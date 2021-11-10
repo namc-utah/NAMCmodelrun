@@ -3,15 +3,7 @@
 # Edited by Christian Perry 20180312
 # Edited by TWA February 2019
 
-
-
-setwd("\\\\share1.bluezone.usu.edu\\miller\\\\buglab\\OE_Modeling\\NAMC_Supported_OEmodels\\Wyoming\\Model Files\\")
-library(gtools); library(MASS); library(cluster); library(Hmisc);
-
-# Load necessary model and .Rdata files:
-source("model.predict.v4.1.r");
-load('WYRIVPACS2012.Rdata');
-
+WY_model<-function(test_bugs,test_preds,rf.model){
 # Load reference bug and pred data:
 predall<-read.table("WY_REFPRED.txt",row.names="SAMPLE",header=T,sep="\t");
 bugall<-read.table("WY_REFBUG.txt",row.names="SAMPLE",header=T,sep="\t");
@@ -40,50 +32,8 @@ bug.vld.pa<-bugall.pa[substr(as.character(predall[,'TYPE']),1,1)=='V',];  #Bug p
 #Data sets complete and aligned;
 ########################################;
 
-# Load test data:
-
-Boxdata <- ("\\\\share1.bluezone.usu.edu\\miller\\\\buglab\\OE_Modeling\\NAMC_Supported_OEmodels\\Wyoming\\InputsAndResults\\CurrentRun")
-setwd(Boxdata)
-getwd()
-pred.test <- read.csv("WY_Habitat.csv",row.names="SampleID",header=T)
-bug.test <- read.csv("WY_Bugs.csv",row.names="SampleID",header=T)
-bug.test[bug.test>0]<-1; #convert bug test matrix to presence/absence;
-
-
-#Drop all samples/sites that do not not have complete data for the model predictors;
-pred.test<-pred.test[complete.cases(pred.test[,preds.final]),];
-bug.test <-bug.test[row.names(pred.test),];
 
 #makes predictions for test data;
-OE.assess.test<-model.predict.v4.1(bugcal.pa,grps.final,preds.final, grpmns,covpinv,prednew=pred.test,bugnew=bug.test,Pc=0.5);
-OE.assess.test$OE.scores;
-write.table(OE.assess.test$OE.scores,'WY_OE_BLM2110.csv',sep=",",col.names=NA)
-
-
-######### This section of code oututs the siteXtaxon probability of capture matrix.
-# Example predictions: For nonreference sites in the Wyoming DEQ data set that are labeled "T" (see Step 1);
-
-pred.test<-read.table("WY_REFPRED.txt",row.names="SAMPLE",header=T,sep="\t");  #predictor data-test sites;
-
-#pred.test<-predall[as.character(predall[,'Mdl704'])=='N_lc',];  #predictor data - test sites;
-
-bug.test.pa<-read.table("WY_REFBUG.txt",row.names="SAMPLE",header=T,sep="\t"); #load bug test matrix;
-bug.test.pa[bug.test.pa>0]<-1; #convert bug test matrix to presence/absence;
-#write.table(bug.test.pa,'WYbugtestpa.csv',sep=",",col.names=NA);
-
-#bug.test.pa<-bugall.pa[as.character(predall[,'Mdl704'])=='N_lc',]; #Bug presence/absence matrix, test sites;
-
-#Drop all samples/sites that do not not have complete data for the model predictors;
-pred.test<-pred.test[complete.cases(pred.test[,preds.final]),];
-bug.test.pa<-bug.test.pa[row.names(pred.test),];
-
-#makes predictions for test data;
-OE.assess.test<-model.predict.v4.1(bugcal.pa,grps.final,preds.final, grpmns,covpinv,prednew=pred.test,bugnew=bug.test.pa,Pc=0.5);
-
-# look at O/E and BC scores of test-data samples;
-OE.assess.test$OE.scores;
-write.table(OE.assess.test,'testjul9refzero.csv',sep=",",col.names=NA)???
-
-
-
-
+OE<-model.predict.v4.1(bugcal.pa,grps.final,preds.final, grpmns,covpinv,prednew=test_preds,bugnew=test_bugs,Pc=0.5)
+return(OE)
+}
