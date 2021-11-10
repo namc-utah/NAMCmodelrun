@@ -44,9 +44,11 @@ modelInfo=query("modelInfo",modelId=4,expand_metadata = FALSE)
 # WQ models will have predictor and R object inputs
 
 #run model applicability function
-
+source(ModelApplicabilityAll.R)
+    
 #save output in database as model result
 
+    
 #query the model result table to get conditions automatically applied
 modelConditions=query("modelConditions",modelId=3)
 modelResults=query("modelResults", sampleIds=150807)

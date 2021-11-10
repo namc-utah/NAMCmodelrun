@@ -91,3 +91,6 @@ source("model.predict.v4.1.r");
 load('WYRIVPACS2012.Rdata')
 
 
+#WW
+load(paste0("My.RF.Model.Version1.Rdata"))
+source(paste0("model.predict.RanFor.4.2.r"));
