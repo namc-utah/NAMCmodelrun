@@ -5,13 +5,10 @@ AREMP_OE_model<-function(bugnew,prednew,ranfor.mod){
   OE<-model.predict.RanFor.4.2(bugcal.pa,grps.final,preds.final, ranfor.mod,prednew,bugnew,Pc=0.5,Cal.OOB=FALSE)
   return(OE)
 }
-
 UTDEQ_2015_model<-function(bugnew,prednew,ranfor.mod){
   OE<-model.predict.RanFor.4.2(bugcal.pa,grps.final, preds.final,ranfor.mod, prednew,bugnew,Pc=0.5,Cal.OOB=FALSE)
   return(OE)
 }
-
-
 WW_model<-function(bugnew,prednew,ranfor.mod){
   OE<-model.predict.RanFor.4.2(bugcal.pa[,c(2:222)],grps.final,preds.final,ranfor.mod, prednew, bugnew, Pc=0.5, Cal.OOB=FALSE);
   return(OE) # bugcal.pa data set needs reviewed and standardized. need to set sampleiDs and the row names but I dont know why we are excluding taxa
@@ -24,13 +21,11 @@ OR_MWCF_model<- function(bugnew,prednew,ranfor.mod){
   OE<-model.predict.v4.1(bugcal.pa,grps.final,preds.final, grpmns,covpinv,prednew,bugnew,Pc=0.5);
   return(OE)
 }
-
 OR_WCCP_model<- function (bugnew,prednew,ranfor.mod){
   #make predictions for test data;
   OE<-model.predict.v4.1(bugcal.pa,grps.final,preds.final, grpmns,covpinv,prednew,bugnew,Pc=0.5);
   return(OE)
 }
-
 WY_model<-function(bugnew,prednew,ranfor.mod){
   OE<-model.predict.v4.1(bugcal.pa,grps.final,preds.final, grpmns,covpinv,prednew,bugnew,Pc=0.5)
   return(OE)
