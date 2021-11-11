@@ -14,27 +14,27 @@ library(MASS)
 library(CSCI)
 
 # load main John Vansickle functions
-source("model.predict.v4.1.r")
-source("model.predict.RanFor.4.2.r")#WW
-source("\\\\share1.bluezone.usu.edu\\miller\\\\buglab\\OE_Modeling\\NAMC_Supported_OEmodels\\PIBO\\PIBO_RF2020\\model.predict.RanFor.r")
+source("model_predict_function/model.predict.v4.1.r")#OR
+source("model_predict_function/model.predict.RanFor.4.2.r")#WW, AREMP,UT
+source("model_predict_function/model.predict.RanFor.r")#PIBO
 
 # R objects
 #AREMP
-load("AREMP_OE.rdata")
-load("AREMP_MMI.rdata")
+load("final_models/AREMP/AREMP_OE_standardized.rdata")
+load("final_models/AREMP/AREMP_MMI.rdata")
 #NV
-load("OE_MMI_models.rdata")
+load("final_models/NV/OE_MMI_models.rdata")
 #OR MWCF
-load("MWCF.rdata")
-load('Nov05model_MWCF_16jan13.Rdata')
+load("final_models/OR_MWCF/MWCF.rdata")
+#load('final_models/OR_MWCF/Nov05model_MWCF_16jan13.Rdata')
 #OR WCCP
-load("WCCP.RData")
-load('Nov05model_WCCP_16jan13.RData')
+load("final_models/OR_WCCP/WCCP.RData")
+#load('Nov05model_WCCP_16jan13.RData')
 #PIBO
-load("Benkendorf.RF.Model.Version1.Rdata")
+load("final_models/PIBO/Benkendorf.RF.Model.Version1_standardized.Rdata")
 #UT
-load('UTDEQ_15_OE_model.rdata')
+load('final_models/UTDEQ15/UTDEQ_15_OE_model_standardized.rdata')
 #WY
-load('WYRIVPACS2012.Rdata')
+load('final_models/WYDEQ/WYRIVPACS2012_standardized.Rdata')
 #WW
-load("My.RF.Model.Version1.Rdata")
+load("final_models/WW18/My.RF.Model.Version1_standardized.Rdata")
