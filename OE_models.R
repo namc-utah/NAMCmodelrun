@@ -33,7 +33,7 @@ WY_model<-function(bugnew,prednew,ranfor.mod){
 
 
 ##### version 0 function
-PIBO_model<-function (bugnew,prednew,ranfor.mod){
+PIBO_model<-function (bug.otu,bugall, grps.final, preds.final, ranfor.mod, prednew){
   # merges test bug data with a null set of all OTU bug names in order for VanSickle code to work properly.
   bugnew.pa <- merge(x=bug.otu, y=bugnew, all=TRUE)         
   # converts na data produced from columns above into 0s;

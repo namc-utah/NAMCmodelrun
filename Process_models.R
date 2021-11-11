@@ -1,5 +1,6 @@
+library(NAMCr)
 # get model id for what model you are running
-models=query("models")
+models=NAMCr::query("models")
 
 # get what predictors are needed for needed for that model
 predictors = query("predictors",modelId=3,expand_metadata = FALSE)
