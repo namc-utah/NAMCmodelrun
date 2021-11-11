@@ -13,7 +13,7 @@
    #        The model can make predictions for all taxa in the calibration data (bugcal.pa) that were present at 1 or more calibration sites;
    #        To see a list of these taxa, do the following:
 
-PIBO_model<-function (test_bugs,test_preds,rf_model){
+PIBO_model<-function (bugsOTU_matrix,test_preds,rf_model){
 ### what is this associated with??
          names(bugall)[colSums(bugall)>0];
 #########;
@@ -21,22 +21,22 @@ PIBO_model<-function (test_bugs,test_preds,rf_model){
 #### Trip is this needed???         
 bug.otu <- read.csv("\\\\share1.bluezone.usu.edu\\miller\\\\buglab\\OE_Modeling\\NAMC_Supported_OEmodels\\PIBO\\InputsAndResults_PIBO2009oe\\Current Run\\OTUbugs1.csv",header=T);
 # merges test bug data with a null set of all OTU bug names in order for VanSickle code to work properly.
-test_bugs.pa <- merge(x=bug.otu, y=test_bugs, all=TRUE)         
+bugsOTU_matrix.pa <- merge(x=bug.otu, y=bugsOTU_matrix, all=TRUE)         
 # converts na data produced from columns above into 0s;
-test_bugs.pa[is.na(test_bugs.pa)]<- 0 
+bugsOTU_matrix.pa[is.na(bugsOTU_matrix.pa)]<- 0 
 
 # Reorder sampleid in ascending order
-test_bugs.pa = test_bugs.pa[order(test_bugs.pa$sampleId), ];
+bugsOTU_matrix.pa = bugsOTU_matrix.pa[order(bugsOTU_matrix.pa$sampleId), ];
 test_preds = test_preds[order(test_preds$sampleId), ];
 
 # makes predictions for test data;
-OE<-model.predict.RanFor(bugall, grps.final, preds.final, ranfor.mod=rf.mod, prednew=test_preds, bugnew.pa=test_bugs.pa, Pc=0.5);
+OE<-model.predict.RanFor(bugall, grps.final, preds.final, ranfor.mod=rf.mod, prednew=test_preds, bugnew.pa=bugsOTU_matrix.pa, Pc=0.5);
 
 ###is this needed????
 # Append Sampleid to results
-OE$OE.scores = data.frame(test_bugs.pa$sampleId, OE$OE.scores)
+OE$OE.scores = data.frame(bugsOTU_matrix.pa$sampleId, OE$OE.scores)
 names(OE$OE.scores) = c('sampleId',names(OE$OE.scores)[2:ncol(OE$OE.scores)] )
-OE$Capture.Probs = data.frame(test_bugs.pa$sampleId, OE$Capture.Probs)
+OE$Capture.Probs = data.frame(bugsOTU_matrix.pa$sampleId, OE$Capture.Probs)
 names(OE$Capture.Probs) = c('sampleId',names(OE$Capture.Probs)[2:ncol(OE$Capture.Probs)] )
 
 return(OE)

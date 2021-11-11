@@ -16,10 +16,10 @@
 #  Code modified by TWA (January 2019) in order to utilize NAMC file structure and output needs
 ##########;
 
-OR_MWCF_model<- function(test_bugs,test_preds,rf_model){
+OR_MWCF_model<- function(bugsOTU_matrix,test_preds,rf_model){
 #make predictions for test data;
 OE<-model.predict.v4.1(bugcal.pa,grps.final,preds.final, grpmns,covpinv,
-                                   prednew=test_preds,bugnew=test_bugs,Pc=0.5);
+                                   prednew=test_preds,bugnew=bugsOTU_matrix,Pc=0.5);
 return(OE)
 }
 
@@ -30,9 +30,9 @@ return(OE)
 
 #############
 
-OR_WCCP_model<- function (test_bugs,test_preds,rf_model){
+OR_WCCP_model<- function (bugsOTU_matrix,test_preds,rf_model){
 #make predictions for test data;
 OE<-model.predict.v4.1(bugcal.pa,grps.final,preds.final, grpmns,covpinv,
-                                   prednew=test_preds.F,bugnew=test_bugs,Pc=0.5);
+                                   prednew=test_preds.F,bugnew=bugsOTU_matrix,Pc=0.5);
 return(OE)
 }

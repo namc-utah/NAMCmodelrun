@@ -3,7 +3,7 @@
 # Edited by Christian Perry 20180312
 # Edited by TWA February 2019
 
-WY_model<-function(test_bugs,test_preds,rf.model){
+WY_model<-function(bugsOTU_matrix,test_preds,rf.model){
 # Load reference bug and pred data:
 predall<-read.table("WY_REFPRED.txt",row.names="SAMPLE",header=T,sep="\t");
 bugall<-read.table("WY_REFBUG.txt",row.names="SAMPLE",header=T,sep="\t");
@@ -34,6 +34,6 @@ bug.vld.pa<-bugall.pa[substr(as.character(predall[,'TYPE']),1,1)=='V',];  #Bug p
 
 
 #makes predictions for test data;
-OE<-model.predict.v4.1(bugcal.pa,grps.final,preds.final, grpmns,covpinv,prednew=test_preds,bugnew=test_bugs,Pc=0.5)
+OE<-model.predict.v4.1(bugcal.pa,grps.final,preds.final, grpmns,covpinv,prednew=test_preds,bugnew=bugsOTU_matrix,Pc=0.5)
 return(OE)
 }

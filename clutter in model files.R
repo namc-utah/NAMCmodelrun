@@ -10,11 +10,11 @@ load("AREMP_MMI.rdata")
 
 
 test_preds=read.csv(file="Z:\\buglab\\OE_Modeling\\NAMC_Supported_OEmodels\\AREMP2014\\ModelFiles\\InputsAndResults\\2021\\Test_preds.csv",row.names="SampleID")
-test_bugs_list=read.csv(file="Z:\\buglab\\OE_Modeling\\NAMC_Supported_OEmodels\\AREMP2014\\ModelFiles\\InputsAndResults\\2021\\Test_bugs.csv")
+bugsOTU_matrix_list=read.csv(file="Z:\\buglab\\OE_Modeling\\NAMC_Supported_OEmodels\\AREMP2014\\ModelFiles\\InputsAndResults\\2021\\bugsOTU_matrix.csv")
 #Matching predictors and bugs
-test_bugs_matrix=matrify(test_bugs_list)
-test_bugs_matrix=test_bugs_matrix[row.names(test_preds),]
-if(any((row.names(test_bugs_matrix)==row.names(test_preds))=="FALSE")=="TRUE"){print("Warning - predictor/bug mismatch")}
+bugsOTU_matrix_matrix=matrify(bugsOTU_matrix_list)
+bugsOTU_matrix_matrix=bugsOTU_matrix_matrix[row.names(test_preds),]
+if(any((row.names(bugsOTU_matrix_matrix)==row.names(test_preds))=="FALSE")=="TRUE"){print("Warning - predictor/bug mismatch")}
 
 #Checking distributions of new predictors against reference predictors
 boxplot(refpreds$WSA_SQKM,test_preds$WSA_SQKM, names=c("Ref","New"),ylab="Watershed Area (km2)")
@@ -54,8 +54,8 @@ abline(h=thresholds[2],lwd=3,col="blue")
 load("OE_MMI_models.rdata")
 #modeling, adjusting, rescaling
 predictors=test_pred
-test_bugs=test_bugs[row.names(predictors),]
-namecheck=row.names(predictors)==row.names(test_bugs)
+bugsOTU_matrix=bugsOTU_matrix[row.names(predictors),]
+namecheck=row.names(predictors)==row.names(bugsOTU_matrix)
 if (any(namecheck=="FALSE")) stop("Predictors do not match bug metrics")
 
 # OR
