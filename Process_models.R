@@ -149,13 +149,16 @@ process_sample_models = function(sampleId, modelId, config = config) {
     #
     # if modelType= bug OE get OTU taxa matrix
     if (def_models$modelType == "OE") {
+      bugnew=OE_bug_matrix(sampleId=sampleId,translationId=def_models$translationId,fixedCount=def_models$fixedCount)
         }
     # if modelType= bug MMI get
     else if (def_models$modelType == "MMI") {
+      bugnew=MMI_metrics(sampleId=sampleId,fixedCount=def_models$fixedCount)
      }
     # CSCI requires just the raw taxa list translated for misspelling
     else if (def_models$modelId %in% c(1)) {# add in model names in comments
-    }
+      CSCIbugs=CSCI_bug(sampleId=sampleId, translationId=def_models$translationId)
+      }
     # CO model must be written out as an excel file using a separate bank of code and function
     else if (def_models$modelId %in% c(4,5,6)){
       print(paste0("CO model must be written out as an excel file using a separate bank of code and function: ",sampleIds))
@@ -189,7 +192,15 @@ process_sample_models = function(sampleId, modelId, config = config) {
     report<-CSCI(bugs=CSCIbugs,stations=prednew) 
     OE=report$core
     }
-    else if AREMP_MMI(prednew, bugnew)
+    # all MMIs will need their own function added here because there is a rf model for each metric
+    else if (def_models$modelId==8){
+      AREMP_MMI_model(bugnew,prednew,rf_model) #seperate out all the models here 
+    }
+    # all MMIs will need their own function added here because there is a rf model for each metric
+    else if (def_models$modelId==3){
+     NV_MMI_model(bugnew,prednew,rf_model)  #seperate out all the models here 
+    }
+     
     else{}
    
        
@@ -200,7 +211,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
     # Save model results
     # ---------------------------------------------------------------
    #has permission to save then spit out result to console
-     if (def_models$modelType=="OE") {# pass Nas for anything not used
+     # pass Nas for anything not used
       NAMCr::save(
         api_endpoint = "newModelResult",
         sampleId = def_samples$sampleId[1],
@@ -210,16 +221,9 @@ process_sample_models = function(sampleId, modelId, config = config) {
         model_result= ,
         modelApplicability=      
           )
-    } else if (def_models$modelType=="MMI"){
-      NAMCr::save(
-        api_endpoint = "newModelResult",
-        sampleId = def_samples$sampleId[1],
-        modelId = def_model_results=modelId,
-        model_result=
-          modelApplicability=
+    } 
       ) 
-      } 
-    
+      }
    
     }
   },
