@@ -2,9 +2,6 @@
 ##Uses closest 10 ref sites for analysis
 ##Considers elevation, watershed area, precipitation, temperature
 
-library(tidyverse)
-setwd("/Users/namc/Box/NAMC/OE_Modeling/NAMC_Supported_OEModels/Model Applicability")
-
 CalPredsModelApplicability=read.csv("/Users/namc/Box/NAMC/OE_Modeling/NAMC_Supported_OEModels/Model Applicability/CalPredsModelApplicability.csv")
 
 TestPreds <- read.csv("/Users/namc/Box/NAMC/OE_Modeling/NAMC_Supported_OEModels/Model Applicability/TestPredsModelApplicability.csv")
