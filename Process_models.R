@@ -181,7 +181,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
     }
     # models using version 4.1 of van sickle code includes: 
     else if (def_models$modelId %in% c(10,11,13:23)){
-     OE<-model.predict.v4.1(bugcal.pa,grps.final,preds.final, grpmns=grpmns,covpinv,prednew,bugnew,Pc=0.5)# add elpsis...
+     OE<-model.predict.v4.1(bugcal.pa,grps.final,preds.final, grpmns,covpinv,prednew,bugnew,Pc=0.5)# add elpsis...
     } 
     # PIBO model was one of the earliest models built and used a version of van sickle's function that didnt have a version number
     else if (def_models$modelId==9){
@@ -194,19 +194,26 @@ process_sample_models = function(sampleId, modelId, config = config) {
     }
     # all MMIs will need their own function added here because there is a rf model for each metric
     else if (def_models$modelId==8){
-      AREMP_MMI_model(bugnew,prednew,rf_model) #seperate out all the models here 
-    }
+      MMI<-AREMP_MMI_model(bugnew,prednew,CLING_rich.rf,DIPT_rich.rf,LLT_rich.rf,NON_INSECT_rich.rf,PER_EPT.rf,PER_INTOL.rf,rf_models,mdeg_metrics_adj_cal,ref_metrics_adj) 
     # all MMIs will need their own function added here because there is a rf model for each metric
     else if (def_models$modelId==3){
-     NV_MMI_model(bugnew,prednew,rf_model)  #seperate out all the models here 
+     MMI<-NV_MMI_model(bugnew,prednew,CLINGER.rf,INSET.rf,NONSET.rf,PER_CFA.rf,PER_EPHEA.rf,PER_PLECA.rf) 
     }
-     
-    else{}
-   
-       
-    )
-    
-   
+    else if (def_models$modelId %in% c(27,28,29,30)){
+      WQ=as.data.frame(randomForest::predict(ranfor.mod,prednew))# make sure prednew has sampleIds as the rows
+    }
+      else{}
+      
+    # ---------------------------------------------------------------
+    # Always run model applicability test
+    # ---------------------------------------------------------------   
+    # get all predictor values needed for a box or project # note this either needs a loop written over it or a different API end point 
+    applicabilitypreds=query("samplePredictorValues",modelId=36,sampleId=sampleId) #need list of samples in database with values
+      
+    # run model applicability function
+    ModelApplicability=ModelApplicability(CalPredsModelApplicability, modelId=def_models$modelId, applicabilitypreds) # add to config file or add an R object with calpreds
+
+
     # ---------------------------------------------------------------
     # Save model results
     # ---------------------------------------------------------------
@@ -216,10 +223,10 @@ process_sample_models = function(sampleId, modelId, config = config) {
         api_endpoint = "newModelResult",
         sampleId = def_samples$sampleId[1],
         modelId = def_model_results=modelId,
-        O= ifelse (not NA),
+        O= ifelse(not NA),
         E=,
         model_result= ,
-        modelApplicability=      
+        modelApplicability=ModelApplicability     
           )
     } 
       ) 
@@ -241,18 +248,6 @@ error = function(e) {
 })
 }
 
-
-#run model applicability function
-
-# get only predictors needed for model applicability 
-predictors = query("predictors",modelId=3,expand_metadata = FALSE)
-
-# get all predictor values needed for a box or project # note this either needs a loop written over it or a different API end point 
-samplePredictorValues=query("samplePredictorValues",modelId=) #need list of samples in database with values
-
-source(ModelApplicabilityAll.R)
-
-#save output in database as model result
 
 
 #query the model result table to get conditions automatically applied

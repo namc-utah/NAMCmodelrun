@@ -22,8 +22,13 @@ PIBO_model<-function (bug.otu,bugall, bugnew,grps.final, preds.final, ranfor.mod
 }
 
 
-#Making metric predictions for new sites
-AREMP_MMI_model<-function(bugnew,prednew,rf_model){
+# MMIs
+# each MMI will need its own function because of the variable name and number of randomforest model inputs....
+
+###this function requires yet another function metricMatrixRescale which pulls in additional things... 
+#need to think about how to turn this into a function or if it should be a package and if this is a more sustainable way of writing MMIs.
+#it is more efficient but not as transparent as NV code
+AREMP_MMI_model<-function(bugnew,prednew,CLING_rich.rf,DIPT_rich.rf,LLT_rich.rf,NON_INSECT_rich.rf,PER_EPT.rf,PER_INTOL.rf,rf_models,mdeg_metrics_adj_cal,ref_metrics_adj){
   bugnew_prd=matrix(ncol=0,nrow=dim(bugnew)[1])
   for(n in 1:length(rf_models)){
     model=get(rf_models[n])
@@ -36,13 +41,39 @@ AREMP_MMI_model<-function(bugnew,prednew,rf_model){
   colnames(bugnew_prd)=colnames(bugnew_raw)
   
   bugnew_adj=bugnew_raw-bugnew_prd
-  bugnew_rs=metricMatrixRescale(bugnew_adj,ref_metrics_adj,mdeg_metrics_adj_cal)
+  bugnew_rs=metricMatrixRescale(metrics=bugnew_adj,ref_metrcs=ref_metrics_adj,mostdeg_metrics=mdeg_metrics_adj_cal)
   
   MMI=rowSums(bugnew_rs)/6
   return(MMI)
 }
 
-NV_MMI_model<-function(bugnew,prednew,rf_model){
+metricMatrixRescale<-function(metrics,ref_metrics,mostdeg_metrics){
+  if(any(colnames(metrics)==colnames(ref_metrics))==FALSE){stop("Columns in new metrics must match columns in ref metrics")}
+  if(any(colnames(metrics)==colnames(mostdeg_metrics))==FALSE){stop("Columns in new metrics must match columns in most deg metrics")}
+  if(any(colnames(mostdeg_metrics)==colnames(ref_metrics))==FALSE){stop("Columns in ref metrics must match columns in most deg metrics")}
+  metrics_rs=matrix(nrow=dim(metrics)[1],ncol=0)
+  for(n in 1:dim(metrics)[2]){
+    metric=metrics[,n]
+    ref_metric=ref_metrics[,n]
+    mostdeg_metric=mostdeg_metrics[,n]
+    if(mean(ref_metric)>mean(mostdeg_metric)){
+      min=quantile(mostdeg_metric,0.05)
+      max=quantile(ref_metric,0.95)
+      metric_rs=(metric-min)/(max-min)}
+    if(mean(ref_metric)<mean(mostdeg_metric)){
+      min=quantile(ref_metric,0.05)
+      max=quantile(mostdeg_metric,0.95)
+      metric_rs=1-((metric-min)/(max-min))}
+    metric_rs[metric_rs>1]=1
+    metric_rs[metric_rs<0]=0
+    metrics_rs=cbind(metrics_rs,metric_rs)}
+  colnames(metrics_rs)=colnames(metrics)
+  row.names(metrics_rs)=rownames(metrics)
+  return(metrics_rs)}
+
+
+
+NV_MMI_model<-function(bugnew,prednew,CLINGER.rf,INSET.rf,NONSET.rf,PER_CFA.rf,PER_EPHEA.rf,PER_PLECA.rf){
   ####adjust metrics for natural variability and rescale
   INSET.raw=bugnew$INSET
   INSET.pred=predict(INSET.rf, newdata=prednew, type="response")
@@ -96,4 +127,6 @@ NV_MMI_model<-function(bugnew,prednew,rf_model){
   MMI=rowSums(bugnew.rs)/7
   return(MMI)
 }
+
+
 

@@ -3,7 +3,7 @@
 load("final_models/AREMP/AREMP_OE_standardized.rdata")
 load("final_models/AREMP/AREMP_MMI.rdata")
 #NV
-load("final_models/NV/OE_MMI_models.rdata")
+load("final_models/NV_MMI/OE_MMI_models.Rdata")
 #OR MWCF
 load("final_models/OR_MWCF/MWCF.rdata")
 #load('final_models/OR_MWCF/Nov05model_MWCF_16jan13.Rdata')
@@ -19,7 +19,9 @@ load('final_models/WYDEQ/WYRIVPACS2012_standardized.Rdata')
 #WW
 load("final_models/WW18/My.RF.Model.Version1_standardized.Rdata")
 
-
+load("model data/TN.Rdata")
+load("model data/EC12.Rdata")
+load("model data/TP.Rdata")
 
 library(NAMCr)
 # get model id for what model you are running

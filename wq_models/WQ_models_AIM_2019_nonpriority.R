@@ -54,8 +54,8 @@ TNTP_AIM = TNTP_AIM[,c("SiteCode", "CaO_Mean", "TP_Mean", "Vol_ave", "AtmCa", "A
 ECboxplot=rbind(ECref,EC_AIM)
 ECboxplot=ECboxplot[,c(6,13,17,21,9,2,3,4,14,12,18,19,22,11,10,5,8,16,7,20)] # In the order in which they are listed in the saved RandomForest model 
 TNTPboxplot=rbind(TNTP_ref,TNTP_AIM)
-TPboxplot=TNTPboxplot[,c(17,2,3,4,5,25,12,11,18,15,13,16,21,22,24,28)] # In the order in which they are listed in the saved RandomForest model 
-TNboxplot=TNTPboxplot[,c(6,7,8,9,10,23,27,19,14,26,18,20,28)] # In the order in which they are listed in the saved RandomForest model 
+refpred=refpred[,c(1,17,2,3,4,5,25,12,11,18,15,13,16,21,22,24)] # In the order in which they are listed in the saved RandomForest model 
+refpred=refpred[,c(1,6,7,8,9,10,23,27,19,14,26,18,20)] # In the order in which they are listed in the saved RandomForest model 
 
 
 # Boxplots: These will write as .png's directly to the current working directory

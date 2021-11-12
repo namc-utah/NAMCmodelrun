@@ -2,26 +2,12 @@
 ##Uses closest 10 ref sites for analysis
 ##Considers elevation, watershed area, precipitation, temperature
 
-CalPredsModelApplicability=read.csv("/Users/namc/Box/NAMC/OE_Modeling/NAMC_Supported_OEModels/Model Applicability/CalPredsModelApplicability.csv")
+ModelApplicability<- function(CalPredsModelApplicability, modelId, prednew){
 
-TestPreds <- read.csv("/Users/namc/Box/NAMC/OE_Modeling/NAMC_Supported_OEModels/Model Applicability/TestPredsModelApplicability.csv")
+CalPredsModelApplicability=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEModels/Model Applicability/CalPredsModelApplicability.csv")
 
-##Identify model set being queried
-Group <- unique(TestPreds$Model)
 ##subset calibration set to only include sites used in the appropriate model build
-CalPreds <- subset(CalPredsModelApplicability,Model == Group)
-
-##build boxplots of calibration set                                       
-logSQ_KM=log(CalPreds$WsAreaSqKm)
-boxplot(logSQ_KM)
-ElevCat=CalPreds$ElevCat
-boxplot(ElevCat)
-logPrecip8110Ws=log(CalPreds$Precip8110Ws)
-boxplot(logPrecip8110Ws)
-Tmean8110Ws=CalPreds$Tmean8110Ws
-boxplot(Tmean8110Ws)
-LAT=CalPreds$LAT
-LONG=CalPreds$LONG
+CalPreds <- subset(CalPredsModelApplicability,Model == modelId)
 
 outlier.preds.ref.raw=data.frame(logSQ_KM,ElevCat,logPrecip8110Ws,Tmean8110Ws, row.names=CalPreds$SiteID)
 
@@ -45,19 +31,7 @@ for (n in 1:dim(ref.dist)[1]){
   ref.top10mean.dist=append(ref.top10mean.dist, mean10dist)
 }
 
-##build boxplots of test site data
-logSQ_KM=log(TestPreds$WsAreaSqKm)
-boxplot(logSQ_KM)
-ElevCat=TestPreds$ElevCat
-boxplot(ElevCat)
-logPrecip8110Ws=log(TestPreds$Precip8110Ws)
-boxplot(logPrecip8110Ws)
-Tmean8110Ws=TestPreds$Tmean8110Ws
-boxplot(Tmean8110Ws)
-LAT=TestPreds$LAT
-LONG=TestPreds$LONG
-outlier.preds.test.raw=data.frame(logSQ_KM,ElevCat,logPrecip8110Ws,Tmean8110Ws, row.names=TestPreds$SampleID)
-
+outlier.preds.test.raw=data.frame(logSQ_KM,ElevCat,logPrecip8110Ws,Tmean8110Ws, row.names=prednew$SampleID)
 
 #standardize by min and max of ref data
 
@@ -87,9 +61,11 @@ for (n in 1:length(sample.list)){
   out.flag90=append(out.flag90, flag90)
 }
 
-final=cbind(out.flag90,TestPreds,outlier.preds.test.std)
+final=cbind(out.flag90,prednew,outlier.preds.test.std)
 
-write.csv(final, paste0("ModAppResults_",Group,".csv"))
+ModelApplicability=ifelse(out.flag90=="Yes","Fail","Pass")
+return(ModelApplicability)
+}
 
 # 
 # ##the following section creates visuals and is not needed for applicability determination
