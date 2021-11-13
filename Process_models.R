@@ -150,11 +150,15 @@ process_sample_models = function(sampleId, modelId, config = config) {
     # if modelType= bug OE get OTU taxa matrix
     if (def_models$modelType == "OE") {
       bugnew=OE_bug_matrix(sampleId=sampleId,translationId=def_models$translationId,fixedCount=def_models$fixedCount)
-        }
+    }
+    #need a way to distinguish this model from others.. call NULL OE?
+    else if (def_models$model_id="12"){
+    bugnew=OR_NBR_bug(sampleId=sampleId,translationId=def_models$translationId,fixedCount=def_models$fixedCount)
+    }
     # if modelType= bug MMI get
     else if (def_models$modelType == "MMI") {
       bugnew=MMI_metrics(sampleId=sampleId,fixedCount=def_models$fixedCount)
-     }
+    }
     # CSCI requires just the raw taxa list translated for misspelling
     else if (def_models$modelId %in% c(1)) {# add in model names in comments
       CSCIbugs=CSCI_bug(sampleId=sampleId, translationId=def_models$translationId)
@@ -187,6 +191,10 @@ process_sample_models = function(sampleId, modelId, config = config) {
     else if (def_models$modelId==9){
       OE<-PIBO_model(bug.otu,bugall, grps.final, preds.final, ranfor.mod, prednew)
     } 
+    # OR eastern region is a null model and no predictors are used
+    else if (def_models$modelId=12){
+     OE<-OR_NBR_model(bugnew) 
+    }
     # CSCI has its own package and function    
     else if (def_models$modelId==1){
     report<-CSCI(bugs=CSCIbugs,stations=prednew) 

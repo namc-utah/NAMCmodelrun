@@ -22,6 +22,32 @@ PIBO_model<-function (bug.otu,bugall, bugnew,grps.final, preds.final, ranfor.mod
 }
 
 
+
+OR_NBR_model<-function(bugnew){
+  ref_tax <- c(
+  'Baetis',
+  'Brachycentrus',
+  'Chironominae',
+  'Diphetor_hageni',
+  'Epeorus',
+  'Optioservus',
+  'Orthocladiinae',
+  'Rhyacophila',
+  'Trombidiformes',
+  'Zaitzevia'
+) #list of 10 "reference" taxa
+
+bugnew$TaxaToCount <- ifelse(bugnew$OTUName %in% ref_taxa, 1, 0)
+
+OE <-bugnew %>% dplyr::group_by(sampleId) %>% dplyr::summarize(O = sum(TaxaToCount))
+OE$E <-
+  7.56 #null E is always the same. Does not account for environmental factors
+OE$OE <- OE$O / OE$E
+
+return(OE)
+}
+
+
 # MMIs
 # each MMI will need its own function because of the variable name and number of randomforest model inputs....
 
@@ -127,6 +153,5 @@ NV_MMI_model<-function(bugnew,prednew,CLINGER.rf,INSET.rf,NONSET.rf,PER_CFA.rf,P
   MMI=rowSums(bugnew.rs)/7
   return(MMI)
 }
-
 
 
