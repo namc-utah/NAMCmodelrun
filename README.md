@@ -1,9 +1,20 @@
-# namc-models
+# NAMCmodelrun
 
-This repository contains the R code and accompanying files for NAMC models. There are three top level folders:
+This repository contains the R code and accompanying files for NAMC models. 
 
-* final_models - contains all finalized and vetted models.
-* experimental_models - contains models that have not yet been finalized.
-* wq_models  - contains water quality models.
+models are of three types
+1. OE
+2. MMI
+3. WQ
 
-All CSV, text and RData files are included in this repository, with the exception of the `AlakinityModel.RData` file required by the Wyoming DEQ alkalinity submodel. This file is over 1Gb and too big for git. Contact the NAMC lab manager for details about how to obtain this file.
+models have 3 main inputs needed and seperate functions depending on model type (model function R file)
+1. new bug data (OE and MMIs only)
+2. new predictors 
+3. reference data and random forest models used to build the model
+
+process sample models and process box model functions 
+1. get needed predictors stored in the database
+2. get bug data stored in the database by calling bug functions in the bug functions R file
+3. call model functions from the model function R file
+4. call the model appicability function
+5. save the model results in the database
