@@ -107,7 +107,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
     # if any predictors not valid look for them in model results (predicted coductivity and alalinity
     
     # ---------------------------------------------------------------
-    # get model metadata needed to run the model
+    # get model metadata needed to run the model - philip said he would change apis so that model id would just be provided and translation id and fixed count wouldnt be needed
     # ---------------------------------------------------------------
     def_models=NAMC::query(
       api_endpoint = "ModelInfo",
@@ -179,14 +179,20 @@ process_sample_models = function(sampleId, modelId, config = config) {
     # ---------------------------------------------------------------
     # Run models
     # ---------------------------------------------------------------   
-    # models using latest version of van sickle function include:
+    # models using latest version of van sickle function include: AREMP, UTDEQ15, Westwide
     if (def_models$modelId %in% c(7,2,25,26)){
        OE<-model.predict.RanFor.4.2(bugcal.pa,grps.final,preds.final, ranfor.mod,prednew,bugnew,Pc=0.5,Cal.OOB=FALSE)#....
     }
-    # models using version 4.1 of van sickle code includes: 
-    else if (def_models$modelId %in% c(10,11,13:23)){
+    # models using version 4.1 of van sickle code include: OR_WCCP, OR_MWCF
+    else if (def_models$modelId %in% c(10,11)){
      OE<-model.predict.v4.1(bugcal.pa,grps.final,preds.final, grpmns,covpinv,prednew,bugnew,Pc=0.5)# add elpsis...
     } 
+    # WY also uses version 4.1 of van sickle code but requires alkalinity model as a dependency
+    else if (def_models$modelId %in% (13:23)){
+      ALK_LOG=setNames(as.data.frame(randomForest::predict(ranfor.mod,prednew,type="response")),c("ALK_LOG"))# need to log value
+      prednew=cbind(prednew,ALK_LOG)
+      OE<-model.predict.v4.1(bugcal.pa,grps.final,preds.final, grpmns,covpinv,prednew,bugnew,Pc=0.5)
+    }
     # PIBO model was one of the earliest models built and used a version of van sickle's function that didnt have a version number
     else if (def_models$modelId==9){
       OE<-PIBO_model(bug.otu,bugall, grps.final, preds.final, ranfor.mod, prednew)
@@ -204,13 +210,17 @@ process_sample_models = function(sampleId, modelId, config = config) {
     else if (def_models$modelId==8){
       MMI<-AREMP_MMI_model(bugnew,prednew,CLING_rich.rf,DIPT_rich.rf,LLT_rich.rf,NON_INSECT_rich.rf,PER_EPT.rf,PER_INTOL.rf,rf_models,mdeg_metrics_adj_cal,ref_metrics_adj) 
     # all MMIs will need their own function added here because there is a rf model for each metric
-    else if (def_models$modelId==3){
+    # need to call conductivity model first before calling the NV model because predicted conductivity is a predictor for the NV model
+      else if (def_models$modelId==3){
+      PrdCond=setNames(as.data.frame(randomForest::predict(ranfor.mod,prednew,type="response")),c('PrdCond'))
+      prednew=cbind(prednew,PrdCond)
      MMI<-NV_MMI_model(bugnew,prednew,CLINGER.rf,INSET.rf,NONSET.rf,PER_CFA.rf,PER_EPHEA.rf,PER_PLECA.rf) 
     }
-    else if (def_models$modelId %in% c(27,28,29,30)){
-      WQ=as.data.frame(randomForest::predict(ranfor.mod,prednew))# make sure prednew has sampleIds as the rows
+    #conductivity, tp, tn,temperature
+      else if (def_models$modelId %in% c(27,28,29,30)){ 
+      WQ=as.data.frame(randomForest::predict(ranfor.mod,prednew,type="response"))# make sure prednew has sampleIds as the rows
     }
-      else{}
+           else{}
       
     # ---------------------------------------------------------------
     # Always run model applicability test
@@ -227,20 +237,38 @@ process_sample_models = function(sampleId, modelId, config = config) {
     # ---------------------------------------------------------------
    #has permission to save then spit out result to console
      # pass Nas for anything not used
-      NAMCr::save(
+    if (modelType=="OE"){
+       NAMCr::save(
         api_endpoint = "newModelResult",
-        sampleId = def_samples$sampleId[1],
+        sampleId = def_samples$sampleId,
         modelId = def_model_results=modelId,
-        O= ifelse(not NA),
-        E=,
-        model_result= ,
+        O= OE$O,
+        E= OE$E,
+        model_result=OE$OoverE ,
         modelApplicability=ModelApplicability     
           )
-    } 
-      ) 
-      }
-   
     }
+     
+    else if (modelType=="MMI"){
+      NAMCr::save(
+        api_endpoint = "newModelResult",
+        sampleId = def_samples$sampleId,
+        modelId = def_model_results=modelId,
+        model_result=MMI ,
+        modelApplicability=ModelApplicability     
+      )
+    } 
+      
+    else if (modelType=="WQ"){
+      NAMCr::save(
+        api_endpoint = "newModelResult",
+        sampleId = def_samples$sampleId,
+        modelId = def_model_results=modelId,
+        model_result=WQ ,
+        modelApplicability=ModelApplicability 
+      )
+    }
+    else{}
   },
   error = function(e) {
     cat(paste0("\n\tPREDICTOR ERROR: ", predictor$abbreviation, "\n"))

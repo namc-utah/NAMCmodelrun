@@ -42,7 +42,7 @@ bugnew$TaxaToCount <- ifelse(bugnew$OTUName %in% ref_taxa, 1, 0)
 OE <-bugnew %>% dplyr::group_by(sampleId) %>% dplyr::summarize(O = sum(TaxaToCount))
 OE$E <-
   7.56 #null E is always the same. Does not account for environmental factors
-OE$OE <- OE$O / OE$E
+OE$OoverE <- OE$O / OE$E
 
 return(OE)
 }
