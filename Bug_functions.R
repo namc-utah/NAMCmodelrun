@@ -9,7 +9,7 @@
 #'
 #' @examples
 OE_bug_matrix<-function(sampleId,translationId,fixedCount){
-  bugsOTU = query(
+  bugsOTU = NAMCr::query(
     "sampleMetrics",
     translationId = def_models$translationId,
     fixedCount = def_models$fixedCount,
@@ -40,10 +40,10 @@ MMI_metrics<-function(sampleId,fixedCount, modelId){
   # need to add list of required metrics to model table as well as random forest input file
   #get needed list of metrics from new end point
   # NV and AREMP relative abundances were OTU standardized too!
-  bugsMetrics = query("sampleMetrics",
+  bugsMetrics = NAMCr::query("sampleMetrics",
                       def_models$fixedCount,
                       sampleIds = def_model_results$SampleId)
-  modelInfo = query("modelInfo", modelId = def_model_results$modelId)
+  modelInfo = NAMCr::query("modelInfo", modelId = def_model_results$modelId)
   #MMI_metrics = subset(bugsMetrics, metricId %in% ()) # store translations to metric names in database
   # need to replace metric name with a model specific metric abbreviation
   bugnew = tidyr::pivot_wider(MMI_metrics,id_cols = "sampleId",names_from = "metricName",values_from = "metricValue")
@@ -64,18 +64,18 @@ return(bugnew)
 #' @examples
 CSCI_bug <- function(sampleId, translationId){
 # get needed data from the APIs  
-  bugRaw = query(
+  bugRaw = NAMCr::query(
     "sampleTaxaInfo",
     translationId = def_models$translationId,
     sampleIds = def_model_results$SampleId
-  )# raw query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
+  )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
   
-  bugsTranslation = query(
+  bugsTranslation = NAMCr::query(
     "sampleTaxaTranslation",
     translationId = def_models$translationId,
     sampleIds = def_model_results$SampleId
   )
-  sites = query(
+  sites = NAMCr::query(
     "samples",
     include = c("sampleId", 'siteId'),
     sampleIds = def_model_results$SampleId
@@ -91,7 +91,7 @@ CSCI_bug <- function(sampleId, translationId){
   CSCIbugs$FinalID = CSCIbugs$OTUName
   CSCIbugs$LifeStageCode=ifelse(CSCIbugs$Class=="Insecta","X",ifelse(is.na(CSCIbugs$lifeStageAbbreviation))==TRUE,X,CSCIbugs$lifeStageAbbreviation)
   CSCIbugs$Distinct == 0
-  CSCIbugs$BAResult = sum(CSCIbugs$rawCount, CSCIbugs$rawBigRareCount)# have query add this as a column... use the mutate function?
+  CSCIbugs$BAResult = sum(CSCIbugs$rawCount, CSCIbugs$rawBigRareCount)# have NAMCr::query add this as a column... use the mutate function?
 
   # subset columns
   CSCIbugs=CSCIbugs[,c('SampleID','StationCode','FinalID','LifeStageCode','Distinct','BAResult')]
@@ -109,20 +109,20 @@ CSCI_bug <- function(sampleId, translationId){
 #'
 #' @examples
 CO_bug_export<-function(boxId, translationId){
-  bugRaw = query(
+  bugRaw = NAMCr::query(
     "sampleTaxaInfo",
     translationId = def_models$translationId,
     sampleIds = def_model_results$SampleId
-  )# raw query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
+  )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
   
-  bugsTranslation = query(
+  bugsTranslation = NAMCr::query(
     "sampleTaxaTranslation",
     translationId = def_models$translationId,
     sampleIds = def_model_results$SampleId
   )
-  samples = query(
+  samples = NAMCr::query(
     "samples",
-    include = c("sampleId",'siteId','sampleDate',"siteName", "sampleMethod","habitat","area"),# possibly add waterbody name to the samples query
+    include = c("sampleId",'siteId','sampleDate',"siteName", "sampleMethod","habitat","area"),# possibly add waterbody name to the samples NAMCr::query
     sampleIds = def_model_results$SampleId
   )
   
@@ -161,7 +161,7 @@ CO_bug_export<-function(boxId, translationId){
 #'
 #' @examples
 OR_NBR_bug <- function(sampleId, translationId, fixedCount) {
-  bugsOTU = query(
+  bugsOTU = NAMCr::query(
     "sampleMetrics",
     translationId = def_models$translationId,
     fixedCount = def_models$fixedCount,

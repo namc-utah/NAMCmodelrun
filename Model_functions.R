@@ -103,7 +103,7 @@ AREMP_MMI_model<-function(bugnew,prednew,CLING_rich.rf,DIPT_rich.rf,LLT_rich.rf,
   for(n in 1:length(rf_models)){
     model=get(rf_models[n])
     if(model$rsq[1500]>=0.1){
-      metric_prd=predict(model,newdata=prednew)}
+      metric_prd=randomForest::predict(model,newdata=prednew)}
     if(model$rsq[1500]<0.1){
       metric_prd=rep(0,times=dim(bugnew_raw)[1])}
     bugnew_prd=cbind(bugnew_prd,metric_prd)
@@ -172,42 +172,42 @@ metricMatrixRescale<-function(metrics,ref_metrics,mostdeg_metrics){
 NV_MMI_model<-function(bugnew,prednew,CLINGER.rf,INSET.rf,NONSET.rf,PER_CFA.rf,PER_EPHEA.rf,PER_PLECA.rf){
   ####adjust metrics for natural variability and rescale
   INSET.raw=bugnew$INSET
-  INSET.pred=predict(INSET.rf, newdata=prednew, type="response")
+  INSET.pred=randomForest::predict(INSET.rf, newdata=prednew, type="response")
   INSET.adj=INSET.raw-INSET.pred
   INSET.rs=100*((INSET.adj--20.23451)/(9.53285--20.23451))
   INSET.rs[INSET.rs>100]=100
   INSET.rs[INSET.rs<0]=0
   
   PER_CFA.raw=bugnew$PER_CFA
-  PER_CFA.pred=predict(PER_CFA.rf, newdata=prednew, type="response")
+  PER_CFA.pred=randomForest::predict(PER_CFA.rf, newdata=prednew, type="response")
   PER_CFA.adj=PER_CFA.raw-PER_CFA.pred
   PER_CFA.rs=100*((PER_CFA.adj--26.84895)/(20.15404--26.84895))
   PER_CFA.rs[PER_CFA.rs>100]=100
   PER_CFA.rs[PER_CFA.rs<0]=0
   
   PER_EPHEA.raw=bugnew$PER_EPHEA
-  PER_EPHEA.pred=predict(PER_EPHEA.rf, newdata=prednew, type="response")
+  PER_EPHEA.pred=randomForest::predict(PER_EPHEA.rf, newdata=prednew, type="response")
   PER_EPHEA.adj=PER_EPHEA.raw-PER_EPHEA.pred
   PER_EPHEA.rs=100*((PER_EPHEA.adj--37.05147)/(29.21069--37.05147))
   PER_EPHEA.rs[PER_EPHEA.rs>100]=100
   PER_EPHEA.rs[PER_EPHEA.rs<0]=0
   
   NONSET.raw=bugnew$NONSET
-  NONSET.pred=predict(NONSET.rf, newdata=prednew, type="response")
+  NONSET.pred=randomForest::predict(NONSET.rf, newdata=prednew, type="response")
   NONSET.adj=NONSET.raw-NONSET.pred
   NONSET.rs=100*((NONSET.adj--3.733934)/(3.773724--3.733934))
   NONSET.rs[NONSET.rs>100]=100
   NONSET.rs[NONSET.rs<0]=0
   
   CLINGER.raw=bugnew$CLINGER
-  CLINGER.pred=predict(CLINGER.rf, newdata=prednew, type="response")
+  CLINGER.pred=randomForest::predict(CLINGER.rf, newdata=prednew, type="response")
   CLINGER.adj=CLINGER.raw-CLINGER.pred
   CLINGER.rs=100*((CLINGER.adj--8.310543)/(5.719022--8.310543))
   CLINGER.rs[CLINGER.rs>100]=100
   CLINGER.rs[CLINGER.rs<0]=0
   
   PER_PLECA.raw=bugnew$PER_PLECA
-  PER_PLECA.pred=predict(PER_PLECA.rf, newdata=prednew, type="response")
+  PER_PLECA.pred=randomForest::predict(PER_PLECA.rf, newdata=prednew, type="response")
   PER_PLECA.adj=PER_PLECA.raw-PER_PLECA.pred
   PER_PLECA.rs=100*((PER_PLECA.adj--6.212933)/(15.33518--6.212933))
   PER_PLECA.rs[PER_PLECA.rs>100]=100

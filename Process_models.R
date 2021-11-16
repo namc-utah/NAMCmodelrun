@@ -252,7 +252,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
     }
     # CSCI has its own package and function
     else if (def_models$modelId == 1) {
-      report <- CSCI(bugs = CSCIbugs, stations = prednew)
+      report <- CSCI::CSCI(bugs = CSCIbugs, stations = prednew)
       OE = report$core
     }
     # all MMIs will need their own function added here because there is a rf model for each metric
@@ -303,7 +303,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
     # Always run model applicability test
     # ---------------------------------------------------------------
     # get all predictor values needed for a box or project # note this either needs a loop written over it or a different API end point
-    applicabilitypreds = query("samplePredictorValues",
+    applicabilitypreds = NAMCr::query("samplePredictorValues",
                                modelId = 36,
                                sampleId = sampleId) #need list of samples in database with values
     
