@@ -1,14 +1,5 @@
 library(randomForest)
-library(labdsv)
-library(vegan)
-library(cluster)
-library(Hmisc)
-library(plyr)
-library(dplyr)# is this used?
-library(gtools)
-library(MASS)
 library(NAMCr)
-
 library(tidyverse)
 #install.packages("devtools")#Install devtools from CRAN
 #library(devtools)
