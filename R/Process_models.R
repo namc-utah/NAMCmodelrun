@@ -20,7 +20,7 @@ process_models = function() {
   def_samples = NAMCr::query(api_endpoint = "samples2process",#need separate end point for models
                              include = c("sampleId", "modelId"))
   for (sample in def_samples) {
-    process_sample_models(sample$sampleId, sample$modelId) 
+    process_sample_models(sample$sampleId, sample$modelId)
   }
   logger$stopLog()
 }
@@ -69,7 +69,7 @@ process_box_models = function(boxId,modelId) {
 #' @details saving each predictor for each sample one at a time in the database
 #'
 #' @param sampleId
-#' @param modelId 
+#' @param modelId
 #' @param config
 #'
 #' @return none
@@ -82,7 +82,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
   # determine if the needed model has already been run for the sample
   # ---------------------------------------------------------------
   # consider adding a loop through models here
-  
+
   # getting a list of samples and associated models that do not already have results in the table
   # has site location changed or predictor values changed if not dont rerun , handle with valid flag
   # not ready status if predictors are not there
@@ -104,9 +104,9 @@ process_sample_models = function(sampleId, modelId, config = config) {
     sampleId = sampleId,
     modelId = modelId
   )
-  def_models = def_models[def_models$status = !"Valid",]
+  def_models = def_models[def_models$status !="Valid",]
   # if any predictors not valid look for them in model results (predicted coductivity and alalinity
-  
+
   # ---------------------------------------------------------------
   # get model metadata needed to run the model - philip said he would change apis so that model id would just be provided and translation id and fixed count wouldnt be needed
   # ---------------------------------------------------------------
@@ -118,11 +118,11 @@ process_sample_models = function(sampleId, modelId, config = config) {
                 "fixed count",),
     modelId = def_model_results$modelId
   )
-  
+
   # ---------------------------------------------------------------
   # Get predictor values needed for the model, if they dont exist yet stop here
   # ---------------------------------------------------------------
-  
+
   # getting predictor values associated with those samples and models coming out of the def_models query above
   def_predictors = NAMCr::query(
     api_endpoint = "samplePredictorValues",
@@ -140,7 +140,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
     prednew = tidyr::pivot_wider(def_predictors,
                                  names_from = "abbreviation",
                                  values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
-    
+
     # ---------------------------------------------------------------
     # Get bug data for model functions
     # ---------------------------------------------------------------
@@ -154,7 +154,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
       )
     }
     #need a way to distinguish this model from others.. call NULL OE?
-    else if (def_models$model_id = "12") {
+    else if (def_models$model_id == 12) {
       bugnew = OR_NBR_bug(
         sampleId = sampleId,
         translationId = def_models$translationId,
@@ -181,16 +181,16 @@ process_sample_models = function(sampleId, modelId, config = config) {
       )
     }
     else {
-      
+
     }
-    
+
     # ---------------------------------------------------------------
     # load model specific R objects which include reference bug data and predictors RF model objects
     # ---------------------------------------------------------------
     # every model has an R object that stores the random forest model and reference data
     # the R objects are named with the model abbreviation
     load(paste0(def_models$model_abbreviation, ".Rdata"))
-    
+
     # ---------------------------------------------------------------
     # Run models
     # ---------------------------------------------------------------
@@ -247,14 +247,14 @@ process_sample_models = function(sampleId, modelId, config = config) {
                    prednew)
     }
     # OR eastern region is a null model and no predictors are used
-    else if (def_models$modelId = 12) {
+    else if (def_models$modelId == 12) {
       OE <- OR_NBR_model(bugnew)
     }
-    # CSCI has its own package and function
-    else if (def_models$modelId == 1) {
-      report <- CSCI::CSCI(bugs = CSCIbugs, stations = prednew)
-      OE = report$core
-    }
+    # # CSCI has its own package and function
+    # else if (def_models$modelId == 1) {
+    #   report <- CSCI::CSCI(bugs = CSCIbugs, stations = prednew)
+    #   OE = report$core
+    # }
     # all MMIs will need their own function added here because there is a rf model for each metric
     else if (def_models$modelId == 8) {
       MMI <-
@@ -296,9 +296,9 @@ process_sample_models = function(sampleId, modelId, config = config) {
       WQ = as.data.frame(randomForest::predict(ranfor.mod, prednew, type = "response"))# make sure prednew has sampleIds as the rows
     }
     else{
-      
+
     }
-    
+
     # ---------------------------------------------------------------
     # Always run model applicability test
     # ---------------------------------------------------------------
@@ -306,13 +306,13 @@ process_sample_models = function(sampleId, modelId, config = config) {
     applicabilitypreds = NAMCr::query("samplePredictorValues",
                                modelId = 36,
                                sampleId = sampleId) #need list of samples in database with values
-    
+
     # run model applicability function
     ModelApplicability = ModelApplicability(CalPredsModelApplicability,
                                             modelId = def_models$modelId,
                                             applicabilitypreds) # add to config file or add an R object with calpreds
-    
-    
+
+
     # ---------------------------------------------------------------
     # Save model results
     # ---------------------------------------------------------------
@@ -322,40 +322,40 @@ process_sample_models = function(sampleId, modelId, config = config) {
       NAMCr::save(
         api_endpoint = "newModelResult",
         sampleId = def_samples$sampleId,
-        modelId = def_model_results = modelId,
+        modelId = def_model_results$modelId,
         O = OE$O,
         E = OE$E,
         model_result = OE$OoverE ,
         modelApplicability = ModelApplicability
       )
     }
-    
+
     else if (modelType == "MMI") {
       NAMCr::save(
         api_endpoint = "newModelResult",
         sampleId = def_samples$sampleId,
-        modelId = def_model_results = modelId,
+        modelId = def_model_results$modelId,
         model_result = MMI ,
         modelApplicability = ModelApplicability
       )
     }
-    
+
     else if (modelType == "WQ") {
       NAMCr::save(
         api_endpoint = "newModelResult",
         sampleId = def_samples$sampleId,
-        modelId = def_model_results = modelId,
+        modelId = def_model_results$modelId,
         model_result = WQ ,
         modelApplicability = ModelApplicability
       )
     }
     else{
-      
+
     }
   }
 }
-    
-    
+
+
 #   error = function(e) {
 #     cat(paste0("\n\tPREDICTOR ERROR: ", predictor$abbreviation, "\n"))
 #     str(e, indent.str = "   ")
@@ -375,5 +375,5 @@ process_sample_models = function(sampleId, modelId, config = config) {
 # #query the model result table to get conditions automatically applied
 # modelConditions=query("modelConditions",modelId=3)
 # modelResults=query("modelResults", sampleIds=150807)
-# 
+#
 
