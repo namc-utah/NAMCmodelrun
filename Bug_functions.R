@@ -143,7 +143,8 @@ CO_bug_export<-function(boxId, translationId){
   CObugs$Grids=NA
   CObugs$CommentsSample==paste0("sampleMethod: ",CObugs$sampleMethod,"habitat: ",CObugs$habitat,"area: ",CObugs$area)
   CObugs$CommentsRep==""
-return(CObugs)
+#write excel file to workspace
+  return(CObugs)
   }
 
 
