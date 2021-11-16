@@ -7,10 +7,11 @@ models are of three types
 2. MMI
 3. WQ
 
-models have 3 main inputs needed and seperate functions depending on model type (model function R file)
+models have 3 main inputs needed and separate functions depending on model type (model function R file)
 1. new bug data (OE and MMIs only)
 2. new predictors 
 3. reference data and random forest models used to build the model
+    this data lives as R objects in teh sysdata.rda folder
 
 process sample models and process box model functions 
 1. get needed predictors stored in the database
