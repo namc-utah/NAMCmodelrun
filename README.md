@@ -1,6 +1,6 @@
 # NAMCmodelrun
 
-This repository contains the R code and accompanying files for NAMC models. 
+This repository contains the R code and accompanying files to run NAMC models. A seperate repository exists for building models
 
 models are of three types
 1. OE
