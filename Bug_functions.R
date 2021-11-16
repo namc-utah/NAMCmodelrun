@@ -1,4 +1,13 @@
-
+#' OE bug data matrix export
+#'
+#' @param sampleId 
+#' @param translationId 
+#' @param fixedCount 
+#'
+#' @return bug data sample by taxa presence/absence matrix
+#' @export
+#'
+#' @examples
 OE_bug_matrix<-function(sampleId,translationId,fixedCount){
   bugsOTU = query(
     "sampleMetrics",
@@ -18,7 +27,16 @@ return(bugnew)
   }
 
 
-MMI_metrics<-function(sampleId,fixedCount){
+#' MMI metrics
+#'
+#' @param sampleId 
+#' @param fixedCount 
+#'
+#' @return sample by metrics dataframe, only metrics needed for a given model
+#' @export 
+#'
+#' @examples
+MMI_metrics<-function(sampleId,fixedCount, modelId){
   # need to add list of required metrics to model table as well as random forest input file
   #get needed list of metrics from new end point
   # NV and AREMP relative abundances were OTU standardized too!
@@ -35,6 +53,15 @@ return(bugnew)
 
 
 
+#' CA CSCI bug data export
+#'
+#' @param sampleId 
+#' @param translationId 
+#'
+#' @return raw bug data translated by CSCI translation and with column names formatted for CSCI model function
+#' @export
+#'
+#' @examples
 CSCI_bug <- function(sampleId, translationId){
 # get needed data from the APIs  
   bugRaw = query(
@@ -72,6 +99,15 @@ CSCI_bug <- function(sampleId, translationId){
   }
 
 
+#' CO EDAS 2017 bug data export
+#'
+#' @param boxId 
+#' @param translationId 
+#'
+#' @return raw bug data translated by CO EDAS translation and with column names formatted for CO EDAS access database
+#' @export
+#'
+#' @examples
 CO_bug_export<-function(boxId, translationId){
   bugRaw = query(
     "sampleTaxaInfo",
@@ -111,13 +147,18 @@ return(CObugs)
   }
 
 
-#PREDATOR NBR pseudo-O/E
-#(The PREDitctive Assessment Tool for ORegon)
-#based on FORTRAN Subsample.exe
-#code by Andrew Caudillo, Lab Manager of NAMC
-#modified from code ideas proposed by David Fowler
 #Essentially a null O/E model (poor model; ref O/E SD is 0.29)
 
+#' OR NBR eastern
+#'
+#' @param sampleId 
+#' @param translationId 
+#' @param fixedCount 
+#'
+#' @return list of rarefied and translated taxa per sample 
+#' @export
+#'
+#' @examples
 OR_NBR_bug <- function(sampleId, translationId, fixedCount) {
   bugsOTU = query(
     "sampleMetrics",

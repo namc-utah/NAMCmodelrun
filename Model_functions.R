@@ -2,6 +2,20 @@
 
 
 ##### version 0 function
+#' PIBO model using version 0 of John Vansickles code
+#'
+#' @param bug.otu 
+#' @param bugall 
+#' @param bugnew 
+#' @param grps.final 
+#' @param preds.final 
+#' @param ranfor.mod 
+#' @param prednew 
+#'
+#' @return O, E, OoverE,BC, null model info
+#' @export
+#'
+#' @examples
 PIBO_model<-function (bug.otu,bugall, bugnew,grps.final, preds.final, ranfor.mod, prednew){
   # merges test bug data with a null set of all OTU bug names in order for VanSickle code to work properly.
   bugnew.pa <- merge(x=bug.otu, y=bugnew, all=TRUE)         
@@ -23,6 +37,15 @@ PIBO_model<-function (bug.otu,bugall, bugnew,grps.final, preds.final, ranfor.mod
 
 
 
+
+#' Oregon NBR null model
+#'
+#' @param bugnew 
+#'
+#' @return OoverE
+#' @export
+#'
+#' @examples
 OR_NBR_model<-function(bugnew){
   ref_tax <- c(
   'Baetis',
@@ -48,12 +71,33 @@ return(OE)
 }
 
 
+
+
+
 # MMIs
 # each MMI will need its own function because of the variable name and number of randomforest model inputs....
 
 ###this function requires yet another function metricMatrixRescale which pulls in additional things... 
 #need to think about how to turn this into a function or if it should be a package and if this is a more sustainable way of writing MMIs.
 #it is more efficient but not as transparent as NV code
+#' AREMP MMI
+#'
+#' @param bugnew 
+#' @param prednew 
+#' @param CLING_rich.rf 
+#' @param DIPT_rich.rf 
+#' @param LLT_rich.rf 
+#' @param NON_INSECT_rich.rf 
+#' @param PER_EPT.rf 
+#' @param PER_INTOL.rf 
+#' @param rf_models 
+#' @param mdeg_metrics_adj_cal 
+#' @param ref_metrics_adj 
+#'
+#' @return MMI value
+#' @export
+#'
+#' @examples
 AREMP_MMI_model<-function(bugnew,prednew,CLING_rich.rf,DIPT_rich.rf,LLT_rich.rf,NON_INSECT_rich.rf,PER_EPT.rf,PER_INTOL.rf,rf_models,mdeg_metrics_adj_cal,ref_metrics_adj){
   bugnew_prd=matrix(ncol=0,nrow=dim(bugnew)[1])
   for(n in 1:length(rf_models)){
@@ -73,6 +117,17 @@ AREMP_MMI_model<-function(bugnew,prednew,CLING_rich.rf,DIPT_rich.rf,LLT_rich.rf,
   return(MMI)
 }
 
+
+#' MMI metric rescaling
+#'
+#' @param metrics 
+#' @param ref_metrics 
+#' @param mostdeg_metrics 
+#'
+#' @return rescaled standardized metrics to min and max of reference and most degraded data
+#' @export
+#'
+#' @examples
 metricMatrixRescale<-function(metrics,ref_metrics,mostdeg_metrics){
   if(any(colnames(metrics)==colnames(ref_metrics))==FALSE){stop("Columns in new metrics must match columns in ref metrics")}
   if(any(colnames(metrics)==colnames(mostdeg_metrics))==FALSE){stop("Columns in new metrics must match columns in most deg metrics")}
@@ -99,6 +154,21 @@ metricMatrixRescale<-function(metrics,ref_metrics,mostdeg_metrics){
 
 
 
+#' NV MMI
+#'
+#' @param bugnew 
+#' @param prednew 
+#' @param CLINGER.rf 
+#' @param INSET.rf 
+#' @param NONSET.rf 
+#' @param PER_CFA.rf 
+#' @param PER_EPHEA.rf 
+#' @param PER_PLECA.rf 
+#'
+#' @return MMI score
+#' @export
+#'
+#' @examples
 NV_MMI_model<-function(bugnew,prednew,CLINGER.rf,INSET.rf,NONSET.rf,PER_CFA.rf,PER_EPHEA.rf,PER_PLECA.rf){
   ####adjust metrics for natural variability and rescale
   INSET.raw=bugnew$INSET
