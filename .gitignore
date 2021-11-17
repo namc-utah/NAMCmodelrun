@@ -38,3 +38,7 @@ vignettes/*.pdf
 # MacOS finder files
 .DS_Store
 .Rproj.user
+.Rproj
+
+.csv
+.xls
