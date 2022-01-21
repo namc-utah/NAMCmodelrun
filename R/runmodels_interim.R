@@ -3,7 +3,7 @@ library(NAMCr)
 library(tidyverse)
 library(CSCI)
 boxId=2185
-modelId=1
+modelId=3
 #prednew=read.csv()
 source("R/Bug_functions_box.R")
 source("R/Model_functions.R")
@@ -135,7 +135,7 @@ if (def_models$modelId %in% c(7, 2, 25, 26)) {
 }  else if (def_models$modelId == 3) {# all MMIs will need their own function added here because there is a rf model for each metric
   # need to call conductivity model first before calling the NV model because predicted conductivity is a predictor for the NV model
   PrdCond = setNames(as.data.frame(
-    randomForest::predict(ranfor.mod, prednew, type = "response")
+    predict(ranfor.mod, prednew, type = "response")
   ), c('PrdCond'))
   prednew = cbind(prednew, PrdCond)
   MMI <-
@@ -150,7 +150,24 @@ if (def_models$modelId %in% c(7, 2, 25, 26)) {
       PER_PLECA.rf
     )
 }else if (def_models$modelId %in% c(27, 28, 29, 30)) {#conductivity, tp, tn,temperature
-  WQ = as.data.frame(randomForest::predict(ranfor.mod, prednew, type = "response"))# make sure prednew has sampleIds as the rows
+  WQ = as.data.frame(predict(ranfor.mod, prednew, type = "response"))# make sure prednew has sampleIds as the rows
 }else{
 
 }
+
+
+
+# ---------------------------------------------------------------
+# Always run model applicability test
+# ---------------------------------------------------------------
+# get all predictor values needed for a box or project # note this either needs a loop written over it or a different API end point
+applicabilitypreds = NAMCr::query("samplePredictorValues",
+                                  modelId = 36,
+                                  sampleId = sampleId) #need list of samples in database with values
+
+# run model applicability function
+ModelApplicability = ModelApplicability(CalPredsModelApplicability,
+                                        modelId = def_models$modelId,
+                                        applicabilitypreds) # add to config file or add an R object with calpreds
+
+

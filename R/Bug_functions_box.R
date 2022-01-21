@@ -34,7 +34,7 @@ OE_bug_matrix_box<-function(boxId,translationId,fixedCount){
 #' @export
 #'
 #' @examples
-MMI_metrics<-function(boxId,translationId,fixedCount){
+MMI_metrics_box<-function(boxId,translationId,fixedCount){
   # need to add list of required metrics to model table as well as random forest input file
   #get needed list of metrics from new end point
   # NV and AREMP relative abundances were OTU standardized too!
@@ -42,10 +42,10 @@ MMI_metrics<-function(boxId,translationId,fixedCount){
                              fixedCount=def_models$fixedCount,
                              translationId=def_models$translationId,
                              boxId = boxId)
-  modelInfo = NAMCr::query("modelInfo", modelId = def_model_results$modelId)
+  #modelInfo = NAMCr::query("modelInfo", modelId = def_model$modelId)
   #MMI_metrics = subset(bugsMetrics, metricId %in% ()) # store translations to metric names in database
   # need to replace metric name with a model specific metric abbreviation
-  bugnew = tidyr::pivot_wider(MMI_metrics,id_cols = "sampleId",names_from = "metricName",values_from = "metricValue")
+  bugnew = tidyr::pivot_wider(bugsMetrics,id_cols = "sampleId",names_from = "metricName",values_from = "metricValue")
   return(bugnew)
 }
 

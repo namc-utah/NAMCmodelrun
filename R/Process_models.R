@@ -256,7 +256,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
     }  else if (def_models$modelId == 3) {# all MMIs will need their own function added here because there is a rf model for each metric
     # need to call conductivity model first before calling the NV model because predicted conductivity is a predictor for the NV model
         PrdCond = setNames(as.data.frame(
-        randomForest::predict(ranfor.mod, prednew, type = "response")
+        predict(ranfor.mod, prednew, type = "response")
       ), c('PrdCond'))
       prednew = cbind(prednew, PrdCond)
       MMI <-
@@ -271,7 +271,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
           PER_PLECA.rf
         )
     }else if (def_models$modelId %in% c(27, 28, 29, 30)) {#conductivity, tp, tn,temperature
-      WQ = as.data.frame(randomForest::predict(ranfor.mod, prednew, type = "response"))# make sure prednew has sampleIds as the rows
+      WQ = as.data.frame(predict(ranfor.mod, prednew, type = "response"))# make sure prednew has sampleIds as the rows
     }else{
 
     }

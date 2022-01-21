@@ -42,10 +42,10 @@ MMI_metrics<-function(sampleId,translationId,fixedCount){
                              fixedCount=def_models$fixedCount,
                              translationId=def_models$translationId,
                              sampleIds = def_model_results$SampleId)
-  modelInfo = NAMCr::query("modelInfo", modelId = def_model_results$modelId)
+  #modelInfo = NAMCr::query("modelInfo", modelId = modelId)
   #MMI_metrics = subset(bugsMetrics, metricId %in% ()) # store translations to metric names in database
   # need to replace metric name with a model specific metric abbreviation
-  bugnew = tidyr::pivot_wider(MMI_metrics,id_cols = "sampleId",names_from = "metricName",values_from = "metricValue")
+  bugnew = tidyr::pivot_wider(bugsMetrics,id_cols = "sampleId",names_from = "metricName",values_from = "metricValue")
 return(bugnew)
   }
 
