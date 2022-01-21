@@ -104,18 +104,19 @@ process_sample_models = function(sampleId, modelId, config = config) {
     sampleId = sampleId,
     modelId = modelId
   )
-  def_models = def_models[def_models$status !="Valid",]
+  def_models_results = def_models_results[def_models_results$status !="current",]
   # if any predictors not valid look for them in model results (predicted coductivity and alalinity
 
   # ---------------------------------------------------------------
   # get model metadata needed to run the model - philip said he would change apis so that model id would just be provided and translation id and fixed count wouldnt be needed
   # ---------------------------------------------------------------
-  def_models = NAMC::query(
-    api_endpoint = "ModelInfo",
+  def_models = NAMCr::query(
+    api_endpoint = "modelInfo",
     include = c("modelId",
-                "modelType",
+                "modelTypeAbbreviation",
+                "abbreviation",
                 "translationId",
-                "fixed count",),
+                "fixedCount"),
     modelId = def_model_results$modelId
   )
 
@@ -133,7 +134,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
     sampleId = def_models$SampleId,
     modelId = def_models$modelId
   )
-  if (any(def_predictors$status == !"Valid")) {
+  if (any(def_predictors$status == !"current")) {
     print(paste0("predictors need calculated sampleID: ", sampleId))
   } else{
     # get predictors into wide format needed for model functions
@@ -146,41 +147,31 @@ process_sample_models = function(sampleId, modelId, config = config) {
     # ---------------------------------------------------------------
     #
     # if modelType= bug OE get OTU taxa matrix
-    if (def_models$modelType == "OE") {
+    if (def_models$modelTypeAbbreviation == "OE") {
       bugnew = OE_bug_matrix(
         sampleId = sampleId,
         translationId = def_models$translationId,
         fixedCount = def_models$fixedCount
       )
-    }
-    #need a way to distinguish this model from others.. call NULL OE?
-    else if (def_models$model_id == 12) {
+    } else if (def_models$modelId == 12) {#need a way to distinguish this model from others.. call NULL OE?
       bugnew = OR_NBR_bug(
         sampleId = sampleId,
         translationId = def_models$translationId,
         fixedCount = def_models$fixedCount
       )
-    }
-    # if modelType= bug MMI get
-    else if (def_models$modelType == "MMI") {
+    } else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
       bugnew = MMI_metrics(sampleId = sampleId, fixedCount = def_models$fixedCount)
-    }
-    # CSCI requires just the raw taxa list translated for misspelling
-    else if (def_models$modelId %in% c(1)) {
+    } else if (def_models$modelId %in% c(1)) {# CSCI requires just the raw taxa list translated for misspelling
       # add in model names in comments
-      CSCIbugs = CSCI_bug(sampleId = sampleId,
-                          translationId = def_models$translationId)
-    }
-    # CO model must be written out as an excel file using a separate bank of code and function
-    else if (def_models$modelId %in% c(4, 5, 6)) {
+      CSCIbugs = CSCI_bug(sampleId = sampleId)
+    }else if (def_models$modelId %in% c(4, 5, 6)) {# CO model must be written out as an excel file using a separate bank of code and function
       print(
         paste0(
           "CO model must be written out as an excel file using a separate bank of code and function: ",
           sampleIds
         )
       )
-    }
-    else {
+    } else {
 
     }
 
@@ -189,7 +180,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
     # ---------------------------------------------------------------
     # every model has an R object that stores the random forest model and reference data
     # the R objects are named with the model abbreviation
-    load(paste0(def_models$model_abbreviation, ".Rdata"))
+    load(paste0(def_models$abbreviation, ".Rdata"))
 
     # ---------------------------------------------------------------
     # Run models
@@ -207,9 +198,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
           Pc = 0.5,
           Cal.OOB = FALSE
         )#....
-    }
-    # models using version 4.1 of van sickle code include: OR_WCCP, OR_MWCF
-    else if (def_models$modelId %in% c(10, 11)) {
+    } else if (def_models$modelId %in% c(10, 11)) {# models using version 4.1 of van sickle code include: OR_WCCP, OR_MWCF
       OE <-
         model.predict.v4.1(bugcal.pa,
                            grps.final,
@@ -219,9 +208,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
                            prednew,
                            bugnew,
                            Pc = 0.5)# add elpsis...
-    }
-    # WY also uses version 4.1 of van sickle code but requires alkalinity model as a dependency
-    else if (def_models$modelId %in% (13:23)) {
+    }else if (def_models$modelId %in% (13:23)) {# WY also uses version 4.1 of van sickle code but requires alkalinity model as a dependency
       ALK_LOG = setNames(as.data.frame(
         randomForest::predict(ranfor.mod, prednew, type = "response")
       ), c("ALK_LOG"))# need to log value
@@ -235,9 +222,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
                            prednew,
                            bugnew,
                            Pc = 0.5)
-    }
-    # PIBO model was one of the earliest models built and used a version of van sickle's function that didnt have a version number
-    else if (def_models$modelId == 9) {
+    }else if (def_models$modelId == 9) {# PIBO model was one of the earliest models built and used a version of van sickle's function that didnt have a version number
       OE <-
         PIBO_model(bug.otu,
                    bugall,
@@ -245,18 +230,15 @@ process_sample_models = function(sampleId, modelId, config = config) {
                    preds.final,
                    ranfor.mod,
                    prednew)
-    }
-    # OR eastern region is a null model and no predictors are used
-    else if (def_models$modelId == 12) {
+    }else if (def_models$modelId == 12) {# OR eastern region is a null model and no predictors are used
       OE <- OR_NBR_model(bugnew)
-    }
-    # # CSCI has its own package and function
-    # else if (def_models$modelId == 1) {
-    #   report <- CSCI::CSCI(bugs = CSCIbugs, stations = prednew)
-    #   OE = report$core
-    # }
+
+    }else if (def_models$modelId == 1) {# CSCI has its own package and function
+      report <- CSCI::CSCI(bugs = CSCIbugs, stations = prednew)
+      OE = report$core
+
+    }else if (def_models$modelId == 8) {
     # all MMIs will need their own function added here because there is a rf model for each metric
-    else if (def_models$modelId == 8) {
       MMI <-
         AREMP_MMI_model(
           bugnew,
@@ -271,11 +253,9 @@ process_sample_models = function(sampleId, modelId, config = config) {
           mdeg_metrics_adj_cal,
           ref_metrics_adj
         )
-    }
-    # all MMIs will need their own function added here because there is a rf model for each metric
+    }  else if (def_models$modelId == 3) {# all MMIs will need their own function added here because there is a rf model for each metric
     # need to call conductivity model first before calling the NV model because predicted conductivity is a predictor for the NV model
-    else if (def_models$modelId == 3) {
-      PrdCond = setNames(as.data.frame(
+        PrdCond = setNames(as.data.frame(
         randomForest::predict(ranfor.mod, prednew, type = "response")
       ), c('PrdCond'))
       prednew = cbind(prednew, PrdCond)
@@ -290,12 +270,9 @@ process_sample_models = function(sampleId, modelId, config = config) {
           PER_EPHEA.rf,
           PER_PLECA.rf
         )
-    }
-    #conductivity, tp, tn,temperature
-    else if (def_models$modelId %in% c(27, 28, 29, 30)) {
+    }else if (def_models$modelId %in% c(27, 28, 29, 30)) {#conductivity, tp, tn,temperature
       WQ = as.data.frame(randomForest::predict(ranfor.mod, prednew, type = "response"))# make sure prednew has sampleIds as the rows
-    }
-    else{
+    }else{
 
     }
 
@@ -318,7 +295,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
     # ---------------------------------------------------------------
     #has permission to save then spit out result to console
     # pass Nas for anything not used
-    if (modelType == "OE") {
+    if (modelTypeAbbreviation == "OE") {
       NAMCr::save(
         api_endpoint = "newModelResult",
         sampleId = def_samples$sampleId,
@@ -330,7 +307,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
       )
     }
 
-    else if (modelType == "MMI") {
+    else if (modelTypeAbbreviation == "MMI") {
       NAMCr::save(
         api_endpoint = "newModelResult",
         sampleId = def_samples$sampleId,
@@ -340,7 +317,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
       )
     }
 
-    else if (modelType == "WQ") {
+    else if (modelTypeAbbreviation == "WQ") {
       NAMCr::save(
         api_endpoint = "newModelResult",
         sampleId = def_samples$sampleId,
