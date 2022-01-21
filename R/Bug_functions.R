@@ -1,39 +1,37 @@
 #' OE bug data matrix export
 #'
-#' @param sampleId 
-#' @param translationId 
-#' @param fixedCount 
+#' @param sampleId
+#' @param translationId
+#' @param fixedCount
 #'
 #' @return bug data sample by taxa presence/absence matrix
 #' @export
 #'
 #' @examples
 OE_bug_matrix<-function(sampleId,translationId,fixedCount){
-  bugsOTU = NAMCr::query(
-    "sampleMetrics",
-    translationId = def_models$translationId,
-    fixedCount = def_models$fixedCount,
-    sampleIds = def_model_results$sampleId
-  )
-  rarefiedOTUTaxa = subset(bugsOTU, metricName == "Rarefied Taxa")
-  rarefiedOTUTaxa = NAMCr::json.expand(rarefiedOTUTaxa, "metricValue")
-  sumrarefiedOTUTaxa = rarefiedOTUTaxa  %>%
-    dplyr::group_by(sampleId, OTUName) %>%
+  bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
+                        translationId = def_models$translationId,
+                        fixedCount = def_models$fixedCount,
+                        sampleIds = def_model_results$sampleId
+                        )
+    sumrarefiedOTUTaxa = bugsOTU  %>%
+    dplyr::group_by(sampleId, otuName) %>%
     dplyr::summarize(sumSplitCount = sum(splitCount)) # why are multiple records exported here per OTU???
-  
+
   sumrarefiedOTUTaxa$presence = ifelse(sumrarefiedOTUTaxa$sumSplitCount >=1, 1, 0)
-  bugnew = tidyr::pivot_wider(sumrarefiedOTUTaxa,id_cols = "sampleId", names_from = "OTUName",values_from = "presence")
+  bugnew = tidyr::pivot_wider(sumrarefiedOTUTaxa,id_cols = "sampleId", names_from = "otuName",values_from = "presence")
+  bugnew[is.na(bugnew)]<-0
 return(bugnew)
   }
 
 
 #' MMI metrics
 #'
-#' @param sampleId 
-#' @param fixedCount 
+#' @param sampleId
+#' @param fixedCount
 #'
 #' @return sample by metrics dataframe, only metrics needed for a given model
-#' @export 
+#' @export
 #'
 #' @examples
 MMI_metrics<-function(sampleId,fixedCount, modelId){
@@ -55,24 +53,24 @@ return(bugnew)
 
 #' CA CSCI bug data export
 #'
-#' @param sampleId 
-#' @param translationId 
+#' @param sampleId
+#' @param translationId
 #'
 #' @return raw bug data translated by CSCI translation and with column names formatted for CSCI model function
 #' @export
 #'
 #' @examples
-CSCI_bug <- function(sampleId, translationId){
-# get needed data from the APIs  
+CSCI_bug <- function(sampleId){
+# get needed data from the APIs
   bugRaw = NAMCr::query(
-    "sampleTaxaInfo",
-    translationId = def_models$translationId,
+    "sampleTaxa",
+    translationId = 9,
     sampleIds = def_model_results$SampleId
   )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
-  
+
   bugsTranslation = NAMCr::query(
     "sampleTaxaTranslation",
-    translationId = def_models$translationId,
+    translationId = 9,
     sampleIds = def_model_results$SampleId
   )
   sites = NAMCr::query(
@@ -80,11 +78,11 @@ CSCI_bug <- function(sampleId, translationId){
     include = c("sampleId", 'siteId'),
     sampleIds = def_model_results$SampleId
   )
-  
- # join that data together into a single dataframe   
+
+ # join that data together into a single dataframe
   CSCIbugs=dplyr::left_join(bugRaw,bugsTranslation, by=c("taxonomyId", "SampleId"))
   CSCIbugs=dplyr::left_join(CSCIbugs,sites, by='SampleId')
-  
+
   # rename columns
   CSCIbugs$SampleID = CSCIbugs$sampleId
   CSCIbugs$StationCode = CSCIbugs$siteId#### need to get site info!!!
@@ -101,35 +99,34 @@ CSCI_bug <- function(sampleId, translationId){
 
 #' CO EDAS 2017 bug data export
 #'
-#' @param boxId 
-#' @param translationId 
+#' @param boxId
 #'
 #' @return raw bug data translated by CO EDAS translation and with column names formatted for CO EDAS access database
 #' @export
 #'
 #' @examples
-CO_bug_export<-function(boxId, translationId){
+CO_bug_export<-function(boxId){
   bugRaw = NAMCr::query(
-    "sampleTaxaInfo",
-    translationId = def_models$translationId,
-    sampleIds = def_model_results$SampleId
+    "sampleTaxa",
+    translationId = 8,
+    boxId = boxId
   )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
-  
+
   bugsTranslation = NAMCr::query(
     "sampleTaxaTranslation",
-    translationId = def_models$translationId,
-    sampleIds = def_model_results$SampleId
+    translationId = 8,
+    boxId=BoxId
   )
   samples = NAMCr::query(
     "samples",
     include = c("sampleId",'siteId','sampleDate',"siteName", "sampleMethod","habitat","area"),# possibly add waterbody name to the samples NAMCr::query
-    sampleIds = def_model_results$SampleId
+    boxId=boxId
   )
-  
-  # join that data together into a single dataframe   
+
+  # join that data together into a single dataframe
   CObugs=dplyr::left_join(bugRaw,bugsTranslation, by=c("taxonomyId", "SampleId"))
   CObugs=dplyr::left_join(CObugs,sites, by='SampleId')
-  
+
   CObugs$Project="NAMC report"
   CObugs$Station=CObugs$sampleId
   CObugs$Name=CObugs$siteId
@@ -152,27 +149,25 @@ CO_bug_export<-function(boxId, translationId){
 
 #' OR NBR eastern
 #'
-#' @param sampleId 
-#' @param translationId 
-#' @param fixedCount 
+#' @param sampleId
+#' @param translationId
+#' @param fixedCount
 #'
-#' @return list of rarefied and translated taxa per sample 
+#' @return list of rarefied and translated taxa per sample
 #' @export
 #'
 #' @examples
 OR_NBR_bug <- function(sampleId, translationId, fixedCount) {
   bugsOTU = NAMCr::query(
-    "sampleMetrics",
+    "sampleTaxaTranslationRarefied",
     translationId = def_models$translationId,
     fixedCount = def_models$fixedCount,
     sampleIds = def_model_results$sampleId
   )
-  rarefiedOTUTaxa = subset(bugsOTU, metricName == "Rarefied Taxa")
-  rarefiedOTUTaxa = NAMCr::json.expand(rarefiedOTUTaxa, "metricValue")
-  sumrarefiedOTUTaxa = rarefiedOTUTaxa  %>%
+  sumrarefiedOTUTaxa = bugsOTU  %>%
     dplyr::group_by(sampleId, OTUName) %>%
     dplyr::summarize(sumSplitCount = sum(splitCount)) # why are multiple records exported here per OTU???
   bugnew=sumrarefiedOTUTaxa
 return(bugnew)
   }
-  
+
