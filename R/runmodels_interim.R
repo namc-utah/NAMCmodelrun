@@ -1,10 +1,13 @@
 library(randomForest)
 library(NAMCr)
 library(tidyverse)
-library(CSCI)
-boxId=2185
-modelId=3
+library(DBI)
+library(RSQLite)
+#library(CSCI)
+boxId=2150
+modelId=25
 #prednew=read.csv()
+SQLite_file_path="C:/NAMC_S3/StreamCat/StreamCat.sqlite"
 source("R/Bug_functions_box.R")
 source("R/Model_functions.R")
 source("R/model.predict.RanFor.4.2.r")
@@ -43,13 +46,13 @@ if (def_models$modelTypeAbbreviation == "OE") {
     translationId = def_models$translationId,
     fixedCount = def_models$fixedCount
   )
-} else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
-  bugnew = MMI_metrics_box(boxId = boxId, fixedCount = def_models$fixedCount)
+} else if (def_models$modelId %in% c(4, 5, 6)) {# CO model must be written out as an excel file using a separate bank of code and function
+  CObugs=CO_bug_export_box(boxId = boxId)
 } else if (def_models$modelId %in% c(1)) {# CSCI requires just the raw taxa list translated for misspelling
   # add in model names in comments
   CSCIbugs = CSCI_bug_box(boxId = boxId)
-}else if (def_models$modelId %in% c(4, 5, 6)) {# CO model must be written out as an excel file using a separate bank of code and function
-  CObugs=CO_bug_export_box(boxId = boxId)
+}else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
+  bugnew = MMI_metrics_box(boxId = boxId, fixedCount = def_models$fixedCount)
 } else {
 
 }
@@ -59,7 +62,25 @@ if (def_models$modelTypeAbbreviation == "OE") {
 # ---------------------------------------------------------------
 # every model has an R object that stores the random forest model and reference data
 # the R objects are named with the model abbreviation
+# instead of all these if statements the R file name could be stored in the database... and should be!!
+#if CO or CSCI model no R data file needs loaded in
+if (def_models$modelId %in% c(1,4,5,6)){
+
+  #if WY model only one Rdata file needs loaded and not one for each "model" but Alkalinity also needs added
+} else if (def_models$modelId %in% c(13:23)){
+  load("sysdata.rda/WY2018.Rdata")
+  load("sysdata.rda/Alkalinity.Rdata")
+  #if westwide model only one R data file needs loaded in and not one for each model
+}else if (def_models$modelId %in% c(25:26)){
+  load(paste0("sysdata.rda/Westwide2018.Rdata"))
+
+  # all other models should have R data files named identical to model name
+}else{
 load(paste0("sysdata.rda/",def_models$abbreviation, ".Rdata"))
+}
+
+
+
 
 # ---------------------------------------------------------------
 # Run models
@@ -89,7 +110,7 @@ if (def_models$modelId %in% c(7, 2, 25, 26)) {
                        Pc = 0.5)# add elpsis...
 }else if (def_models$modelId %in% (13:23)) {# WY also uses version 4.1 of van sickle code but requires alkalinity model as a dependency
   ALK_LOG = setNames(as.data.frame(
-    randomForest::predict(ranfor.mod, prednew, type = "response")
+    predict(ranfor.mod, prednew, type = "response")
   ), c("ALK_LOG"))# need to log value
   prednew = cbind(prednew, ALK_LOG)
   OE <-
@@ -161,9 +182,9 @@ if (def_models$modelId %in% c(7, 2, 25, 26)) {
 # Always run model applicability test
 # ---------------------------------------------------------------
 # get all predictor values needed for a box or project # note this either needs a loop written over it or a different API end point
-applicabilitypreds = NAMCr::query("samplePredictorValues",
-                                  modelId = 36,
-                                  sampleId = sampleId) #need list of samples in database with values
+conn<-DBI::dbConnect(RSQLite::SQLite(),SQLite_file_path)
+applicabilitypreds = DBI::dbGetQuery(conn,sprintf("SELECT ElevCat,	Precip8110Ws,	Tmean8110Ws,	WsAreaSqKm FROM StreamCat_2016 WHERE COMID in (%s)",inLOOP(substr(COMIDs,1,10))))
+
 
 # run model applicability function
 ModelApplicability = ModelApplicability(CalPredsModelApplicability,

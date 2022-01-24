@@ -153,25 +153,23 @@ process_sample_models = function(sampleId, modelId, config = config) {
         translationId = def_models$translationId,
         fixedCount = def_models$fixedCount
       )
-    } else if (def_models$modelId == 12) {#need a way to distinguish this model from others.. call NULL OE?
+      #need a way to distinguish this model from others.. call NULL OE?
+    } else if (def_models$modelId == 12) {
       bugnew = OR_NBR_bug(
         sampleId = sampleId,
         translationId = def_models$translationId,
         fixedCount = def_models$fixedCount
       )
-    } else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
-      bugnew = MMI_metrics(sampleId = sampleId, fixedCount = def_models$fixedCount)
-    } else if (def_models$modelId %in% c(1)) {# CSCI requires just the raw taxa list translated for misspelling
+     # CO model must be written out as an excel file using a separate bank of code and function
+    } else if (def_models$modelId %in% c(4, 5, 6)) {
+      print(paste0( "CO model must be written out as an excel file using a separate bank of code and function: ", sampleIds))
+      # CSCI requires just the raw taxa list translated for misspelling
+    } else if (def_models$modelId %in% c(1)) {
       # add in model names in comments
       CSCIbugs = CSCI_bug(sampleId = sampleId)
-    }else if (def_models$modelId %in% c(4, 5, 6)) {# CO model must be written out as an excel file using a separate bank of code and function
-      print(
-        paste0(
-          "CO model must be written out as an excel file using a separate bank of code and function: ",
-          sampleIds
-        )
-      )
-    } else {
+    } else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
+      bugnew = MMI_metrics(sampleId = sampleId, fixedCount = def_models$fixedCount)
+ }else {
 
     }
 
@@ -180,7 +178,22 @@ process_sample_models = function(sampleId, modelId, config = config) {
     # ---------------------------------------------------------------
     # every model has an R object that stores the random forest model and reference data
     # the R objects are named with the model abbreviation
-    load(paste0(def_models$abbreviation, ".Rdata"))
+    # instead of all these if statements the R file name could be stored in the database... and should be!!
+    #if CO or CSCI model no R data file needs loaded in
+    if (def_models$modelId %in% c(1,4,5,6)){
+
+      #if WY model only one Rdata file needs loaded and not one for each "model" but Alkalinity also needs added
+    } else if (def_models$modelId %in% c(13:23)){
+      load("sysdata.rda/WY2018.Rdata")
+      load("sysdata.rda/Alkalinity.Rdata")
+      #if westwide model only one R data file needs loaded in and not one for each model
+    }else if (def_models$modelId %in% c(25:26)){
+      load(paste0("sysdata.rda/Westwide2018.Rdata"))
+
+      # all other models should have R data files named identical to model name
+    }else{
+      load(paste0("sysdata.rda/",def_models$abbreviation, ".Rdata"))
+    }
 
     # ---------------------------------------------------------------
     # Run models
@@ -210,7 +223,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
                            Pc = 0.5)# add elpsis...
     }else if (def_models$modelId %in% (13:23)) {# WY also uses version 4.1 of van sickle code but requires alkalinity model as a dependency
       ALK_LOG = setNames(as.data.frame(
-        randomForest::predict(ranfor.mod, prednew, type = "response")
+        predict(ranfor.mod, prednew, type = "response")
       ), c("ALK_LOG"))# need to log value
       prednew = cbind(prednew, ALK_LOG)
       OE <-

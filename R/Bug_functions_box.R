@@ -109,39 +109,39 @@ CSCI_bug_box <- function(boxId){
 CO_bug_export_box<-function(boxId){
   bugRaw = NAMCr::query(
     "sampleTaxa",
-    translationId = 8,
     boxId = boxId
   )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
 
   bugsTranslation = NAMCr::query(
     "sampleTaxaTranslation",
     translationId = 8,
-    boxId=BoxId
+    boxId=boxId
   )
   samples = NAMCr::query(
     "samples",
-    include = c("boxId",'siteId','sampleDate',"siteName", "sampleMethod","habitat","area"),# possibly add waterbody name to the samples NAMCr::query
+    include = c("boxId","sampleId",'siteId','sampleDate',"siteName", "sampleMethod","habitat","area"),# possibly add waterbody name to the samples NAMCr::query
     boxId=boxId
   )
 
   # join that data together into a single dataframe
   CObugs=dplyr::left_join(bugRaw,bugsTranslation, by=c("taxonomyId", "sampleId"))
-  CObugs=dplyr::left_join(CObugs,sites, by='sampleId')
+  CObugs=dplyr::left_join(CObugs,samples, by='sampleId')
 
-  CObugs$Project="NAMC report"
-  CObugs$Station=CObugs$boxId
+  CObugs$Project=paste0("NAMC boxId: ",boxId)
+  CObugs$Station=CObugs$sampleId
   CObugs$Name=CObugs$siteId
   CObugs$Location=CObugs$siteName # previously used waterbody name.. use that if we export this data for use by CO state
   CObugs$CollDate=CObugs$sampleDate
-  CObugs$Organism=CObugs$OTUName
-  CObugs$Individuals=CObugs$rawCount
-  CObugs$Stage=CObugs$lifestageAbbreviation
-  CObugs$CommentsTaxa
-  CObugs$RepNum==1
+  CObugs$Organism=CObugs$otuName
+  CObugs$Individuals=CObugs$splitCount.y
+  CObugs$Stage=CObugs$lifeStageAbbreviation
+  CObugs$CommentsTaxa=paste0("taxonomyId: ",CObugs$taxonomyId)
+  CObugs$RepNum=1
   CObugs$Grids=NA
-  CObugs$CommentsSample==paste0("sampleMethod: ",CObugs$sampleMethod,"habitat: ",CObugs$habitat,"area: ",CObugs$area)
-  CObugs$CommentsRep==""
-  #write excel file to workspace
+  CObugs$CommentsSample=paste0("sampleMethod: ",CObugs$sampleMethod," ,habitat: ",CObugs$habitat," ,area: ",CObugs$area)
+  CObugs$CommentsRep=""
+  CObugs=CObugs[,c("Project","Station","Name","Location","CollDate","Organism","Individuals","Stage","CommentsTaxa","RepNum","Grids","CommentsSample","CommentsRep")]
+    #write excel file to workspace
   return(CObugs)
 }
 
