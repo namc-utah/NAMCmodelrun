@@ -3,16 +3,21 @@ library(NAMCr)
 library(tidyverse)
 library(DBI)
 library(RSQLite)
+library(nhdplusTools)
 #library(CSCI)
 boxId=2150
 modelId=25
 #prednew=read.csv()
 SQLite_file_path="C:/NAMC_S3/StreamCat/StreamCat.sqlite"
+temp_predictor_metadata="C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/Geospatial predictors/predictor_table_for_database.csv"
+nhd_dir="C:/Users/jenni/Box/NAMC (Trip Armstrong)/StreamCat/NHDPlusV21"
+
 source("R/Bug_functions_box.R")
 source("R/Model_functions.R")
 source("R/model.predict.RanFor.4.2.r")
 source("R/model.predict.RanFor.r")
 source("R/model.predict.v4.1.r")
+source("R/ModelApplicabilityAll.R")
 
 # if any predictors not valid look for them in model results (predicted coductivity and alalinity
 
@@ -110,8 +115,7 @@ if (def_models$modelId %in% c(7, 2, 25, 26)) {
                        Pc = 0.5)# add elpsis...
 }else if (def_models$modelId %in% (13:23)) {# WY also uses version 4.1 of van sickle code but requires alkalinity model as a dependency
   ALK_LOG = setNames(as.data.frame(
-    predict(ranfor.mod, prednew, type = "response")
-  ), c("ALK_LOG"))# need to log value
+    predict(ranfor.mod, prednew, type = "response")), c("ALK_LOG"))# need to log value
   prednew = cbind(prednew, ALK_LOG)
   OE <-
     model.predict.v4.1(bugcal.pa,
@@ -181,14 +185,46 @@ if (def_models$modelId %in% c(7, 2, 25, 26)) {
 # ---------------------------------------------------------------
 # Always run model applicability test
 # ---------------------------------------------------------------
-# get all predictor values needed for a box or project # note this either needs a loop written over it or a different API end point
-conn<-DBI::dbConnect(RSQLite::SQLite(),SQLite_file_path)
-applicabilitypreds = DBI::dbGetQuery(conn,sprintf("SELECT ElevCat,	Precip8110Ws,	Tmean8110Ws,	WsAreaSqKm FROM StreamCat_2016 WHERE COMID in (%s)",inLOOP(substr(COMIDs,1,10))))
+# get site locations from database
+def_sites = NAMCr::query(
+  api_endpoint = "samples",
+  include = c("sampleId","siteId", "siteName", "usState", "siteLocation"),
+  boxId = boxId
+)
+points2process=geojsonsf::geojson_sf(def_sites$siteLocation)
 
+# use nhdplusTools to get COMID for each site
+for (p in 1:nrow(points2process)){
+  start_comid <- nhdplusTools::discover_nhdplus_id(points2process[p,1])
+  if(p == 1){
+    comids= start_comid
+  }else{
+    comids = rbind(comids, start_comid)
+  }
+}
+def_sites$COMID=comids
+
+
+# get elevation, watershed area, precip, and temp variable from stream cat SQLite database
+# create function to loop over each site for input into SQL query
+inLOOP<- function(inSTR,...) {
+  inSTR=unlist(inSTR)
+  if (inSTR[1]==''){loopSTR="''"} else{
+    for (i in 1:length(inSTR)){
+      comma=ifelse(i==length(inSTR),'',',')
+      STRl=sprintf("'%s'%s",inSTR[i],comma)
+      if(i==1){loopSTR=STRl} else{loopSTR=paste(loopSTR,STRl)}
+    } }
+  return(loopSTR)
+}
+#create database connection
+conn<-DBI::dbConnect(RSQLite::SQLite(),SQLite_file_path)
+preds = DBI::dbGetQuery(conn,sprintf("SELECT COMID, ElevCat,	Precip8110Ws,	Tmean8110Ws,	WsAreaSqKm FROM StreamCat_2016 WHERE COMID in (%s)",inLOOP(substr(def_sites$COMID,1,10))))
+applicabilitypreds=merge(def_sites,preds, by="COMID")
 
 # run model applicability function
 ModelApplicability = ModelApplicability(CalPredsModelApplicability,
-                                        modelId = def_models$modelId,
+                                        modelId = modelId,
                                         applicabilitypreds) # add to config file or add an R object with calpreds
 
 

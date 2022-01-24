@@ -7,7 +7,11 @@ ModelApplicability<- function(CalPredsModelApplicability, modelId, prednew){
 CalPredsModelApplicability=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEModels/Model Applicability/CalPredsModelApplicability.csv")
 
 ##subset calibration set to only include sites used in the appropriate model build
-CalPreds <- subset(CalPredsModelApplicability,Model == modelId)
+CalPreds <- subset(CalPredsModelApplicability,modelID==modelId)
+logSQ_KM=log(CalPreds$WsAreaSqKm)
+ElevCat=CalPreds$ElevCat
+logPrecip8110Ws=log(CalPreds$Precip8110Ws)
+Tmean8110Ws=CalPreds$Tmean8110Ws
 
 outlier.preds.ref.raw=data.frame(logSQ_KM,ElevCat,logPrecip8110Ws,Tmean8110Ws, row.names=CalPreds$SiteID)
 
@@ -31,7 +35,13 @@ for (n in 1:dim(ref.dist)[1]){
   ref.top10mean.dist=append(ref.top10mean.dist, mean10dist)
 }
 
-outlier.preds.test.raw=data.frame(logSQ_KM,ElevCat,logPrecip8110Ws,Tmean8110Ws, row.names=prednew$SampleID)
+
+logSQ_KM=log(applicabilitypreds$WsAreaSqKm)
+ElevCat=applicabilitypreds$ElevCat
+logPrecip8110Ws=log(applicabilitypreds$Precip8110Ws)
+Tmean8110Ws=applicabilitypreds$Tmean8110Ws
+
+outlier.preds.test.raw=data.frame(logSQ_KM,ElevCat,logPrecip8110Ws,Tmean8110Ws, row.names=applicabilitypreds$sampleId)
 
 #standardize by min and max of ref data
 
@@ -61,16 +71,16 @@ for (n in 1:length(sample.list)){
   out.flag90=append(out.flag90, flag90)
 }
 
-final=cbind(out.flag90,prednew,outlier.preds.test.std)
-
+final=cbind(out.flag90,applicabilitypreds,outlier.preds.test.std)
+final$ModelApplicability=ifelse(out.flag90=="Yes","Fail","Pass")
 ModelApplicability=ifelse(out.flag90=="Yes","Fail","Pass")
-return(ModelApplicability)
+return(final)
 }
 
-# 
+#
 # ##the following section creates visuals and is not needed for applicability determination
 # ## this does not need to be run every time
-# ####double check the results visually 
+# ####double check the results visually
 # library("factoextra")
 # outlier.preds.ref.std2=as.data.frame(outlier.preds.ref.std)
 # outlier.preds.test.std2=as.data.frame(outlier.preds.test.std)
