@@ -1,90 +1,24 @@
 
-###### function to run all samples in the database at once. API endpoint still needs developed
-#' run all models for all samples at once
-#'
-#' @return none
-#' @export
-#'
-#' @examples
-process_models = function() {
-  logger = Logger$new(
-    logPath = "./",
-    fileName = "",
-    enabled = TRUE,
-    consoleOutput = TRUE,
-    appendDate = TRUE
-  )
-  logger$startLog()
-
-
-  def_samples = NAMCr::query(api_endpoint = "samples2process",#need separate end point for models
-                             include = c("sampleId", "modelId"))
-  for (sample in def_samples) {
-    process_sample_models(sample$sampleId, sample$modelId)
-  }
-  logger$stopLog()
-}
-
-
-####### run a model for a box
-#' model results for each box
-#'
-#' @param boxId
-#' @param modelId
-#' @return none
-#' @export
-#'
-#' @examples
-process_box_models = function(boxId,modelId) {
-  logger = Logger$new(
-    logPath = "/",
-    fileName = "",
-    enabled = TRUE,
-    consoleOutput = TRUE,
-    appendDate = TRUE
-  )
-  logger$startLog()
-
-  def_boxes = NAMCr::query(
-    api_endpoint = "samples",
-    include = c("sampleId"),
-    boxIds = boxId
-  )
-
-  # for (i in seq_len(nrow(def_boxes))) {
-  #   process_sample_predictors(def_boxes$sampleId[i])
-  # }
-
-  by(def_boxes, seqlen(nrow(def_boxes)), function(sample) {
-    process_sample_models(sample$sampleId,modelId)
-  })
-
-  logger$stopLog()
-}
-
-
-####### run models for one sample at a time
+####### run models for a list of samples
 #' Process sample models
 #' @description
-#' @details saving each predictor for each sample one at a time in the database
+#' @details run models for a list of samples (i.e. box) and save each model result sample by sample
 #'
-#' @param sampleId
-#' @param modelId
-#' @param config
+#' @param boxIds
+#' @param modelIds
 #'
 #' @return none
 #' @export
 #'
 #' @examples
-process_sample_models = function(sampleId, modelId, config = config) {
+process_sample_models = function(boxIds, modelIds ) {
   # tryCatch({
   #   # ---------------------------------------------------------------
-  # determine if the needed model has already been run for the sample
+  # get a list of samples if the needed model has already been run for the sample
   # ---------------------------------------------------------------
-  # consider adding a loop through models here
 
   # getting a list of samples and associated models that do not already have results in the table
-  # has site location changed or predictor values changed if not dont rerun , handle with valid flag
+  # has site location changed or predictor values changed if not dont rerun by excluding status=current
   # not ready status if predictors are not there
   def_model_results = NAMC::query(
     api_endpoint = "modelResults",
@@ -98,14 +32,12 @@ process_sample_models = function(sampleId, modelId, config = config) {
       "modelResult",
       #"modelApplicability"
       #invasive species
-      #is.Active ---look for only one record
-      #modelRunId - query knows if metrics are out of date
     ),
-    sampleId = sampleId,
-    modelId = modelId
+    boxIds = boxIds,
+    modelIds = modelIds
   )
   def_models_results = def_models_results[def_models_results$status !="current",]
-  # if any predictors not valid look for them in model results (predicted coductivity and alalinity
+
 
   # ---------------------------------------------------------------
   # get model metadata needed to run the model - philip said he would change apis so that model id would just be provided and translation id and fixed count wouldnt be needed
@@ -131,7 +63,7 @@ process_sample_models = function(sampleId, modelId, config = config) {
                 "status",
                 "abbreviation",
                 "predictorValue"),
-    sampleId = def_models$SampleId,
+    sampleId = def_models_results$sampleId,
     modelId = def_models$modelId
   )
   if (any(def_predictors$status == !"current")) {
@@ -149,14 +81,14 @@ process_sample_models = function(sampleId, modelId, config = config) {
     # if modelType= bug OE get OTU taxa matrix
     if (def_models$modelTypeAbbreviation == "OE") {
       bugnew = OE_bug_matrix(
-        sampleId = sampleId,
+        sampleId = def_models_results$sampleId,
         translationId = def_models$translationId,
         fixedCount = def_models$fixedCount
       )
       #need a way to distinguish this model from others.. call NULL OE?
     } else if (def_models$modelId == 12) {
       bugnew = OR_NBR_bug(
-        sampleId = sampleId,
+        sampleId = def_models_results$sampleId,
         translationId = def_models$translationId,
         fixedCount = def_models$fixedCount
       )
@@ -166,9 +98,9 @@ process_sample_models = function(sampleId, modelId, config = config) {
       # CSCI requires just the raw taxa list translated for misspelling
     } else if (def_models$modelId %in% c(1)) {
       # add in model names in comments
-      CSCIbugs = CSCI_bug(sampleId = sampleId)
+      CSCIbugs = CSCI_bug(sampleId = def_models_results$sampleId)
     } else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
-      bugnew = MMI_metrics(sampleId = sampleId, fixedCount = def_models$fixedCount)
+      bugnew = MMI_metrics(sampleId = def_models_results$sampleId, translationId=def_models$translationId, fixedCount = def_models$fixedCount)
  }else {
 
     }
@@ -367,3 +299,65 @@ process_sample_models = function(sampleId, modelId, config = config) {
 # modelResults=query("modelResults", sampleIds=150807)
 #
 
+#' ###### function to run all samples in the database at once. API endpoint still needs developed
+#' #' run all models for all samples at once
+#' #'
+#' #' @return none
+#' #' @export
+#' #'
+#' #' @examples
+#' process_models = function() {
+#'   logger = Logger$new(
+#'     logPath = "./",
+#'     fileName = "",
+#'     enabled = TRUE,
+#'     consoleOutput = TRUE,
+#'     appendDate = TRUE
+#'   )
+#'   logger$startLog()
+#'
+#'
+#'   def_samples = NAMCr::query(api_endpoint = "samples2process",#need separate end point for models
+#'                              include = c("sampleId", "modelId"))
+#'   for (sample in def_samples) {
+#'     process_sample_models(sample$sampleId, sample$modelId)
+#'   }
+#'   logger$stopLog()
+#' }
+#'
+#'
+#' ####### run a model for a box
+#' #' model results for each box
+#' #'
+#' #' @param boxId
+#' #' @param modelId
+#' #' @return none
+#' #' @export
+#' #'
+#' #' @examples
+#' process_box_models = function(boxId,modelId) {
+#'   logger = Logger$new(
+#'     logPath = "/",
+#'     fileName = "",
+#'     enabled = TRUE,
+#'     consoleOutput = TRUE,
+#'     appendDate = TRUE
+#'   )
+#'   logger$startLog()
+#'
+#'   def_boxes = NAMCr::query(
+#'     api_endpoint = "samples",
+#'     include = c("sampleId"),
+#'     boxIds = boxId
+#'   )
+#'
+#'   # for (i in seq_len(nrow(def_boxes))) {
+#'   #   process_sample_predictors(def_boxes$sampleId[i])
+#'   # }
+#'
+#'   by(def_boxes, seqlen(nrow(def_boxes)), function(sample) {
+#'     process_sample_models(sample$sampleId,modelId)
+#'   })
+#'
+#'   logger$stopLog()
+#' }

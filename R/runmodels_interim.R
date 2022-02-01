@@ -5,9 +5,9 @@ library(DBI)
 library(RSQLite)
 library(nhdplusTools)
 #library(CSCI)
-boxId=2150
-modelId=25
-#prednew=read.csv()
+boxId=2141
+modelId=2
+prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/UTDEQ/AllSeasonsModel_2015/InputsAndResults/AIM2020/UTDEQ_Habitat.csv")
 SQLite_file_path="C:/NAMC_S3/StreamCat/StreamCat.sqlite"
 temp_predictor_metadata="C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/Geospatial predictors/predictor_table_for_database.csv"
 nhd_dir="C:/Users/jenni/Box/NAMC (Trip Armstrong)/StreamCat/NHDPlusV21"
@@ -57,10 +57,15 @@ if (def_models$modelTypeAbbreviation == "OE") {
   # add in model names in comments
   CSCIbugs = CSCI_bug_box(boxId = boxId)
 }else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
-  bugnew = MMI_metrics_box(boxId = boxId, fixedCount = def_models$fixedCount)
+  bugnew = MMI_metrics_box(boxId = boxId, translationId=def_models$translationId, fixedCount = def_models$fixedCount)
 } else {
 
 }
+bugnew<-subset(bugnew,sampleId %in% prednew$SAMPLE)
+names(bugnew)[1]<-"SAMPLE"
+
+rownames(bugnew$sampleId)
+bugnew<-bugnew[,-1]
 
 # ---------------------------------------------------------------
 # load model specific R objects which include reference bug data and predictors RF model objects
