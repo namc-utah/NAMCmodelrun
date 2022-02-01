@@ -1,17 +1,17 @@
-
-####### run models for a list of samples
-#' Process sample models
-#' @description
-#' @details run models for a list of samples (i.e. box) and save each model result sample by sample
 #'
-#' @param boxIds
-#' @param modelIds
-#'
-#' @return none
-#' @export
-#'
-#' @examples
-process_sample_models = function(boxIds, modelIds ) {
+#' ####### run models for a list of samples in a box
+#' #' Run models
+#' #' @description
+#' #' @details run models for a list of samples (i.e. box) and save each model result sample by sample
+#' #'
+#' #' @param boxIds
+#' #' @param modelIds
+#' #'
+#' #' @return none
+#' #' @export
+#' #'
+#' #' @examples
+#' run_models = function(boxIds, modelIds ) {
   # tryCatch({
   #   # ---------------------------------------------------------------
   # get a list of samples if the needed model has already been run for the sample
@@ -110,18 +110,18 @@ process_sample_models = function(boxIds, modelIds ) {
     # ---------------------------------------------------------------
     # every model has an R object that stores the random forest model and reference data
     # the R objects are named with the model abbreviation
-    # instead of all these if statements the R file name could be stored in the database... and should be!!
+    # instead of all these if statements the R file name could be stored in the database... but WY and NV require two models and R file names
     #if CO or CSCI model no R data file needs loaded in
     if (def_models$modelId %in% c(1,4,5,6)){
 
       #if WY model only one Rdata file needs loaded and not one for each "model" but Alkalinity also needs added
     } else if (def_models$modelId %in% c(13:23)){
       load("sysdata.rda/WY2018.Rdata")
-      load("sysdata.rda/Alkalinity.Rdata")
+      load("sysdata.rda/Alkalinity.Rdata")### objects named the same so they will be overwritten.... how do we deal with
       #if westwide model only one R data file needs loaded in and not one for each model
     }else if (def_models$modelId %in% c(25:26)){
       load(paste0("sysdata.rda/Westwide2018.Rdata"))
-
+      # need to add an if statement to load conductivity and NV objects but objects named the same so they will be overwritten how do we deal with?
       # all other models should have R data files named identical to model name
     }else{
       load(paste0("sysdata.rda/",def_models$abbreviation, ".Rdata"))
@@ -275,7 +275,7 @@ process_sample_models = function(boxIds, modelIds ) {
 
     }
   }
-}
+#}
 
 
 #   error = function(e) {
