@@ -73,21 +73,23 @@
     prednew = tidyr::pivot_wider(def_predictors,
                                  names_from = "abbreviation",
                                  values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
-
+    prednew=as.data.frame(prednew)
+    rownames(prednew)<-prednew$sampleId
+    prednew<-prednew[,-1]
     # ---------------------------------------------------------------
     # Get bug data for model functions
     # ---------------------------------------------------------------
     #
     # if modelType= bug OE get OTU taxa matrix
-    if (def_models$modelTypeAbbreviation == "OE") {
-      bugnew = OE_bug_matrix(
+    if (def_models$modelId == 12) {
+      bugnew = OR_NBR_bug(
         sampleId = def_models_results$sampleId,
         translationId = def_models$translationId,
         fixedCount = def_models$fixedCount
       )
       #need a way to distinguish this model from others.. call NULL OE?
-    } else if (def_models$modelId == 12) {
-      bugnew = OR_NBR_bug(
+    } else if (def_models$modelTypeAbbreviation == "OE") {
+      bugnew = OE_bug_matrix(
         sampleId = def_models_results$sampleId,
         translationId = def_models$translationId,
         fixedCount = def_models$fixedCount
@@ -104,6 +106,7 @@
  }else {
 
     }
+    bugnew<-subset(bugnew,rownames(bugnew) %in% rownames(prednew))
 
     # ---------------------------------------------------------------
     # load model specific R objects which include reference bug data and predictors RF model objects

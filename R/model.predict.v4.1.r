@@ -49,20 +49,20 @@
 
 #'  OE predict version 4.1
 #'
-#' @param bugcal.pa 
-#' @param grps.final 
-#' @param preds.final 
-#' @param grpmns 
-#' @param covpinv 
-#' @param prednew 
-#' @param bugnew 
-#' @param Pc 
+#' @param bugcal.pa
+#' @param grps.final
+#' @param preds.final
+#' @param grpmns
+#' @param covpinv
+#' @param prednew
+#' @param bugnew
+#' @param Pc
 #'
-#' @return O, E, OoverE, BC, null 
+#' @return O, E, OoverE, BC, null
 #' @export
 #'
 #' @examples
-model.predict.v4.1<-function(bugcal.pa,grps.final,preds.final,grpmns,covpinv,prednew,bugnew,Pc) {;
+model.predict.v4.1<-function(bugcal.pa,grps.final,preds.final,grpmns,covpinv,prednew,bugnew,Pc=0.5) {;
 
 #first convert bug matrix to P/A (1/0);
    temp.pa<-bugnew;
@@ -173,7 +173,7 @@ BC.null<-apply(bugnew.pa[,nulltax],1,function(x)sum(abs(x-pnull[nulltax])))/(Obs
 #Also includes outlier flags;
 
 OE.final<-data.frame(O=OE.stats$OBS,E=OE.stats$E.prd,
-                      OoverE=OE.stats$OBS/OE.stats$E.prd, 
+                      OoverE=OE.stats$OBS/OE.stats$E.prd,
    Onull=Obsnull,Enull=rep(Enull,length(Obsnull)),OoverE.null=Obsnull/Enull,
    BC= OE.stats$BC.prd,BC.null=BC.null,
      outlier.05=outlier.flag$outlier.05,outlier.01=outlier.flag$outlier.01,

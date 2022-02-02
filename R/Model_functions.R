@@ -5,7 +5,7 @@
 #' PIBO model using version 0 of John Vansickles code
 #'
 #' @param bug.otu
-#' @param bugall
+#' @param bugcal.pa
 #' @param bugnew
 #' @param grps.final
 #' @param preds.final
@@ -16,23 +16,23 @@
 #' @export
 #'
 #' @examples
-PIBO_model<-function (bug.otu,bugall, bugnew,grps.final, preds.final, ranfor.mod, prednew){
+PIBO_model<-function (bug.otu,bugcal.pa, bugnew,grps.final, preds.final, ranfor.mod, prednew){
   # merges test bug data with a null set of all OTU bug names in order for VanSickle code to work properly.
   bugnew.pa <- merge(x=bug.otu, y=bugnew, all=TRUE)
   # converts na data produced from columns above into 0s;
   bugnew.pa[is.na(bugnew.pa)]<- 0
 
   # makes predictions for test data;
-  OE<-model.predict.RanFor(bugall, grps.final, preds.final, ranfor.mod, prednew, bugnew.pa, Pc=0.5);
+  OE<-model.predict.RanFor(bugcal.pa, grps.final, preds.final, ranfor.mod, prednew, bugnew.pa, Pc=0.5);
 
-  ###is this needed????
-  # Append Sampleid to results
-  OE$OE.scores = data.frame(bugnew.pa$sampleId, OE$OE.scores)
-  names(OE$OE.scores) = c('sampleId',names(OE$OE.scores)[2:ncol(OE$OE.scores)] )
-  OE$Capture.Probs = data.frame(bugnew.pa$sampleId, OE$Capture.Probs)
-  names(OE$Capture.Probs) = c('sampleId',names(OE$Capture.Probs)[2:ncol(OE$Capture.Probs)] )
+  # ###is this needed????
+  # # Append Sampleid to results
+  # OE$OE.scores = data.frame(bugnew.pa$sampleId, OE$OE.scores)
+  # names(OE$OE.scores) = c('sampleId',names(OE$OE.scores)[2:ncol(OE$OE.scores)] )
+  # OE$Capture.Probs = data.frame(bugnew.pa$sampleId, OE$Capture.Probs)
+  # names(OE$Capture.Probs) = c('sampleId',names(OE$Capture.Probs)[2:ncol(OE$Capture.Probs)] )
 
-  return(OE)
+  return(OE$OE.scores)
 }
 
 

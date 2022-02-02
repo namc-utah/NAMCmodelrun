@@ -7,10 +7,13 @@ library(nhdplusTools)
 library(devtools)
 library(BMIMetrics)
 library(CSCI)
-boxId=2141
+boxId=2152# 2141-UT,2065 OR WCCP and MCCP, null
 models=NAMCr::query("models")
-modelId=2
-prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/UTDEQ/AllSeasonsModel_2015/InputsAndResults/AIM2020/UTDEQ_Habitat.csv",row.names="SAMPLE")
+modelId=9
+prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/PIBO/InputsAndResults_PIBO2009oe/AIM_ID_2020/Habitat.csv",row.names = "SAMPLEID")
+#prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/UTDEQ/AllSeasonsModel_2015/InputsAndResults/AIM2020/UTDEQ_Habitat.csv",row.names="SAMPLE")
+#prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/OR/InputsAndResults_PredatorORDEQ2005oe/AIM_OR_2019/MWCF/MWCF_Habitat.csv",row.names="SampleID")
+#prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/OR/InputsAndResults_PredatorORDEQ2005oe/AIM_OR_2019/WCCP/WCCP_Habitat.csv",row.names="SampleID")
 SQLite_file_path="C:/NAMC_S3/StreamCat/StreamCat2022.sqlite"
 temp_predictor_metadata="C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/Geospatial predictors/predictor_table_for_database.csv"
 
@@ -41,14 +44,13 @@ def_models = NAMCr::query(
 # ---------------------------------------------------------------
 #
 # if modelType= bug OE get OTU taxa matrix
-if (def_models$modelTypeAbbreviation == "OE") {
-  bugnew = OE_bug_matrix_box(
+if (def_models$modelId == 12) {#need a way to distinguish this model from others.. call NULL OE?
+  bugnew = OR_NBR_bug_box(
     boxId = boxId,
     translationId = def_models$translationId,
-    fixedCount = def_models$fixedCount
-  )
-} else if (def_models$modelId == 12) {#need a way to distinguish this model from others.. call NULL OE?
-  bugnew = OR_NBR_bug_box(
+    fixedCount = def_models$fixedCount)
+} else if(def_models$modelTypeAbbreviation == "OE") {
+  bugnew = OE_bug_matrix_box(
     boxId = boxId,
     translationId = def_models$translationId,
     fixedCount = def_models$fixedCount
@@ -182,6 +184,7 @@ if (def_models$modelId %in% c(7, 2, 25, 26)) {
 }else{
 
 }
+#need to add a if statement here for in not OE or null model
 OEscores<-OE$OE.scores
 
 
