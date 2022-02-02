@@ -6,7 +6,7 @@
 # Version 4.1 - Given same upgrade as model.predict.4.1
 # Version 4.2 - Added option for out-of-bag predictions on CAL data. 12/30/10;
 ###########################;
-#STEP 1 -- 
+#STEP 1 --
 # Obtain the component of the desired model (bugcal.pa, grps.final,preds.final,rf.mod) ;
 # Next, create the 2 objects needed to define the data for new samples/sites at which predictions are desired;
 #   "prednew" = data frame containing predictor variables (columns) at all new sites/samples (rows);
@@ -23,12 +23,12 @@
 #               All other taxa (columns) in bugnew are ignored;
 #               Note that bugnew and prednew must have site/sample ID's as their row names;
 
-# Other model inputs;   
+# Other model inputs;
 #        "Pc" = capture probability cutoff.
 #               Only those taxa with predicted capture probability > Pc for a sample will be included in O/E for that sample;
 #               Typical choice is Pc=0.5. To include all taxa in O/E, set Pc=1.e-14;
-#     "Cal.OOB" = logical value. Default = FALSE. Set equal to TRUE, only if you are predicting for 
-#                  the model calibration data and desire out-of-bag predictions; 
+#     "Cal.OOB" = logical value. Default = FALSE. Set equal to TRUE, only if you are predicting for
+#                  the model calibration data and desire out-of-bag predictions;
 #Sample usage:
     # OE.assess<-model.predict.RF.4.2(bugcal.pa,grps.final,preds.final,rf.mod,prednew=pred.vld,bugnew=bug.vld.pa,Pc=0.5,Cal.OOB=FALSE);
 
@@ -46,20 +46,20 @@
 
 #' OE predict 4.2
 #'
-#' @param bugcal.pa 
-#' @param grps.final 
-#' @param preds.final 
-#' @param ranfor.mod 
-#' @param prednew 
-#' @param bugnew 
-#' @param Pc 
-#' @param Cal.OOB 
+#' @param bugcal.pa
+#' @param grps.final
+#' @param preds.final
+#' @param ranfor.mod
+#' @param prednew
+#' @param bugnew
+#' @param Pc
+#' @param Cal.OOB
 #'
-#' @return O, E, OoverE, BC, null 
+#' @return O, E, OoverE, BC, null
 #' @export
 #'
 #' @examples
-model.predict.RanFor.4.2<-function(bugcal.pa,grps.final,preds.final,ranfor.mod, prednew,bugnew,Pc,Cal.OOB=FALSE) {;
+model.predict.RanFor.4.2<-function(bugcal.pa,grps.final,preds.final,ranfor.mod, prednew,bugnew,Pc=0.5,Cal.OOB=FALSE) {;
 
 #first convert bug matrix to P/A (1/0);
    temp.pa<-bugnew;
@@ -138,7 +138,7 @@ BC.null<-apply(bugnew.pa[,nulltax],1,function(x)sum(abs(x-pnull[nulltax])))/(Obs
 #Also includes outlier flags;
 
 OE.final<-data.frame(O=OE.stats$OBS,E=OE.stats$E.prd,
-                      OoverE=OE.stats$OBS/OE.stats$E.prd, 
+                      OoverE=OE.stats$OBS/OE.stats$E.prd,
    Onull=Obsnull,Enull=rep(Enull,length(Obsnull)),OoverE.null=Obsnull/Enull,
    BC= OE.stats$BC.prd,BC.null=BC.null,
           row.names=row.names(bugnew.pa));

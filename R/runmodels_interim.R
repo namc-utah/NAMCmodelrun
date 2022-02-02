@@ -4,13 +4,15 @@ library(tidyverse)
 library(DBI)
 library(RSQLite)
 library(nhdplusTools)
-#library(CSCI)
+library(devtools)
+library(BMIMetrics)
+library(CSCI)
 boxId=2141
+models=NAMCr::query("models")
 modelId=2
-prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/UTDEQ/AllSeasonsModel_2015/InputsAndResults/AIM2020/UTDEQ_Habitat.csv")
-SQLite_file_path="C:/NAMC_S3/StreamCat/StreamCat.sqlite"
+prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/UTDEQ/AllSeasonsModel_2015/InputsAndResults/AIM2020/UTDEQ_Habitat.csv",row.names="SAMPLE")
+SQLite_file_path="C:/NAMC_S3/StreamCat/StreamCat2022.sqlite"
 temp_predictor_metadata="C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/Geospatial predictors/predictor_table_for_database.csv"
-nhd_dir="C:/Users/jenni/Box/NAMC (Trip Armstrong)/StreamCat/NHDPlusV21"
 
 source("R/Bug_functions_box.R")
 source("R/Model_functions.R")
@@ -61,11 +63,7 @@ if (def_models$modelTypeAbbreviation == "OE") {
 } else {
 
 }
-bugnew<-subset(bugnew,sampleId %in% prednew$SAMPLE)
-names(bugnew)[1]<-"SAMPLE"
-
-rownames(bugnew$sampleId)
-bugnew<-bugnew[,-1]
+bugnew<-subset(bugnew,rownames(bugnew) %in% rownames(prednew))
 
 # ---------------------------------------------------------------
 # load model specific R objects which include reference bug data and predictors RF model objects
@@ -184,7 +182,7 @@ if (def_models$modelId %in% c(7, 2, 25, 26)) {
 }else{
 
 }
-
+OEscores<-OE$OE.scores
 
 
 # ---------------------------------------------------------------
@@ -224,7 +222,7 @@ inLOOP<- function(inSTR,...) {
 }
 #create database connection
 conn<-DBI::dbConnect(RSQLite::SQLite(),SQLite_file_path)
-preds = DBI::dbGetQuery(conn,sprintf("SELECT COMID, ElevCat,	Precip8110Ws,	Tmean8110Ws,	WsAreaSqKm FROM StreamCat_2016 WHERE COMID in (%s)",inLOOP(substr(def_sites$COMID,1,10))))
+preds = DBI::dbGetQuery(conn,sprintf("SELECT COMID, ElevCat,	Precip8110Ws,	Tmean8110Ws,	WsAreaSqKm FROM StreamCat_2022 WHERE COMID in (%s)",inLOOP(substr(def_sites$COMID,1,10))))
 applicabilitypreds=merge(def_sites,preds, by="COMID")
 
 # run model applicability function

@@ -21,6 +21,9 @@ OE_bug_matrix_box<-function(boxId,translationId,fixedCount){
   sumrarefiedOTUTaxa$presence = ifelse(sumrarefiedOTUTaxa$sumSplitCount >=1, 1, 0)
   bugnew = tidyr::pivot_wider(sumrarefiedOTUTaxa,id_cols = "sampleId", names_from = "otuName",values_from = "presence")
   bugnew[is.na(bugnew)]<-0
+  bugnew=as.data.frame(bugnew)
+  rownames(bugnew)<-bugnew$sampleId
+  bugnew<-bugnew[,-1]
   return(bugnew)
 }
 
@@ -46,6 +49,9 @@ MMI_metrics_box<-function(boxId,translationId,fixedCount){
   #MMI_metrics = subset(bugsMetrics, metricId %in% ()) # store translations to metric names in database
   # need to replace metric name with a model specific metric abbreviation
   bugnew = tidyr::pivot_wider(bugsMetrics,id_cols = "sampleId",names_from = "metricName",values_from = "metricValue")
+  bugnew=as.data.frame(bugnew)
+  rownames(bugnew)<-bugnew$sampleId
+  bugnew<-bugnew[,-1]
   return(bugnew)
 }
 
