@@ -97,7 +97,7 @@ CSCI_bug <- function(sampleId){
   CSCIbugs$class<-ifelse(is.na(CSCIbugs$class)==TRUE,"X",CSCIbugs$class)
   CSCIbugs$LifeStageCode=ifelse(is.na(CSCIbugs$lifeStageAbbreviation)==TRUE,"X",ifelse(CSCIbugs$class!="Insecta","X",CSCIbugs$lifeStageAbbreviation))
   CSCIbugs$Distinct = 0
-  CSCIbugs=CSCIbugs %>% mutate(BAResult=splitCount.y+bigRareCount)
+  CSCIbugs=CSCIbugs %>% mutate(BAResult=splitCount.x+bigRareCount)
   CSCIbugs=subset(CSCIbugs,is.na(otuName)==FALSE)
   names(CSCIbugs)[names(CSCIbugs)=="sampleId"]<-"SampleID"
   # subset columns
