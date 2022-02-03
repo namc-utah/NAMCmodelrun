@@ -81,7 +81,7 @@ CSCI_bug <- function(sampleId){
   )
   sites = NAMCr::query(
     "samples",
-    include = c("sampleId", 'siteId'),
+    include = c("sampleId", 'siteName'),
     sampleIds = def_model_results$SampleId
   )
 
@@ -92,15 +92,16 @@ CSCI_bug <- function(sampleId){
   # rename columns
   # rename columns
   CSCIbugs$boxId = CSCIbugs$boxId
-  CSCIbugs$StationCode = CSCIbugs$siteId#### need to get site info!!!
+  CSCIbugs$StationCode = CSCIbugs$siteName#### need to get site info!!!
   CSCIbugs$FinalID = CSCIbugs$otuName
   CSCIbugs$class<-ifelse(is.na(CSCIbugs$class)==TRUE,"X",CSCIbugs$class)
-  CSCIbugs$LifeStageCode=ifelse(is.na(CSCIbugs$lifeStageAbbreviation)==TRUE,"X",ifelse(CSCIbugs$class=="Insecta","X",CSCIbugs$lifeStageAbbreviation))
+  CSCIbugs$LifeStageCode=ifelse(is.na(CSCIbugs$lifeStageAbbreviation)==TRUE,"X",ifelse(CSCIbugs$class!="Insecta","X",CSCIbugs$lifeStageAbbreviation))
   CSCIbugs$Distinct = 0
   CSCIbugs=CSCIbugs %>% mutate(BAResult=splitCount.y+bigRareCount)
   CSCIbugs=subset(CSCIbugs,is.na(otuName)==FALSE)
+  names(CSCIbugs)[names(CSCIbugs)=="sampleId"]<-"SampleID"
   # subset columns
-  CSCIbugs=CSCIbugs[,c('sampleId','StationCode','FinalID','LifeStageCode','Distinct','BAResult')]
+  CSCIbugs=CSCIbugs[,c('SampleID','StationCode','FinalID','LifeStageCode','Distinct','BAResult')]
   return(CSCIbugs)
   }
 

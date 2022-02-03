@@ -114,8 +114,8 @@
     # every model has an R object that stores the random forest model and reference data
     # the R objects are named with the model abbreviation
     # instead of all these if statements the R file name could be stored in the database... but WY and NV require two models and R file names
-    #if CO or CSCI model no R data file needs loaded in
-    if (def_models$modelId %in% c(1,4,5,6)){
+    #if CO, CSCI, or OR null model no R data file needs loaded in
+    if (def_models$modelId %in% c(1,4,5,6,12)){
 
       #if WY model only one Rdata file needs loaded and not one for each "model" but Alkalinity also needs added
     } else if (def_models$modelId %in% c(13:23)){
@@ -133,7 +133,7 @@
     # ---------------------------------------------------------------
     # Run models
     # ---------------------------------------------------------------
-    # models using latest version of van sickle function include: AREMP, UTDEQ15, Westwide
+    # models using john vansickles RIVPACS random forest code : AREMP, UTDEQ15, Westwide, PIBO
     if (def_models$modelId %in% c(7, 2, 25, 26,9)) {
       OE <-
         model.predict.RanFor.4.2(
@@ -146,7 +146,7 @@
           Pc = 0.5,
           Cal.OOB = FALSE
         )#....
-    } else if (def_models$modelId %in% c(10, 11)) {# models using version 4.1 of van sickle code include: OR_WCCP, OR_MWCF
+    } else if (def_models$modelId %in% c(10, 11)) {# models using John VanSickles RIVPACS discriminant function code: OR_WCCP, OR_MWCF
       OE <-
         model.predict.v4.1(bugcal.pa,
                            grps.final,
@@ -156,7 +156,7 @@
                            prednew,
                            bugnew,
                            Pc = 0.5)# add elpsis...
-    }else if (def_models$modelId %in% (13:23)) {# WY also uses version 4.1 of van sickle code but requires alkalinity model as a dependency
+    }else if (def_models$modelId %in% (13:23)) {# WY also uses John vansickles discriminant function code but requires alkalinity model as a dependency
       ALK_LOG = setNames(as.data.frame(
         predict(ranfor.mod, prednew, type = "response")
       ), c("ALK_LOG"))# need to log value

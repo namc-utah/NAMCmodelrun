@@ -7,10 +7,11 @@ library(nhdplusTools)
 library(devtools)
 library(BMIMetrics)
 library(CSCI)
-boxId=2152# 2141-UT,2065 OR WCCP and MCCP, null
+boxId=2172# 2141-UT,2065 OR WCCP and MCCP, null, 2152 PIBO
 models=NAMCr::query("models")
-modelId=9
-prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/PIBO/InputsAndResults_PIBO2009oe/AIM_ID_2020/Habitat.csv",row.names = "SAMPLEID")
+modelId=1
+prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/CA/Hybrid_CA_Model/InputsAndResults/CurrentRun/habitat.csv")
+#prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/PIBO/InputsAndResults_PIBO2009oe/AIM_ID_2020/Habitat.csv",row.names = "SAMPLEID")
 #prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/UTDEQ/AllSeasonsModel_2015/InputsAndResults/AIM2020/UTDEQ_Habitat.csv",row.names="SAMPLE")
 #prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/OR/InputsAndResults_PredatorORDEQ2005oe/AIM_OR_2019/MWCF/MWCF_Habitat.csv",row.names="SampleID")
 #prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/OR/InputsAndResults_PredatorORDEQ2005oe/AIM_OR_2019/WCCP/WCCP_Habitat.csv",row.names="SampleID")
@@ -20,7 +21,6 @@ temp_predictor_metadata="C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/Ge
 source("R/Bug_functions_box.R")
 source("R/Model_functions.R")
 source("R/model.predict.RanFor.4.2.r")
-source("R/model.predict.RanFor.r")
 source("R/model.predict.v4.1.r")
 source("R/ModelApplicabilityAll.R")
 
@@ -73,8 +73,8 @@ bugnew<-subset(bugnew,rownames(bugnew) %in% rownames(prednew))
 # every model has an R object that stores the random forest model and reference data
 # the R objects are named with the model abbreviation
 # instead of all these if statements the R file name could be stored in the database... and should be!!
-#if CO or CSCI model no R data file needs loaded in
-if (def_models$modelId %in% c(1,4,5,6)){
+#if CO, CSCI, or OR null model no R data file needs loaded in
+if (def_models$modelId %in% c(1,4,5,6,12)){
 
   #if WY model only one Rdata file needs loaded and not one for each "model" but Alkalinity also needs added
 } else if (def_models$modelId %in% c(13:23)){
@@ -96,7 +96,7 @@ load(paste0("sysdata.rda/",def_models$abbreviation, ".Rdata"))
 # Run models
 # ---------------------------------------------------------------
 # models using latest version of van sickle function include: AREMP, UTDEQ15, Westwide, PIBO
-if (def_models$modelId %in% c(7, 2, 25, 26,9)) {
+if (def_models$modelId %in% c(7, 2, 25, 26, 9)) {
   OE <-
     model.predict.RanFor.4.2(
       bugcal.pa,
