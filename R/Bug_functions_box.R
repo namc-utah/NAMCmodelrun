@@ -126,7 +126,7 @@ CO_bug_export_box<-function(boxId){
   )
   samples = NAMCr::query(
     "samples",
-    include = c("boxId","sampleId",'siteId','sampleDate',"siteName", "sampleMethod","habitat","area"),# possibly add waterbody name to the samples NAMCr::query
+    include = c("boxId","sampleId",'siteId','sampleDate',"siteName", "sampleMethod","habitatName","area"),# possibly add waterbody name to the samples NAMCr::query
     boxId=boxId
   )
 
@@ -134,7 +134,7 @@ CO_bug_export_box<-function(boxId){
   CObugs=dplyr::left_join(bugRaw,bugsTranslation, by=c("taxonomyId", "sampleId"))
   CObugs=dplyr::left_join(CObugs,samples, by='sampleId')
 
-  CObugs$Project=paste0("NAMC boxId: ",boxId)
+  CObugs$Project=paste0(boxId)
   CObugs$Station=CObugs$sampleId
   CObugs$Name=CObugs$siteId
   CObugs$Location=CObugs$siteName # previously used waterbody name.. use that if we export this data for use by CO state
@@ -145,10 +145,11 @@ CO_bug_export_box<-function(boxId){
   CObugs$CommentsTaxa=paste0("taxonomyId: ",CObugs$taxonomyId)
   CObugs$RepNum=1
   CObugs$Grids=NA
-  CObugs$CommentsSample=paste0("sampleMethod: ",CObugs$sampleMethod," ,habitat: ",CObugs$habitat," ,area: ",CObugs$area)
-  CObugs$CommentsRep=""
+  CObugs$CommentsSample=paste0("sampleMethod: ",CObugs$sampleMethod, "area: ",CObugs$area)
+  CObugs$CommentsRep=paste0("habitat: ",CObugs$habitatName)
   CObugs=CObugs[,c("Project","Station","Name","Location","CollDate","Organism","Individuals","Stage","CommentsTaxa","RepNum","Grids","CommentsSample","CommentsRep")]
     #write excel file to workspace
+  write.csv(CObugs,file = paste0("CObugs","boxId_",CObugs$Project[1],"_",Sys.Date(),".csv"),row.names=FALSE)
   return(CObugs)
 }
 
