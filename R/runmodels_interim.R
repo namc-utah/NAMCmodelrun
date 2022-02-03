@@ -95,8 +95,8 @@ load(paste0("sysdata.rda/",def_models$abbreviation, ".Rdata"))
 # ---------------------------------------------------------------
 # Run models
 # ---------------------------------------------------------------
-# models using latest version of van sickle function include: AREMP, UTDEQ15, Westwide
-if (def_models$modelId %in% c(7, 2, 25, 26)) {
+# models using latest version of van sickle function include: AREMP, UTDEQ15, Westwide, PIBO
+if (def_models$modelId %in% c(7, 2, 25, 26,9)) {
   OE <-
     model.predict.RanFor.4.2(
       bugcal.pa,
@@ -131,14 +131,6 @@ if (def_models$modelId %in% c(7, 2, 25, 26)) {
                        prednew,
                        bugnew,
                        Pc = 0.5)
-}else if (def_models$modelId == 9) {# PIBO model was one of the earliest models built and used a version of van sickle's function that didnt have a version number
-  OE <-
-    PIBO_model(bug.otu,
-               bugall,
-               grps.final,
-               preds.final,
-               ranfor.mod,
-               prednew)
 }else if (def_models$modelId == 12) {# OR eastern region is a null model and no predictors are used
   OE <- OR_NBR_model(bugnew)
 
