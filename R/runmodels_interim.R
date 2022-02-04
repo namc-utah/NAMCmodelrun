@@ -7,15 +7,15 @@ library(nhdplusTools)
 library(devtools)
 library(BMIMetrics)
 library(CSCI)
-boxId=2172# 2141-UT,2065 OR WCCP and MCCP, null, 2152 PIBO, 2172 CSCI,2107 AREMP, 2054 CO
+boxId=2065# 2141-UT,2065 OR WCCP and MCCP, null, 2152 PIBO, 2172 CSCI,2107 AREMP, 2054 CO
 models=NAMCr::query("models")
-modelId=1
+modelId=10
 #prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/AREMP2014/InputsAndResults/2020/Test_preds.csv",row.names="SampleID")
-prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/CA/Hybrid_CA_Model/InputsAndResults/CurrentRun/habitat.csv")
+#prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/CA/Hybrid_CA_Model/InputsAndResults/CurrentRun/habitat.csv")
 #prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/PIBO/InputsAndResults_PIBO2009oe/AIM_ID_2020/Habitat.csv",row.names = "SAMPLEID")
 #prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/UTDEQ/AllSeasonsModel_2015/InputsAndResults/AIM2020/UTDEQ_Habitat.csv",row.names="SAMPLE")
 #prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/OR/InputsAndResults_PredatorORDEQ2005oe/AIM_OR_2019/MWCF/MWCF_Habitat.csv",row.names="SampleID")
-#prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/OR/InputsAndResults_PredatorORDEQ2005oe/AIM_OR_2019/WCCP/WCCP_Habitat.csv",row.names="SampleID")
+prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/OR/InputsAndResults_PredatorORDEQ2005oe/AIM_OR_2019/WCCP/WCCP_Habitat.csv",row.names="SampleID")
 SQLite_file_path="C:/NAMC_S3/StreamCat/StreamCat2022.sqlite"
 CalPredsModelApplicability=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEModels/Model Applicability/CalPredsModelApplicability.csv")
 
@@ -97,7 +97,7 @@ load(paste0("sysdata.rda/",def_models$abbreviation, ".Rdata"))
 # ---------------------------------------------------------------
 # models using latest version of van sickle function include: AREMP, UTDEQ15, Westwide, PIBO
 if (def_models$modelId %in% c(7, 2, 25, 26, 9)) {
-  OE <-
+  modelResults <-
     model.predict.RanFor.4.2(
       bugcal.pa,
       grps.final,
@@ -108,8 +108,9 @@ if (def_models$modelId %in% c(7, 2, 25, 26, 9)) {
       Pc = 0.5,
       Cal.OOB = FALSE
     )#....
+  OE<-modelResults$OE.scores
 } else if (def_models$modelId %in% c(10, 11)) {# models using version 4.1 of van sickle code include: OR_WCCP, OR_MWCF
-  OE <-
+  modelResults <-
     model.predict.v4.1(bugcal.pa,
                        grps.final,
                        preds.final,
@@ -118,11 +119,12 @@ if (def_models$modelId %in% c(7, 2, 25, 26, 9)) {
                        prednew,
                        bugnew,
                        Pc = 0.5)# add elpsis...
+  OE<-modelResults$OE.scores
 }else if (def_models$modelId %in% (13:23)) {# WY also uses version 4.1 of van sickle code but requires alkalinity model as a dependency
   ALK_LOG = setNames(as.data.frame(
     predict(ranfor.mod, prednew, type = "response")), c("ALK_LOG"))# need to log value
   prednew = cbind(prednew, ALK_LOG)
-  OE <-
+  modelResults <-
     model.predict.v4.1(bugcal.pa,
                        grps.final,
                        preds.final,
@@ -131,6 +133,7 @@ if (def_models$modelId %in% c(7, 2, 25, 26, 9)) {
                        prednew,
                        bugnew,
                        Pc = 0.5)
+  OE<-modelResults$OE.scores
 }else if (def_models$modelId == 12) {# OR eastern region is a null model and no predictors are used
   OE <- OR_NBR_model(bugnew)
 
@@ -177,8 +180,7 @@ if (def_models$modelId %in% c(7, 2, 25, 26, 9)) {
 }else{
 
 }
-#need to add a if statement here for in not OE or null model
-OEscores<-OE$OE.scores
+
 
 
 # ---------------------------------------------------------------
