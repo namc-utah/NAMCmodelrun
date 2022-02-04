@@ -62,7 +62,7 @@
 #' @export
 #'
 #' @examples
-model.predict.v4.1<-function(bugcal.pa,grps.final,preds.final,grpmns,covpinv,prednew,bugnew,Pc=0.5) {;
+model.predict.v4.1<-function(bugcal.pa,grps.final,preds.final,grpmns,covpinv,prednew,bugnew,Pc=0.5) {
 
 #first convert bug matrix to P/A (1/0);
    temp.pa<-bugnew;

@@ -4,7 +4,7 @@
 
 ModelApplicability<- function(CalPredsModelApplicability, modelId, prednew){
 
-CalPredsModelApplicability=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEModels/Model Applicability/CalPredsModelApplicability.csv")
+#CalPredsModelApplicability=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEModels/Model Applicability/CalPredsModelApplicability.csv")
 
 ##subset calibration set to only include sites used in the appropriate model build
 CalPreds <- subset(CalPredsModelApplicability,modelID==modelId)

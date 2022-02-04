@@ -102,7 +102,8 @@ CSCI_bug <- function(sampleId){
   names(CSCIbugs)[names(CSCIbugs)=="sampleId"]<-"SampleID"
   # subset columns
   CSCIbugs=CSCIbugs[,c('SampleID','StationCode','FinalID','LifeStageCode','Distinct','BAResult')]
-  return(CSCIbugs)
+  bugnew= CSCIbugs %>% dplyr::group_by(SampleID,StationCode,FinalID,LifeStageCode,Distinct) %>% dplyr::summarize(BAResult=sum(BAResult))
+  return(bugnew)
   }
 
 

@@ -96,11 +96,10 @@
       )
      # CO model must be written out as an excel file using a separate bank of code and function
     } else if (def_models$modelId %in% c(4, 5, 6)) {
-      print(paste0( "CO model must be written out as an excel file using a separate bank of code and function: ", sampleIds))
+      CObugs=CO_bug_export_box(boxId = boxId)# change boxid to list of sampleIds
       # CSCI requires just the raw taxa list translated for misspelling
     } else if (def_models$modelId %in% c(1)) {
-      # add in model names in comments
-      CSCIbugs = CSCI_bug(sampleId = def_models_results$sampleId)
+      bugnew = CSCI_bug(sampleId = def_models_results$sampleId)
     } else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
       bugnew = MMI_metrics(sampleId = def_models_results$sampleId, translationId=def_models$translationId, fixedCount = def_models$fixedCount)
  }else {
@@ -116,7 +115,7 @@
     # instead of all these if statements the R file name could be stored in the database... but WY and NV require two models and R file names
     #if CO, CSCI, or OR null model no R data file needs loaded in
     if (def_models$modelId %in% c(1,4,5,6,12)){
-
+      print("no R object needs loaded")
       #if WY model only one Rdata file needs loaded and not one for each "model" but Alkalinity also needs added
     } else if (def_models$modelId %in% c(13:23)){
       load("sysdata.rda/WY2018.Rdata")
@@ -174,9 +173,9 @@
       OE <- OR_NBR_model(bugnew)
 
     }else if (def_models$modelId == 1) {# CSCI has its own package and function
-      report <- CSCI::CSCI(bugs = CSCIbugs, stations = prednew)
+      report <- CSCI::CSCI(bugs = bugnew, stations = prednew)
       OE = report$core
-
+      rownames(OE)=OE$SampleID
     }else if (def_models$modelId == 8) {
     # all MMIs will need their own function added here because there is a rf model for each metric
       MMI <-
@@ -235,7 +234,7 @@
     # ---------------------------------------------------------------
     #has permission to save then spit out result to console
     # pass Nas for anything not used
-    if (modelTypeAbbreviation == "OE") {
+    if (def_models$modelTypeAbbreviation == "OE") {
       NAMCr::save(
         api_endpoint = "newModelResult",
         sampleId = def_samples$sampleId,
@@ -247,7 +246,7 @@
       )
     }
 
-    else if (modelTypeAbbreviation == "MMI") {
+    else if (def_models$modelTypeAbbreviation == "MMI") {
       NAMCr::save(
         api_endpoint = "newModelResult",
         sampleId = def_samples$sampleId,
@@ -257,7 +256,7 @@
       )
     }
 
-    else if (modelTypeAbbreviation == "WQ") {
+    else if (def_models$modelTypeAbbreviation == "WQ") {
       NAMCr::save(
         api_endpoint = "newModelResult",
         sampleId = def_samples$sampleId,

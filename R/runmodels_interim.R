@@ -7,17 +7,17 @@ library(nhdplusTools)
 library(devtools)
 library(BMIMetrics)
 library(CSCI)
-boxId=2054# 2141-UT,2065 OR WCCP and MCCP, null, 2152 PIBO, 2172 CSCI,2107 AREMP, 2054 CO
+boxId=2172# 2141-UT,2065 OR WCCP and MCCP, null, 2152 PIBO, 2172 CSCI,2107 AREMP, 2054 CO
 models=NAMCr::query("models")
-modelId=4
-prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/AREMP2014/InputsAndResults/2020/Test_preds.csv",row.names="SampleID")
-#prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/CA/Hybrid_CA_Model/InputsAndResults/CurrentRun/habitat.csv")
+modelId=1
+#prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/AREMP2014/InputsAndResults/2020/Test_preds.csv",row.names="SampleID")
+prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/CA/Hybrid_CA_Model/InputsAndResults/CurrentRun/habitat.csv")
 #prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/PIBO/InputsAndResults_PIBO2009oe/AIM_ID_2020/Habitat.csv",row.names = "SAMPLEID")
 #prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/UTDEQ/AllSeasonsModel_2015/InputsAndResults/AIM2020/UTDEQ_Habitat.csv",row.names="SAMPLE")
 #prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/OR/InputsAndResults_PredatorORDEQ2005oe/AIM_OR_2019/MWCF/MWCF_Habitat.csv",row.names="SampleID")
 #prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/OR/InputsAndResults_PredatorORDEQ2005oe/AIM_OR_2019/WCCP/WCCP_Habitat.csv",row.names="SampleID")
 SQLite_file_path="C:/NAMC_S3/StreamCat/StreamCat2022.sqlite"
-temp_predictor_metadata="C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/Geospatial predictors/predictor_table_for_database.csv"
+CalPredsModelApplicability=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEModels/Model Applicability/CalPredsModelApplicability.csv")
 
 source("R/Bug_functions_box.R")
 source("R/Model_functions.R")
@@ -59,8 +59,7 @@ if (def_models$modelId == 12) {#need a way to distinguish this model from others
 } else if (def_models$modelId %in% c(4, 5, 6)) {# CO model must be written out as an excel file using a separate bank of code and function
   CObugs=CO_bug_export_box(boxId = boxId)
 } else if (def_models$modelId %in% c(1)) {# CSCI requires just the raw taxa list translated for misspelling
-  # add in model names in comments
-  CSCIbugs = CSCI_bug_box(boxId = boxId)
+  bugnew = CSCI_bug_box(boxId = boxId)
 }else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
   bugnew = MMI_metrics_box(boxId = boxId, translationId=def_models$translationId, fixedCount = def_models$fixedCount)
 } else {
@@ -76,7 +75,7 @@ bugnew<-subset(bugnew,rownames(bugnew) %in% rownames(prednew))
 # instead of all these if statements the R file name could be stored in the database... and should be!!
 #if CO, CSCI, or OR null model no R data file needs loaded in
 if (def_models$modelId %in% c(1,4,5,6,12)){
-
+print("no R object needs loaded")
   #if WY model only one Rdata file needs loaded and not one for each "model" but Alkalinity also needs added
 } else if (def_models$modelId %in% c(13:23)){
   load("sysdata.rda/WY2018.Rdata")
@@ -138,6 +137,7 @@ if (def_models$modelId %in% c(7, 2, 25, 26, 9)) {
 }else if (def_models$modelId == 1) {# CSCI has its own package and function
     report <- CSCI::CSCI(bugs = CSCIbugs, stations = prednew)
     OE = report$core
+    rownames(OE)=OE$SampleID
 
      }else if (def_models$modelId == 8) {
   ## all MMIs will need their own function added here because there is a rf model for each metric
@@ -187,7 +187,7 @@ OEscores<-OE$OE.scores
 # get site locations from database
 def_sites = NAMCr::query(
   api_endpoint = "samples",
-  include = c("sampleId","siteId", "siteName", "usState", "siteLocation"),
+  include = c("sampleId","siteId", "siteName", "usState", "siteLocation","customerSiteCode","visitId"),
   boxId = boxId
 )
 points2process=geojsonsf::geojson_sf(def_sites$siteLocation)
@@ -226,4 +226,16 @@ ModelApplicability = ModelApplicability(CalPredsModelApplicability,
                                         modelId = modelId,
                                         applicabilitypreds) # add to config file or add an R object with calpreds
 
+FinalResults=merge(OE,ModelApplicability,by="row.names")
+names(FinalResults)[1]<-"sampleId"
 
+if (def_models$modelTypeAbbreviation == "OE") {
+  FinalResults=FinalResults[,c("sampleId","visitId","customerSiteCode","O","E","OoverE","ModelApplicability")]
+}else if (def_models$modelTypeAbbreviation == "Hybrid"){
+  FinalResults=FinalResults[,c("sampleId","visitId","customerSiteCode","OoverE","MMI","CSCI","Count","ModelApplicability")]
+}else if (def_models$modelTypeAbbreviation == "MMI"){
+ FinalResults=FinalResults[,c("sampleId","visitId","customerSiteCode","MMI","ModelApplicability")]
+}else{
+}
+
+write.csv(FinalResults,paste0("FinalResults_",def_models$abbreviation,"_",Sys.Date(),".csv"),row.names = FALSE)

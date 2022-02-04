@@ -98,10 +98,12 @@ CSCI_bug_box <- function(boxId){
   CSCIbugs$Distinct = 0
   CSCIbugs=CSCIbugs %>% mutate(BAResult=splitCount.x+bigRareCount)
   CSCIbugs=subset(CSCIbugs,is.na(otuName)==FALSE)
+  CSCIbugs=subset(CSCIbugs,select=-noteTypeIds)
   # subset columns
   names(CSCIbugs)[names(CSCIbugs)=="sampleId"]<-"SampleID"
   CSCIbugs=CSCIbugs[,c('SampleID','StationCode','FinalID','LifeStageCode','Distinct','BAResult')]
-  return(CSCIbugs)
+  bugnew= CSCIbugs %>% dplyr::group_by(SampleID,StationCode,FinalID,LifeStageCode,Distinct) %>% dplyr::summarize(BAResult=sum(BAResult))
+  return(bugnew)
 }
 
 
@@ -150,6 +152,11 @@ CO_bug_export_box<-function(boxId){
   CObugs=CObugs[,c("Project","Station","Name","Location","CollDate","Organism","Individuals","Stage","CommentsTaxa","RepNum","Grids","CommentsSample","CommentsRep")]
     #write excel file to workspace
   write.csv(CObugs,file = paste0("CObugs","boxId_",CObugs$Project[1],"_",Sys.Date(),".csv"),row.names=FALSE)
+  cat(paste("csv with CObugs has been written out to your current working directory.",
+            "Convert this csv to excel 2003 and import into CO EDAS access database to compute the CSCI score.",
+            "Follow instructions in this pdf Box\\NAMC\\OE_Modeling\\NAMC_Supported_OEmodels\\CO\\Documentation\\EDAS2017\\Tutorial Guide to EDAS_Version 1.7.pdf",
+            "to import bug and habitat data, harmonize taxa list, rarefy and compute MMI",
+            "then read resulting excel file back into R to save results in the database.", sep="\n"))
   return(CObugs)
 }
 
