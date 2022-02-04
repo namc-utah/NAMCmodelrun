@@ -196,7 +196,9 @@ points2process=geojsonsf::geojson_sf(def_sites$siteLocation)
 
 # use nhdplusTools to get COMID for each site
 for (p in 1:nrow(points2process)){
-  start_comid <- nhdplusTools::discover_nhdplus_id(points2process[p,1])
+  tryCatch({start_comid <- nhdplusTools::discover_nhdplus_id(points2process[p,1])},error=function(e){
+  cat(paste0("error_row_",p))
+})
   if(p == 1){
     comids= start_comid
   }else{
@@ -228,15 +230,61 @@ ModelApplicability = ModelApplicability(CalPredsModelApplicability,
                                         modelId = modelId,
                                         applicabilitypreds) # add to config file or add an R object with calpreds
 
-FinalResults=merge(OE,ModelApplicability,by="row.names")
+FinalResults=dplyr::left_join(OE,ModelApplicability,by="row.names")
 names(FinalResults)[1]<-"sampleId"
 
+
+
+# ---------------------------------------------------------------
+# Get additional bug metrics (fixed count and invasives)
+# ---------------------------------------------------------------
+##### get fixed count column #####
+bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
+                       translationId = def_models$translationId,
+                       fixedCount = def_models$fixedCount,
+                       boxId = boxId
+)
+sumrarefiedOTUTaxa = bugsOTU  %>%
+  dplyr::group_by(sampleId) %>%
+  dplyr::summarize(sumSplitCount = sum(splitCount))
+
+
+###### get invasives #####
+# get raw bug data
+bugRaw = NAMCr::query(
+  "sampleTaxa",
+  boxId = boxId
+)
+#subset taxa in samples to only invasives
+bugraw = subset(bugRaw,taxonomyId %in% c(1330,1331,2633, 2671,4933,4934,4935,4936,4937,4938,4939,4940,4941,4942,1019,1994,5096,1515,1518,1604,2000,4074,1369,2013,1579))
+#create list of invasives present at a site
+invasives<-bugraw %>% dplyr::group_by(sampleId) %>% dplyr::summarize(InvasiveInvertSpecies=paste0(list(unique(scientificName)),collapse=''))
+# remove list formatting
+invasives$InvasiveInvertSpecies=gsub("^c()","",invasives$InvasiveInvertSpecies)
+invasives$InvasiveInvertSpecies=gsub("\"","",invasives$InvasiveInvertSpecies)
+invasives$InvasiveInvertSpecies=gsub("\\(","",invasives$InvasiveInvertSpecies)
+invasives$InvasiveInvertSpecies=gsub("\\)","",invasives$InvasiveInvertSpecies)
+# join to list of all samples with fixed counts
+additionalbugmetrics=dplyr::left_join(sumrarefiedOTUTaxa,invasives, by="sampleId")
+# if no invasives were present set to absent
+additionalbugmetrics[is.na(additionalbugmetrics)]<-"Absent"
+
+
+
+
+# ---------------------------------------------------------------
+# join all together and write out final file
+# ---------------------------------------------------------------
+
+FinalResults=dplyr::left_join(FinalResults,additionalbugmetrics,by="sampleId")
+
+# subset only the columns we need
 if (def_models$modelTypeAbbreviation == "OE") {
-  FinalResults=FinalResults[,c("sampleId","visitId","customerSiteCode","O","E","OoverE","ModelApplicability")]
+  FinalResults=FinalResults[,c("sampleId","visitId","customerSiteCode","O","E","OoverE","ModelApplicability","sumSplitCount","InvasiveInvertSpecies")]
 }else if (def_models$modelTypeAbbreviation == "Hybrid"){
-  FinalResults=FinalResults[,c("sampleId","visitId","customerSiteCode","OoverE","MMI","CSCI","Count","ModelApplicability")]
+  FinalResults=FinalResults[,c("sampleId","visitId","customerSiteCode","OoverE","MMI","CSCI","Count","ModelApplicability","sumSplitCount","InvasiveInvertSpecies")]
 }else if (def_models$modelTypeAbbreviation == "MMI"){
- FinalResults=FinalResults[,c("sampleId","visitId","customerSiteCode","MMI","ModelApplicability")]
+ FinalResults=FinalResults[,c("sampleId","visitId","customerSiteCode","MMI","ModelApplicability","sumSplitCount","InvasiveInvertSpecies")]
 }else{
 }
 
