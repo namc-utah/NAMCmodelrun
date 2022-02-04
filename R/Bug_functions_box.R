@@ -48,7 +48,38 @@ MMI_metrics_box<-function(boxId,translationId,fixedCount){
   #modelInfo = NAMCr::query("modelInfo", modelId = def_model$modelId)
   #MMI_metrics = subset(bugsMetrics, metricId %in% ()) # store translations to metric names in database
   # need to replace metric name with a model specific metric abbreviation
-  bugnew = tidyr::pivot_wider(bugsMetrics,id_cols = "sampleId",names_from = "metricName",values_from = "metricValue")
+  if (def_models$translationId==13){# NV MMI metrics
+    MMI_metrics = subset(bugsMetrics, metricId %in% c(71,#insect richness
+                                                      73,# noninsect richness
+                                                      47,#clinger richness
+                                                     22, #shannons diversity
+                                                     42, # collector filterer density
+                                                     109,# total density
+                                                     362,#percent  Ephemeoptera
+                                                     363))# percent plecoptera
+    MMI_metrics$metricValue=as.numeric(MMI_metrics$metricValue)
+    MMI_metrics$metricModelName=ifelse(MMI_metrics$metricId==71,"INSET",
+                                   ifelse(MMI_metrics$metricId==73,"NONSET",
+                                          ifelse(MMI_metrics$metricId==47,"CLINGER",
+                                                 ifelse(MMI_metrics$metricId==22,"SHDIVER",
+                                                        ifelse(MMI_metrics$metricId==42,"CFA_DEN",
+                                                               ifelse(MMI_metrics$metricId==109,"DEN",
+                                                                      ifelse(MMI_metrics$metricId==362,"EPHEA",
+                                                                             ifelse(MMI_metrics$metricId==363,"PLECA",NA)
+                                                                             )))))))
+
+ bugnew = tidyr::pivot_wider(MMI_metrics,id_cols = "sampleId",names_from = "metricModelName",values_from = "metricValue")
+ bugnew$PER_CFA=bugnew$CFA_DEN/bugnew$DEN*100
+  bugnew$PER_EPHEA=bugnew$EPHEA*100
+  bugnew$PER_PLECA=bugnew$PLECA*100
+  bugnew=bugnew[,c("sampleId","INSET","NONSET","CLINGER","SHDIVER","PER_CFA","PER_EPHEA","PER_PLECA")]
+ }else if (def_models$translationId==13){#AREMP MMI metrics
+
+  }else{
+
+  }
+
+
   bugnew=as.data.frame(bugnew)
   rownames(bugnew)<-bugnew$sampleId
   bugnew<-bugnew[,-1]

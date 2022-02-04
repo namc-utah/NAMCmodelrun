@@ -183,8 +183,8 @@ NV_MMI_model<-function(bugnew,prednew,CLINGER.rf,INSET.rf,NONSET.rf,PER_CFA.rf,P
 
   #Calculate MMI scores for new samples
   bugnew.rs=data.frame(INSET.rs, PER_EPHEA.rs, SHDIVER.rs, PER_CFA.rs, PER_PLECA.rs, NONSET.rs, CLINGER.rs, row.names=row.names(bugnew))
-  MMI=rowSums(bugnew.rs)/7
-  return(MMI)
+  bugnew.rs$MMI=rowSums(bugnew.rs)/7
+  return(bugnew.rs)
 }
 
 
