@@ -9,11 +9,11 @@ ModelApplicability<- function(CalPredsModelApplicability, modelId, prednew){
 ##subset calibration set to only include sites used in the appropriate model build
 CalPreds <- subset(CalPredsModelApplicability,modelID==modelId)
 logSQ_KM=log(CalPreds$WsAreaSqKm)
-ElevCat=CalPreds$ElevCat
+ElevCat_standardized=CalPreds$ElevCat
 logPrecip8110Ws=log(CalPreds$Precip8110Ws)
-Tmean8110Ws=CalPreds$Tmean8110Ws
+Tmean8110Ws_standardized=CalPreds$Tmean8110Ws
 
-outlier.preds.ref.raw=data.frame(logSQ_KM,ElevCat,logPrecip8110Ws,Tmean8110Ws, row.names=CalPreds$SiteID)
+outlier.preds.ref.raw=data.frame(logSQ_KM,ElevCat_standardized,logPrecip8110Ws,Tmean8110Ws_standardized, row.names=CalPreds$SiteID)
 
 #standardize by min and max of ref data
 outlier.preds.ref.std=matrix(nrow=dim(outlier.preds.ref.raw)[1], ncol=0)
@@ -37,11 +37,11 @@ for (n in 1:dim(ref.dist)[1]){
 
 
 logSQ_KM=log(applicabilitypreds$WsAreaSqKm)
-ElevCat=applicabilitypreds$ElevCat
+ElevCat_standardized=applicabilitypreds$ElevCat
 logPrecip8110Ws=log(applicabilitypreds$Precip8110Ws)
-Tmean8110Ws=applicabilitypreds$Tmean8110Ws
+Tmean8110Ws_standardized=applicabilitypreds$Tmean8110Ws
 
-outlier.preds.test.raw=data.frame(logSQ_KM,ElevCat,logPrecip8110Ws,Tmean8110Ws, row.names=applicabilitypreds$sampleId)
+outlier.preds.test.raw=data.frame(logSQ_KM,ElevCat_standardized,logPrecip8110Ws,Tmean8110Ws_standardized, row.names=applicabilitypreds$sampleId)
 
 #standardize by min and max of ref data
 
