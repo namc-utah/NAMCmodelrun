@@ -48,7 +48,9 @@ MMI_metrics_box<-function(boxId,translationId,fixedCount){
   #modelInfo = NAMCr::query("modelInfo", modelId = def_model$modelId)
   #MMI_metrics = subset(bugsMetrics, metricId %in% ()) # store translations to metric names in database
   # need to replace metric name with a model specific metric abbreviation
-  if (def_models$translationId==13){# NV MMI metrics
+  if (def_models$translationId==13){
+
+    # NV MMI metrics
     MMI_metrics = subset(bugsMetrics, metricId %in% c(71,#insect richness
                                                       73,# noninsect richness
                                                       47,#clinger richness
@@ -73,8 +75,30 @@ MMI_metrics_box<-function(boxId,translationId,fixedCount){
   bugnew$PER_EPHEA=bugnew$EPHEA*100
   bugnew$PER_PLECA=bugnew$PLECA*100
   bugnew=bugnew[,c("sampleId","INSET","NONSET","CLINGER","SHDIVER","PER_CFA","PER_EPHEA","PER_PLECA")]
- }else if (def_models$translationId==13){#AREMP MMI metrics
+ }else if (def_models$translationId==23){
 
+   #AREMP MMI metrics
+   MMI_metrics = subset(bugsMetrics, metricId %in% c(47,#clinger richness
+                                                     362,#percent  Ephemeoptera
+                                                     61,#diptera richness
+                                                     33,#intolerant density
+                                                     109,# total density
+                                                     73,# noninsect richness
+                                                     48#long lived taxa richness
+                                                     ))
+   MMI_metrics$metricValue=as.numeric(MMI_metrics$metricValue)
+   MMI_metrics$metricModelName=ifelse(MMI_metrics$metricId==47,"CLING_rich",
+                                      ifelse(MMI_metrics$metricId==362,"EPT_RA",
+                                             ifelse(MMI_metrics$metricId==61,"DIPT_rich",
+                                                    ifelse(MMI_metrics$metricId==33,"INTOL_DEN",
+                                                           ifelse(MMI_metrics$metricId==109,"DEN",
+                                                                  ifelse(MMI_metrics$metricId==73,"NON_INSECT_rich",
+                                                                         ifelse(MMI_metrics$metricId==48,"LLT_rich",NA)
+                                                                         ))))))
+   bugnew = tidyr::pivot_wider(MMI_metrics,id_cols = "sampleId",names_from = "metricModelName",values_from = "metricValue")
+   bugnew$PER_EPT=bugnew$EPT_RA*100
+   bugnew$PER_INTOL=bugnew$INTOL_DEN/bugnew$DEN*100
+   bugnew=bugnew[,c("sampleId","CLING_rich","PER_EPT","DIPT_rich","PER_INTOL","NON_INSECT_rich","LLT_rich")]
   }else{
 
   }

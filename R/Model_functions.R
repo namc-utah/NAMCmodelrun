@@ -68,16 +68,16 @@ AREMP_MMI_model<-function(bugnew,prednew,CLING_rich.rf,DIPT_rich.rf,LLT_rich.rf,
     if(model$rsq[1500]>=0.1){
       metric_prd=predict(model,newdata=prednew)}
     if(model$rsq[1500]<0.1){
-      metric_prd=rep(0,times=dim(bugnew_raw)[1])}
+      metric_prd=rep(0,times=dim(bugnew)[1])}
     bugnew_prd=cbind(bugnew_prd,metric_prd)
   }
-  colnames(bugnew_prd)=colnames(bugnew_raw)
+  colnames(bugnew_prd)=colnames(bugnew)
 
-  bugnew_adj=bugnew_raw-bugnew_prd
-  bugnew_rs=metricMatrixRescale(metrics=bugnew_adj,ref_metrcs=ref_metrics_adj,mostdeg_metrics=mdeg_metrics_adj_cal)
-
-  MMI=rowSums(bugnew_rs)/6
-  return(MMI)
+  bugnew_adj=bugnew-bugnew_prd
+  bugnew_rs=metricMatrixRescale(metrics=bugnew_adj,ref_metrics=ref_metrics_adj,mostdeg_metrics=mdeg_metrics_adj_cal)
+  bugnew_rs=as.data.frame(bugnew_rs)
+  bugnew_rs$MMI=rowSums(bugnew_rs)/6
+  return(bugnew_rs)
 }
 
 

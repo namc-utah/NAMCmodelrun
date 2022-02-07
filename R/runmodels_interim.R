@@ -204,7 +204,7 @@ ModelApplicability = ModelApplicability(CalPredsModelApplicability,
                                         applicabilitypreds) # add to config file or add an R object with calpreds
 
 FinalResults=merge(OE,ModelApplicability,by="row.names")
-names(FinalResults)[1]<-"sampleId"
+
 
 
 
