@@ -79,7 +79,7 @@ MMI_metrics_box<-function(boxId,translationId,fixedCount){
 
    #AREMP MMI metrics
    MMI_metrics = subset(bugsMetrics, metricId %in% c(47,#clinger richness
-                                                     362,#percent  Ephemeoptera
+                                                     26,#percent  Ephemeoptera
                                                      61,#diptera richness
                                                      33,#intolerant density
                                                      109,# total density
@@ -88,7 +88,7 @@ MMI_metrics_box<-function(boxId,translationId,fixedCount){
                                                      ))
    MMI_metrics$metricValue=as.numeric(MMI_metrics$metricValue)
    MMI_metrics$metricModelName=ifelse(MMI_metrics$metricId==47,"CLING_rich",
-                                      ifelse(MMI_metrics$metricId==362,"EPT_RA",
+                                      ifelse(MMI_metrics$metricId==26,"EPT_DEN",
                                              ifelse(MMI_metrics$metricId==61,"DIPT_rich",
                                                     ifelse(MMI_metrics$metricId==33,"INTOL_DEN",
                                                            ifelse(MMI_metrics$metricId==109,"DEN",
@@ -96,7 +96,7 @@ MMI_metrics_box<-function(boxId,translationId,fixedCount){
                                                                          ifelse(MMI_metrics$metricId==48,"LLT_rich",NA)
                                                                          ))))))
    bugnew = tidyr::pivot_wider(MMI_metrics,id_cols = "sampleId",names_from = "metricModelName",values_from = "metricValue")
-   bugnew$PER_EPT=bugnew$EPT_RA*100
+   bugnew$PER_EPT=bugnew$EPT_DEN/bugnew$DEN*100
    bugnew$PER_INTOL=bugnew$INTOL_DEN/bugnew$DEN*100
    bugnew=bugnew[,c("sampleId","CLING_rich","PER_EPT","DIPT_rich","PER_INTOL","NON_INSECT_rich","LLT_rich")]
   }else{

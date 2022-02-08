@@ -259,7 +259,7 @@ FinalResults=dplyr::left_join(FinalResults,additionalbugmetrics,by="sampleId")
 if (def_models$modelTypeAbbreviation == "OE") {
   FinalResults=FinalResults[,c("sampleId","visitId","customerSiteCode","O","E","OoverE","ModelApplicability","sumSplitCount","InvasiveInvertSpecies")]
 }else if (def_models$modelTypeAbbreviation == "Hybrid"){
-  FinalResults=FinalResults[,c("sampleId","visitId","customerSiteCode","OoverE","MMI","CSCI","Count","ModelApplicability","sumSplitCount","InvasiveInvertSpecies")]
+  FinalResults=FinalResults[,c("sampleId","visitId","customerSiteCode","OoverE","MMI","CSCI","ModelApplicability","sumSplitCount","InvasiveInvertSpecies")]
 }else if (def_models$modelTypeAbbreviation == "MMI"){
  FinalResults=FinalResults[,c("sampleId","visitId","customerSiteCode","MMI","ModelApplicability","sumSplitCount","InvasiveInvertSpecies")]
 }else{
