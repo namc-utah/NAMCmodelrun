@@ -39,6 +39,10 @@ if (def_models$modelId == 12) {#need a way to distinguish this model from others
 
 }
 bugnew<-subset(bugnew,rownames(bugnew) %in% rownames(prednew))
+prednew<-subset(prednew,rownames(prednew) %in% rownames(bugnew))
+#reorder them the same just in case model functions dont already do this
+bugnew = bugnew[order(rownames(bugnew)),];
+prednew = prednew[order(rownames(prednew)),];
 
 # ---------------------------------------------------------------
 # load model specific R objects which include reference bug data and predictors RF model objects
