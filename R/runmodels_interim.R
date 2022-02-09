@@ -74,7 +74,7 @@ load(paste0("sysdata.rda/",def_models$abbreviation, ".Rdata"))
 # ---------------------------------------------------------------
 # models using latest version of van sickle function include: AREMP, UTDEQ15, Westwide, PIBO
 if (def_models$modelId %in% c(7, 2, 25, 26, 9)) {
-  modelResults <-
+  OE <-
     model.predict.RanFor.4.2(
       bugcal.pa,
       grps.final,
@@ -85,9 +85,9 @@ if (def_models$modelId %in% c(7, 2, 25, 26, 9)) {
       Pc = 0.5,
       Cal.OOB = FALSE
     )#....
-  OE<-modelResults$OE.scores
+  modelResults<-OE$OE.scores
 } else if (def_models$modelId %in% c(10, 11)) {# models using version 4.1 of van sickle code include: OR_WCCP, OR_MWCF
-  modelResults <-
+  OE <-
     model.predict.v4.1(bugcal.pa,
                        grps.final,
                        preds.final,
@@ -96,12 +96,12 @@ if (def_models$modelId %in% c(7, 2, 25, 26, 9)) {
                        prednew,
                        bugnew,
                        Pc = 0.5)# add elpsis...
-  OE<-modelResults$OE.scores
+  modelResults<-OE$OE.scores
 }else if (def_models$modelId %in% (13:23)) {# WY also uses version 4.1 of van sickle code but requires alkalinity model as a dependency
   ALK_LOG = setNames(as.data.frame(
     predict(ranfor.mod, prednew, type = "response")), c("ALK_LOG"))# need to log value
   prednew = cbind(prednew, ALK_LOG)
-  modelResults <-
+  OE <-
     model.predict.v4.1(bugcal.pa,
                        grps.final,
                        preds.final,
@@ -110,18 +110,18 @@ if (def_models$modelId %in% c(7, 2, 25, 26, 9)) {
                        prednew,
                        bugnew,
                        Pc = 0.5)
-  OE<-modelResults$OE.scores
+  modelResults<-OE$OE.scores
 }else if (def_models$modelId == 12) {# OR eastern region is a null model and no predictors are used
-  OE <- OR_NBR_model(bugnew)
+  modelResults <- OR_NBR_model(bugnew)
 
 }else if (def_models$modelId == 1) {# CSCI has its own package and function
     report <- CSCI::CSCI(bugs = CSCIbugs, stations = prednew)
-    OE = report$core
-    rownames(OE)=OE$SampleID
+    modelResults = report$core
+    rownames(modelResults)=modelResults$SampleID
 
      }else if (def_models$modelId == 8) {
   ## all MMIs will need their own function added here because there is a rf model for each metric
-  MMI <-
+  modelResults <-
     AREMP_MMI_model(
       bugnew,
       prednew,
@@ -141,7 +141,7 @@ if (def_models$modelId %in% c(7, 2, 25, 26, 9)) {
     predict(ranfor.mod, prednew, type = "response")
   ), c('PrdCond'))
   prednew = cbind(prednew, PrdCond)
-  MMI <-
+  modelResults <-
     NV_MMI_model(
       bugnew,
       prednew,
@@ -153,7 +153,7 @@ if (def_models$modelId %in% c(7, 2, 25, 26, 9)) {
       PER_PLECA.rf
     )
 }else if (def_models$modelId %in% c(27, 28, 29, 30)) {#conductivity, tp, tn,temperature
-  WQ = as.data.frame(predict(ranfor.mod, prednew, type = "response"))# make sure prednew has sampleIds as the rows
+  modelResults = as.data.frame(predict(ranfor.mod, prednew, type = "response"))# make sure prednew has sampleIds as the rows
 }else{
 
 }
@@ -207,7 +207,7 @@ ModelApplicability = ModelApplicability(CalPredsModelApplicability,
                                         modelId = modelId,
                                         applicabilitypreds) # add to config file or add an R object with calpreds
 
-FinalResults=merge(OE,ModelApplicability,by="row.names")
+finalResults=merge(modelResults,ModelApplicability,by="row.names")
 
 
 
@@ -223,7 +223,7 @@ bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
 )
 sumrarefiedOTUTaxa = bugsOTU  %>%
   dplyr::group_by(sampleId) %>%
-  dplyr::summarize(sumSplitCount = sum(splitCount))
+  dplyr::summarize(fixedCount = sum(splitCount))
 
 
 ###### get invasives #####
@@ -253,16 +253,76 @@ additionalbugmetrics[is.na(additionalbugmetrics)]<-"Absent"
 # join all together and write out final file
 # ---------------------------------------------------------------
 
-FinalResults=dplyr::left_join(FinalResults,additionalbugmetrics,by="sampleId")
+finalResults=dplyr::left_join(finalResults,additionalbugmetrics,by="sampleId")
 
 # subset only the columns we need
 if (def_models$modelTypeAbbreviation == "OE") {
-  FinalResults=FinalResults[,c("sampleId","visitId","customerSiteCode","O","E","OoverE","ModelApplicability","sumSplitCount","InvasiveInvertSpecies")]
+  finalResults=finalResults[,c("sampleId","visitId","customerSiteCode","O","E","OoverE","ModelApplicability","fixedCount","InvasiveInvertSpecies")]
 }else if (def_models$modelTypeAbbreviation == "Hybrid"){
-  FinalResults=FinalResults[,c("sampleId","visitId","customerSiteCode","OoverE","MMI","CSCI","ModelApplicability","sumSplitCount","InvasiveInvertSpecies")]
+  finalResults=finalResults[,c("sampleId","visitId","customerSiteCode","OoverE","MMI","CSCI","ModelApplicability","fixedCount","InvasiveInvertSpecies")]
 }else if (def_models$modelTypeAbbreviation == "MMI"){
- FinalResults=FinalResults[,c("sampleId","visitId","customerSiteCode","MMI","ModelApplicability","sumSplitCount","InvasiveInvertSpecies")]
+ finalResults=finalResults[,c("sampleId","visitId","customerSiteCode","MMI","ModelApplicability","fixedCount","InvasiveInvertSpecies")]
 }else{
 }
 
-write.csv(FinalResults,paste0("FinalResults_",def_models$abbreviation,"_",Sys.Date(),".csv"),row.names = FALSE)
+write.csv(finalResults,paste0("FinalResults_",def_models$abbreviation,"_",Sys.Date(),".csv"),row.names = FALSE)
+
+
+
+
+  # ---------------------------------------------------------------
+  # Save model results
+  # ---------------------------------------------------------------
+for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to the notes field in some easy fashion???
+  #has permission to save then spit out result to console
+  # pass Nas for anything not used
+  tryCatch({
+    if (def_models$modelTypeAbbreviation == "OE") {
+      NAMCr::save(
+        api_endpoint = "setModelResult",
+        sampleId = finalResults$sampleId[i],
+        modelId = def_model_results$modelId[1],
+        oResult = finalResults$O[i],
+        eResult = finalResults$E[i],
+        modelResult = finalResults$OoverE[i] ,
+        fixedCount = finalResults$fixedCount[i],
+        modelApplicability = finalResults$ModelApplicability[i],
+        notes=finalResults$InvasiveInvertSpecies[i]
+      )
+    }else if (def_models$modelTypeAbbreviation == "Hybrid") {
+      NAMCr::save(
+        api_endpoint = "setModelResult",
+        sampleId = finalResults$sampleId[i],
+        modelId = def_model_results$modelId[1],
+        modelResult = finalResults$CSCI[i],
+        fixedCount = finalResults$fixedCount[i],
+        modelApplicability = finalResults$ModelApplicability[i],
+        notes=finalResults$InvasiveInvertSpecies[i]
+      )
+    }else if (def_models$modelTypeAbbreviation == "MMI") {
+      NAMCr::save(
+        api_endpoint = "setModelResult",
+        sampleId = finalResults$sampleId[i],
+        modelId = def_model_results$modelId[1],
+        modelResult = finalResults$MMI[i],
+        fixedCount = finalResults$fixedCount[i],
+        modelApplicability = finalResults$ModelApplicability[i],
+        notes=finalResults$InvasiveInvertSpecies[i]
+      )
+    }else if (def_models$modelTypeAbbreviation == "WQ") {
+      NAMCr::save(
+        api_endpoint = "setModelResult",
+        sampleId = finalResults$sampleId[i],
+        modelId = def_model_results$modelId[1],
+        modelResult = finalResults$WQ[i],###need to fix....
+        modelApplicability = finalResults$ModelApplicability[i]
+      )
+    }else{
+    }
+
+  }, error =function(e){
+    cat(paste0("\n\tSAMPLE ERROR: ",finalResults$sampleId[i],"\n"))
+    str(e,indent.str = "   "); cat("\n")
+  })
+}
+

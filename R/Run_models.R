@@ -13,6 +13,15 @@
 #' #' @examples
 #' run_models = function(boxIds, modelIds ) {
   # tryCatch({
+
+#   # ---------------------------------------------------------------
+# get a list of samples in a box or project
+# ---------------------------------------------------------------
+if (exists("boxId")){
+  def_samples=NAMCr::query("samples",boxId=boxId)
+}else {def_samples=NAMCr::query("samples",projectId=projectId)
+  }
+
   #   # ---------------------------------------------------------------
   # get a list of samples if the needed model has already been run for the sample
   # ---------------------------------------------------------------
@@ -20,23 +29,12 @@
   # getting a list of samples and associated models that do not already have results in the table
   # has site location changed or predictor values changed if not dont rerun by excluding status=current
   # not ready status if predictors are not there
-  def_model_results = NAMC::query(
+  def_model_results = NAMCr::query(
     api_endpoint = "modelResults",
-    include = c(
-      "modelId",
-      "status",
-      "modelVersion",
-      "abbreviation",
-      #"O",
-      #"E",
-      "modelResult",
-      #"modelApplicability"
-      #invasive species
-    ),
-    boxIds = boxIds,
-    modelIds = modelIds
+    sampleIds=def_samples$sampleId
   )
-  def_models_results = def_models_results[def_models_results$status !="current",]
+  def_model_results=subset(def_model_results,modelId==modelID & is.na(modelResult)==TRUE)
+  #def_models_results = def_models_results[def_models_results$status !="current",]
 
 
   # ---------------------------------------------------------------
@@ -49,7 +47,7 @@
                 "abbreviation",
                 "translationId",
                 "fixedCount"),
-    modelId = def_model_results$modelId
+    modelId = def_model_results$modelId[1]
   )
 
   # ---------------------------------------------------------------
@@ -59,18 +57,21 @@
   # getting predictor values associated with those samples and models coming out of the def_models query above
   def_predictors = NAMCr::query(
     api_endpoint = "samplePredictorValues",
-    include = c("predictorId",
+    include = c("sampleId",
+                "predictorId",
                 "status",
                 "abbreviation",
-                "predictorValue"),
-    sampleId = def_models_results$sampleId,
-    modelId = def_models$modelId
+                "predictorValue"
+                ),
+    sampleIds = def_model_results$sampleId,
+    #modelId = def_models$modelId
   )
-  if (any(def_predictors$status == !"current")) {
-    print(paste0("predictors need calculated sampleID: ", sampleId))
+  if (any(def_predictors$status!="current")) {
+    print(paste0("predictors need calculated"))
   } else{
     # get predictors into wide format needed for model functions
     prednew = tidyr::pivot_wider(def_predictors,
+                                 id_cols="sampleId",
                                  names_from = "abbreviation",
                                  values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
     prednew=as.data.frame(prednew)
@@ -83,29 +84,35 @@
     # if modelType= bug OE get OTU taxa matrix
     if (def_models$modelId == 12) {
       bugnew = OR_NBR_bug(
-        sampleId = def_models_results$sampleId,
+        sampleIds = def_model_results$sampleId,
         translationId = def_models$translationId,
         fixedCount = def_models$fixedCount
       )
       #need a way to distinguish this model from others.. call NULL OE?
     } else if (def_models$modelTypeAbbreviation == "OE") {
       bugnew = OE_bug_matrix(
-        sampleId = def_models_results$sampleId,
+        sampleIds = def_model_results$sampleId,
         translationId = def_models$translationId,
         fixedCount = def_models$fixedCount
       )
      # CO model must be written out as an excel file using a separate bank of code and function
     } else if (def_models$modelId %in% c(4, 5, 6)) {
-      CObugs=CO_bug_export_box(boxId = boxId)# change boxid to list of sampleIds
+      CObugs=CO_bug_export_box(sampleIds=def_model_results$sampleId)# change boxid to list of sampleIds
       # CSCI requires just the raw taxa list translated for misspelling
     } else if (def_models$modelId %in% c(1)) {
-      bugnew = CSCI_bug(sampleId = def_models_results$sampleId)
+      bugnew = CSCI_bug(sampleIds = def_model_results$sampleId)
     } else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
-      bugnew = MMI_metrics(sampleId = def_models_results$sampleId, translationId=def_models$translationId, fixedCount = def_models$fixedCount)
+      bugnew = MMI_metrics(sampleIds = def_model_results$sampleId, translationId=def_models$translationId, fixedCount = def_models$fixedCount)
  }else {
 
     }
     bugnew<-subset(bugnew,rownames(bugnew) %in% rownames(prednew))
+    prednew<-subset(prednew,rownames(prednew) %in% rownames(bugnew))
+    #reorder them the same just in case model functions dont already do this
+    bugnew = bugnew[order(rownames(bugnew)),];
+    prednew = prednew[order(rownames(prednew)),];
+
+
 
     # ---------------------------------------------------------------
     # load model specific R objects which include reference bug data and predictors RF model objects
@@ -145,6 +152,7 @@
           Pc = 0.5,
           Cal.OOB = FALSE
         )#....
+      modelResults<-OE$OE.scores
     } else if (def_models$modelId %in% c(10, 11)) {# models using John VanSickles RIVPACS discriminant function code: OR_WCCP, OR_MWCF
       OE <-
         model.predict.v4.1(bugcal.pa,
@@ -155,6 +163,7 @@
                            prednew,
                            bugnew,
                            Pc = 0.5)# add elpsis...
+      modelResults<-OE$OE.scores
     }else if (def_models$modelId %in% (13:23)) {# WY also uses John vansickles discriminant function code but requires alkalinity model as a dependency
       ALK_LOG = setNames(as.data.frame(
         predict(ranfor.mod, prednew, type = "response")
@@ -169,16 +178,17 @@
                            prednew,
                            bugnew,
                            Pc = 0.5)
+      modelResults<-OE$OE.scores
     }else if (def_models$modelId == 12) {# OR eastern region is a null model and no predictors are used
-      OE <- OR_NBR_model(bugnew)
+      modelResults <- OR_NBR_model(bugnew)
 
     }else if (def_models$modelId == 1) {# CSCI has its own package and function
       report <- CSCI::CSCI(bugs = bugnew, stations = prednew)
-      OE = report$core
-      rownames(OE)=OE$SampleID
+      modelResults = report$core
+      rownames(modelResults)=modelResults$SampleID
     }else if (def_models$modelId == 8) {
     # all MMIs will need their own function added here because there is a rf model for each metric
-      MMI <-
+      modelResults <-
         AREMP_MMI_model(
           bugnew,
           prednew,
@@ -198,7 +208,7 @@
         predict(ranfor.mod, prednew, type = "response")
       ), c('PrdCond'))
       prednew = cbind(prednew, PrdCond)
-      MMI <-
+      modelResults <-
         NV_MMI_model(
           bugnew,
           prednew,
@@ -210,7 +220,7 @@
           PER_PLECA.rf
         )
     }else if (def_models$modelId %in% c(27, 28, 29, 30)) {#conductivity, tp, tn,temperature
-      WQ = as.data.frame(predict(ranfor.mod, prednew, type = "response"))# make sure prednew has sampleIds as the rows
+      modelResults = as.data.frame(predict(ranfor.mod, prednew, type = "response"))# make sure prednew has sampleIds as the rows
     }else{
 
     }
@@ -220,54 +230,121 @@
     # ---------------------------------------------------------------
     # get all predictor values needed for a box or project # note this either needs a loop written over it or a different API end point
     applicabilitypreds = NAMCr::query("samplePredictorValues",
-                               modelId = 36,
-                               sampleId = sampleId) #need list of samples in database with values
-
+                                include = c(
+                                  "sampleId",
+                                  "predictorId",
+                                  "status",
+                                  "abbreviation",
+                                  "predictorValue"
+                                  ),
+                                modelId = 36,
+                                sampleIds = def_model_results$sampleId
+                                ) #need list of samples in database with values
+    applicabilitypreds = tidyr::pivot_wider(applicabilitypreds,
+                                 id_cols="sampleId",
+                                 names_from = "abbreviation",
+                                 values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
+    applicabilitypreds=as.data.frame(applicabilitypreds)
     # run model applicability function
     ModelApplicability = ModelApplicability(CalPredsModelApplicability,
                                             modelId = def_models$modelId,
                                             applicabilitypreds) # add to config file or add an R object with calpreds
 
+    finalResults=merge(modelResults,ModelApplicability,by="row.names")
+
+    # ---------------------------------------------------------------
+    # Get additional bug metrics (fixed count and invasives)
+    # ---------------------------------------------------------------
+    ##### get fixed count column #####
+    bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
+                           translationId = def_models$translationId,
+                           fixedCount = def_models$fixedCount,
+                           sampleIds=def_model_results$sampleId
+    )
+    sumrarefiedOTUTaxa = bugsOTU  %>%
+      dplyr::group_by(sampleId) %>%
+      dplyr::summarize(fixedCount = sum(splitCount))
+
+
+    ###### get invasives #####
+    # get raw bug data
+    bugRaw = NAMCr::query(
+      "sampleTaxa",
+      sampleIds=def_model_results$sampleId
+    )
+    #subset taxa in samples to only invasives
+    bugraw = subset(bugRaw,taxonomyId %in% c(1330,1331,2633, 2671,4933,4934,4935,4936,4937,4938,4939,4940,4941,4942,1019,1994,5096,1515,1518,1604,2000,4074,1369,2013,1579))
+    #create list of invasives present at a site
+    invasives<-bugraw %>% dplyr::group_by(sampleId) %>% dplyr::summarize(InvasiveInvertSpecies=paste0(list(unique(scientificName)),collapse=''))
+    # remove list formatting
+    invasives$InvasiveInvertSpecies=gsub("^c()","",invasives$InvasiveInvertSpecies)
+    invasives$InvasiveInvertSpecies=gsub("\"","",invasives$InvasiveInvertSpecies)
+    invasives$InvasiveInvertSpecies=gsub("\\(","",invasives$InvasiveInvertSpecies)
+    invasives$InvasiveInvertSpecies=gsub("\\)","",invasives$InvasiveInvertSpecies)
+    # join to list of all samples with fixed counts
+    additionalbugmetrics=dplyr::left_join(sumrarefiedOTUTaxa,invasives, by="sampleId")
+    # if no invasives were present set to absent
+    additionalbugmetrics[is.na(additionalbugmetrics)]<-"Absent"
+
+    finalResults=dplyr::left_join(finalResults,additionalbugmetrics,by="sampleId")
+
 
     # ---------------------------------------------------------------
     # Save model results
     # ---------------------------------------------------------------
+for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to the notes field in some easy fashion???
     #has permission to save then spit out result to console
     # pass Nas for anything not used
+  tryCatch({
     if (def_models$modelTypeAbbreviation == "OE") {
       NAMCr::save(
-        api_endpoint = "newModelResult",
-        sampleId = def_samples$sampleId,
-        modelId = def_model_results$modelId,
-        O = OE$O,
-        E = OE$E,
-        model_result = OE$OoverE ,
-        modelApplicability = ModelApplicability
+        api_endpoint = "setModelResult",
+        sampleId = finalResults$sampleId[i],
+        modelId = def_model_results$modelId[1],
+        oResult = finalResults$O[i],
+        eResult = finalResults$E[i],
+        modelResult = finalResults$OoverE[i] ,
+        fixedCount = finalResults$fixedCount[i],
+        modelApplicability = finalResults$ModelApplicability[i],
+        notes=finalResults$InvasiveInvertSpecies[i]
       )
-    }
-
-    else if (def_models$modelTypeAbbreviation == "MMI") {
+    }else if (def_models$modelTypeAbbreviation == "Hybrid") {
       NAMCr::save(
-        api_endpoint = "newModelResult",
-        sampleId = def_samples$sampleId,
-        modelId = def_model_results$modelId,
-        model_result = MMI ,
-        modelApplicability = ModelApplicability
+        api_endpoint = "setModelResult",
+        sampleId = finalResults$sampleId[i],
+        modelId = def_model_results$modelId[1],
+        modelResult = finalResults$CSCI[i],
+        fixedCount = finalResults$fixedCount[i],
+        modelApplicability = finalResults$ModelApplicability[i],
+        notes=finalResults$InvasiveInvertSpecies[i]
       )
-    }
-
-    else if (def_models$modelTypeAbbreviation == "WQ") {
+    }else if (def_models$modelTypeAbbreviation == "MMI") {
       NAMCr::save(
-        api_endpoint = "newModelResult",
-        sampleId = def_samples$sampleId,
-        modelId = def_model_results$modelId,
-        model_result = WQ ,
-        modelApplicability = ModelApplicability
+        api_endpoint = "setModelResult",
+        sampleId = finalResults$sampleId[i],
+        modelId = def_model_results$modelId[1],
+        modelResult = finalResults$MMI[i],
+        fixedCount = finalResults$fixedCount[i],
+        modelApplicability = finalResults$ModelApplicability[i],
+        notes=finalResults$InvasiveInvertSpecies[i]
       )
+    }else if (def_models$modelTypeAbbreviation == "WQ") {
+      NAMCr::save(
+        api_endpoint = "setModelResult",
+        sampleId = finalResults$sampleId[i],
+        modelId = def_model_results$modelId[1],
+        modelResult = finalResults$WQ[i],###need to fix....
+        modelApplicability = finalResults$ModelApplicability[i]
+      )
+    }else{
     }
-    else{
 
-    }
+  }, error =function(e){
+    cat(paste0("\n\tSAMPLE ERROR: ",finalResults$sampleId[i],"\n"))
+    str(e,indent.str = "   "); cat("\n")
+  })
+}
+
   }
 #}
 
