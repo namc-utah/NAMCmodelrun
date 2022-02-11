@@ -256,6 +256,7 @@ additionalbugmetrics[is.na(additionalbugmetrics)]<-"Absent"
 finalResults=dplyr::left_join(finalResults,additionalbugmetrics,by="sampleId")
 
 # subset only the columns we need
+#mannually add modelabbreviation after read out and before sending to Logan
 if (def_models$modelTypeAbbreviation == "OE") {
   finalResults=finalResults[,c("sampleId","visitId","customerSiteCode","O","E","OoverE","ModelApplicability","fixedCount","InvasiveInvertSpecies")]
 }else if (def_models$modelTypeAbbreviation == "Hybrid"){

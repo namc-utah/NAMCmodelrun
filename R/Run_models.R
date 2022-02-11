@@ -63,9 +63,10 @@ if (exists("boxId")){
                 "abbreviation",
                 "predictorValue"
                 ),
-    sampleIds = def_model_results$sampleId,
-    #modelId = def_models$modelId
-  )
+    sampleIds = def_model_results$sampleId)
+  modelpred=NAMCr::query("predictors",modelId=modelID)
+  def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
+
   if (any(def_predictors$status!="current")) {
     print(paste0("predictors need calculated"))
   } else{
