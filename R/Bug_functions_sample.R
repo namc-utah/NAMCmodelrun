@@ -57,7 +57,7 @@ MMI_metrics<-function(sampleIds,translationId,fixedCount){
                                                       73,# noninsect richness
                                                       47,#clinger richness
                                                       22, #shannons diversity
-                                                      42, # collector filterer density
+                                                      42, # collector filterer density, 438 relative abundance
                                                       109,# total density
                                                       362,#percent  Ephemeoptera
                                                       363))# percent plecoptera
@@ -81,9 +81,9 @@ MMI_metrics<-function(sampleIds,translationId,fixedCount){
 
     #AREMP MMI metrics
     MMI_metrics = subset(bugsMetrics, metricId %in% c(47,#clinger richness
-                                                      26,#percent  Ephemeoptera
+                                                      26,#EPT density - still missing
                                                       61,#diptera richness
-                                                      33,#intolerant density
+                                                      33,#intolerant density, 452 relative abundance
                                                       109,# total density
                                                       73,# noninsect richness
                                                       48#long lived taxa richness

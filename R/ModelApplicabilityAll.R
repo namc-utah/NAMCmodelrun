@@ -78,27 +78,27 @@ return(final)
 }
 
 #
-# ##the following section creates visuals and is not needed for applicability determination
-# ## this does not need to be run every time
-# ####double check the results visually
-# library("factoextra")
-# outlier.preds.ref.std2=as.data.frame(outlier.preds.ref.std)
-# outlier.preds.test.std2=as.data.frame(outlier.preds.test.std)
-# outlier.preds.ref.std2$Status="Ref"
-# outlier.preds.test.std2$Status=out.flag90
-# modelappinput=rbind(outlier.preds.test.std2,outlier.preds.ref.std2)
-# modelappinputactive=modelappinput[,c(1:4)]
-# res.pca <- prcomp(modelappinputactive, scale=FALSE)
-# fviz_eig(res.pca) #scree plot
-# groups=as.factor(modelappinput$Status)#create group variable to visualize formal test above
-# #create PCA plot in R with 90% confidence ellipses around each group
-# png(filename="OR_MWCF_PCA.png")
-# fviz_pca_biplot(res.pca, repel = TRUE,
-#                 col.var = "#696969", # Variables color
-#                 col.ind = groups,
-#                 geom=c("point"),
-#                 addEllipses = TRUE, # Concentration ellipses
-#                 ellipse.type = "norm",
-#                 ellipse.level=0.90
-# )
-# dev.off()
+##the following section creates visuals and is not needed for applicability determination
+## this does not need to be run every time
+####double check the results visually
+#library("factoextra")
+outlier.preds.ref.std2=as.data.frame(outlier.preds.ref.std)
+outlier.preds.test.std2=as.data.frame(outlier.preds.test.std)
+outlier.preds.ref.std2$Status="Ref"
+outlier.preds.test.std2$Status=out.flag90
+modelappinput=rbind(outlier.preds.test.std2,outlier.preds.ref.std2)
+modelappinputactive=modelappinput[,c(1:4)]
+res.pca <- prcomp(modelappinputactive, scale=FALSE)
+fviz_eig(res.pca) #scree plot
+groups=as.factor(modelappinput$Status)#create group variable to visualize formal test above
+#create PCA plot in R with 90% confidence ellipses around each group
+png(filename=paste0("model_",modelId,"_PCA_",Sys.Date(),".png"))
+fviz_pca_biplot(res.pca, repel = TRUE,
+                col.var = "#696969", # Variables color
+                col.ind = groups,
+                geom=c("point"),
+                addEllipses = TRUE, # Concentration ellipses
+                ellipse.type = "norm",
+                ellipse.level=0.90
+)
+dev.off()

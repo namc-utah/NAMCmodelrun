@@ -140,10 +140,13 @@ if (exists("boxId")){
     # ---------------------------------------------------------------
     # Run models
     # ---------------------------------------------------------------
+
+    # ------------------------------
+    # OE models
+    # ------------------------------
     # models using john vansickles RIVPACS random forest code : AREMP, UTDEQ15, Westwide, PIBO
     if (def_models$modelId %in% c(7, 2, 25, 26,9)) {
-      OE <-
-        model.predict.RanFor.4.2(
+      OE <-model.predict.RanFor.4.2(
           bugcal.pa,
           grps.final,
           preds.final,
@@ -154,9 +157,10 @@ if (exists("boxId")){
           Cal.OOB = FALSE
         )#....
       modelResults<-OE$OE.scores
-    } else if (def_models$modelId %in% c(10, 11)) {# models using John VanSickles RIVPACS discriminant function code: OR_WCCP, OR_MWCF
-      OE <-
-        model.predict.v4.1(bugcal.pa,
+
+    # models using John VanSickles RIVPACS discriminant function code: OR_WCCP, OR_MWCF
+    } else if (def_models$modelId %in% c(10, 11)) {
+      OE <-model.predict.v4.1(bugcal.pa,
                            grps.final,
                            preds.final,
                            grpmns,
@@ -165,13 +169,14 @@ if (exists("boxId")){
                            bugnew,
                            Pc = 0.5)# add elpsis...
       modelResults<-OE$OE.scores
-    }else if (def_models$modelId %in% (13:23)) {# WY also uses John vansickles discriminant function code but requires alkalinity model as a dependency
+
+    # WY also uses John vansickles discriminant function code but requires alkalinity model as a dependency
+    } else if (def_models$modelId %in% (13:23)) {
       ALK_LOG = setNames(as.data.frame(
-        predict(ranfor.mod, prednew, type = "response")
-      ), c("ALK_LOG"))# need to log value
-      prednew = cbind(prednew, ALK_LOG)
-      OE <-
-        model.predict.v4.1(bugcal.pa,
+        log10(predict(ranfor.mod, prednew, type = "response"))
+      ), c("ALK_LOG"))
+      prednew = cbind(prednew, ALK_LOG) ## need to subset to only model predictors or maybe it doesnt matter??
+      OE <-model.predict.v4.1(bugcal.pa,
                            grps.final,
                            preds.final,
                            grpmns,
@@ -180,15 +185,22 @@ if (exists("boxId")){
                            bugnew,
                            Pc = 0.5)
       modelResults<-OE$OE.scores
-    }else if (def_models$modelId == 12) {# OR eastern region is a null model and no predictors are used
+
+    # OR eastern region is a null model and no predictors are used
+    } else if (def_models$modelId == 12) {
       modelResults <- OR_NBR_model(bugnew)
 
-    }else if (def_models$modelId == 1) {# CSCI has its own package and function
+    # CSCI has its own package and function
+    } else if (def_models$modelId == 1) {
       report <- CSCI::CSCI(bugs = bugnew, stations = prednew)
       modelResults = report$core
       rownames(modelResults)=modelResults$SampleID
-    }else if (def_models$modelId == 8) {
-    # all MMIs will need their own function added here because there is a rf model for each metric
+
+      # ------------------------------
+      # MMI models
+      # ------------------------------
+      # all MMIs will need their own function added here because there is a rf model for each metric
+    } else if (def_models$modelId == 8) {# AREMP MMI
       modelResults <-
         AREMP_MMI_model(
           bugnew,
@@ -203,10 +215,10 @@ if (exists("boxId")){
           mdeg_metrics_adj_cal,
           ref_metrics_adj
         )
-    }  else if (def_models$modelId == 3) {# all MMIs will need their own function added here because there is a rf model for each metric
+    } else if (def_models$modelId == 3) {# NV MMI
     # need to call conductivity model first before calling the NV model because predicted conductivity is a predictor for the NV model
         PrdCond = setNames(as.data.frame(
-        predict(ranfor.mod, prednew, type = "response")
+        predict(ranfor.mod, prednew, type = "response")# need to subset to only model predictors or maybe it doesnt matter??
       ), c('PrdCond'))
       prednew = cbind(prednew, PrdCond)
       modelResults <-
@@ -220,7 +232,12 @@ if (exists("boxId")){
           PER_EPHEA.rf,
           PER_PLECA.rf
         )
-    }else if (def_models$modelId %in% c(27, 28, 29, 30)) {#conductivity, tp, tn,temperature
+
+      # ------------------------------
+      # WQ models
+      # ------------------------------
+      #conductivity, tp, tn,temperature
+    }else if (def_models$modelId %in% c(27, 28, 29, 30)) {
       modelResults = as.data.frame(predict(ranfor.mod, prednew, type = "response"))# make sure prednew has sampleIds as the rows
     }else{
 
@@ -238,9 +255,9 @@ if (exists("boxId")){
                                   "abbreviation",
                                   "predictorValue"
                                   ),
-                                modelId = 36,
                                 sampleIds = def_model_results$sampleId
                                 ) #need list of samples in database with values
+    applicabilitypreds = subset(applicabilitypreds, abbreviation %in% c('ElevCat','Tmean8110Ws','WsAreaSqKm','Precip8110Ws'))
     applicabilitypreds = tidyr::pivot_wider(applicabilitypreds,
                                  id_cols="sampleId",
                                  names_from = "abbreviation",
@@ -350,20 +367,6 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
 #}
 
 
-#   error = function(e) {
-#     cat(paste0("\n\tPREDICTOR ERROR: ", predictor$abbreviation, "\n"))
-#     str(e, indent.str = "   ")
-#     cat("\n")
-#   })
-# })
-# },
-# error = function(e) {
-#   cat(paste0("\n\tSAMPLE ERROR: ", sampleId, "\n"))
-#   str(e, indent.str = "   ")
-#   cat("\n")
-# })
-# }
-
 
 
 # #query the model result table to get conditions automatically applied
@@ -371,65 +374,3 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
 # modelResults=query("modelResults", sampleIds=150807)
 #
 
-#' ###### function to run all samples in the database at once. API endpoint still needs developed
-#' #' run all models for all samples at once
-#' #'
-#' #' @return none
-#' #' @export
-#' #'
-#' #' @examples
-#' process_models = function() {
-#'   logger = Logger$new(
-#'     logPath = "./",
-#'     fileName = "",
-#'     enabled = TRUE,
-#'     consoleOutput = TRUE,
-#'     appendDate = TRUE
-#'   )
-#'   logger$startLog()
-#'
-#'
-#'   def_samples = NAMCr::query(api_endpoint = "samples2process",#need separate end point for models
-#'                              include = c("sampleId", "modelId"))
-#'   for (sample in def_samples) {
-#'     process_sample_models(sample$sampleId, sample$modelId)
-#'   }
-#'   logger$stopLog()
-#' }
-#'
-#'
-#' ####### run a model for a box
-#' #' model results for each box
-#' #'
-#' #' @param boxId
-#' #' @param modelId
-#' #' @return none
-#' #' @export
-#' #'
-#' #' @examples
-#' process_box_models = function(boxId,modelId) {
-#'   logger = Logger$new(
-#'     logPath = "/",
-#'     fileName = "",
-#'     enabled = TRUE,
-#'     consoleOutput = TRUE,
-#'     appendDate = TRUE
-#'   )
-#'   logger$startLog()
-#'
-#'   def_boxes = NAMCr::query(
-#'     api_endpoint = "samples",
-#'     include = c("sampleId"),
-#'     boxIds = boxId
-#'   )
-#'
-#'   # for (i in seq_len(nrow(def_boxes))) {
-#'   #   process_sample_predictors(def_boxes$sampleId[i])
-#'   # }
-#'
-#'   by(def_boxes, seqlen(nrow(def_boxes)), function(sample) {
-#'     process_sample_models(sample$sampleId,modelId)
-#'   })
-#'
-#'   logger$stopLog()
-#' }
