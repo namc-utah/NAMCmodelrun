@@ -98,7 +98,16 @@ if (exists("boxId")){
       )
      # CO model must be written out as an excel file using a separate bank of code and function
     } else if (def_models$modelId %in% c(4, 5, 6)) {
-      CObugs=CO_bug_export_box(sampleIds=def_model_results$sampleId)# change boxid to list of sampleIds
+      #write get bugs from database, write out as a csv and save as CObugs object
+      CObugs=CO_bug_export(sampleIds=def_model_results$sampleId)
+      #write out predictors as a csv
+      write.csv(prednew,file = paste0("COpredictors","boxId_",CObugs$Project[1],"_",Sys.Date(),".csv"),row.names=FALSE)
+      cat(paste("csv with COpredictors has been written out to your current working directory.",
+                "Convert this csv to excel 2003 and import into CO EDAS access database to compute the CSCI score.",
+                "Follow instructions in this pdf Box\\NAMC\\OE_Modeling\\NAMC_Supported_OEmodels\\CO\\Documentation\\EDAS2017\\Tutorial Guide to EDAS_Version 1.7.pdf",
+                "to import bug and habitat data, harmonize taxa list, rarefy and compute MMI",
+                "then read resulting excel file back into R to save results in the database.", sep="\n"))
+
       # CSCI requires just the raw taxa list translated for misspelling
     } else if (def_models$modelId %in% c(1)) {
       bugnew = CSCI_bug(sampleIds = def_model_results$sampleId)
@@ -369,8 +378,8 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
 
 
 
-# #query the model result table to get conditions automatically applied
-# modelConditions=query("modelConditions",modelId=3)
-# modelResults=query("modelResults", sampleIds=150807)
-#
+# query the model result table to get conditions automatically applied
+Report=query("modelResults", sampleIds=finalResults$sampleId)
 
+#use the following to see what thresholds were applied
+modelConditions=NAMCr::query("modelConditions",modelId=modelID)
