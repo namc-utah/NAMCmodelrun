@@ -95,7 +95,7 @@ MMI_metrics<-function(sampleIds,translationId,fixedCount){
                                                                    )))))
     bugnew = tidyr::pivot_wider(MMI_metrics,id_cols = "sampleId",names_from = "metricModelName",values_from = "metricValue")
     bugnew$PER_EPT=bugnew$EPT*100
-    bugnew$PER_INTOL=bugnew$INTOL_DEN*100
+    bugnew$PER_INTOL=bugnew$INTOL*100
     bugnew=bugnew[,c("sampleId","CLING_rich","PER_EPT","DIPT_rich","PER_INTOL","NON_INSECT_rich","LLT_rich")]
   }else{
 

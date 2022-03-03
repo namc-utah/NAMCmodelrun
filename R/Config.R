@@ -27,7 +27,7 @@ projects=NAMCr::query("projects")
 #projectId=
 models=NAMCr::query("models")
 modelId=8
-modelId=3
+modelID=3
 #prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/Wyoming/InputsAndResults/CurrentRun/WY_Habitat.csv", row.names="SampleID")
 #prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/West_Wide_Model/NewWestWIde_NONMidgeModel/InputsAndResults/AIM_NM_MT_2019/WW18_Preds.csv", row.names="SampleID")
 #prednew=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEmodels/West_Wide_Model/NewWestWIde_NONMidgeModel/InputsAndResults/CurrentRun/WW18_Preds.csv", row.names="SampleID")
