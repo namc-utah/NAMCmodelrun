@@ -42,11 +42,6 @@ SQLite_file_path="C:/NAMC_S3/StreamCat/StreamCat2022.sqlite"
 CalPredsModelApplicability=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEModels/Model Applicability/CalPredsModelApplicability.csv")
 
 
-
-
-#29-37
-#254-end
-
 source("R/Bug_functions_box.R")
 source("R/Bug_functions_sample.R")
 source("R/Model_functions.R")
