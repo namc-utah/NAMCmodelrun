@@ -7,7 +7,7 @@ ModelApplicability<- function(CalPredsModelApplicability, modelId, prednew){
 #CalPredsModelApplicability=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEModels/Model Applicability/CalPredsModelApplicability.csv")
 
 ##subset calibration set to only include sites used in the appropriate model build
-CalPreds <- subset(CalPredsModelApplicability,modelID==modelId)
+CalPreds <- subset(CalPredsModelApplicability,modelID=modelId)
 logSQ_KM=log(CalPreds$WsAreaSqKm)
 ElevCat_standardized=CalPreds$ElevCat
 logPrecip8110Ws=log(CalPreds$Precip8110Ws)
@@ -71,11 +71,6 @@ for (n in 1:length(sample.list)){
   out.flag90=append(out.flag90, flag90)
 }
 
-final=cbind(out.flag90,applicabilitypreds,outlier.preds.test.std)
-final$ModelApplicability=ifelse(out.flag90=="Yes","Fail","Pass")
-ModelApplicability=ifelse(out.flag90=="Yes","Fail","Pass")
-return(final)
-}
 
 #
 ##the following section creates visuals and is not needed for applicability determination
@@ -102,3 +97,14 @@ fviz_pca_biplot(res.pca, repel = TRUE,
                 ellipse.level=0.90
 )
 dev.off()
+
+
+
+
+
+final=cbind(out.flag90,applicabilitypreds,outlier.preds.test.std)
+final$ModelApplicability=ifelse(out.flag90=="Yes","false","true")
+ModelApplicability=ifelse(out.flag90=="Yes","false","true")
+return(final)
+}
+

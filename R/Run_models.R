@@ -335,7 +335,7 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
         modelApplicability = finalResults$ModelApplicability[i],
         notes=finalResults$InvasiveInvertSpecies[i]
       )
-    }else if (def_models$modelTypeAbbreviation == "Hybrid") {
+    }else if (def_models$modelTypeAbbreviation == "Both Observed Versus Expected and Multimetric Index") {
       NAMCr::save(
         api_endpoint = "setModelResult",
         sampleId = finalResults$sampleId[i],
