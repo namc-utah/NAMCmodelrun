@@ -57,17 +57,17 @@ MMI_metrics<-function(sampleIds,translationId,fixedCount){
                                                       280,# noninsect richness
                                                       291,#clinger richness
                                                       439, #shannons diversity
-                                                      200, # collector filterer density, 438 relative abundance
-                                                      176,#percent  Ephemeoptera
-                                                      177))# percent plecoptera
+                                                      113, # collector filter relative abundance
+                                                      89,#percent  Ephemeoptera
+                                                      90))# percent plecoptera
     MMI_metrics$metricValue=as.numeric(MMI_metrics$metricValue)
     MMI_metrics$metricModelName=ifelse(MMI_metrics$metricId==276,"INSET",
                                        ifelse(MMI_metrics$metricId==280,"NONSET",
                                               ifelse(MMI_metrics$metricId==291,"CLINGER",
                                                      ifelse(MMI_metrics$metricId==439,"SHDIVER",
-                                                            ifelse(MMI_metrics$metricId==200,"CFA",
-                                                                          ifelse(MMI_metrics$metricId==176,"EPHEA",
-                                                                                 ifelse(MMI_metrics$metricId==177,"PLECA",NA)
+                                                            ifelse(MMI_metrics$metricId==113,"CFA",
+                                                                          ifelse(MMI_metrics$metricId==89,"EPHEA",
+                                                                                 ifelse(MMI_metrics$metricId==90,"PLECA",NA)
                                                                           ))))))
 
     bugnew = tidyr::pivot_wider(MMI_metrics,id_cols = "sampleId",names_from = "metricModelName",values_from = "metricValue")
@@ -79,9 +79,9 @@ MMI_metrics<-function(sampleIds,translationId,fixedCount){
 
     #AREMP MMI metrics
     MMI_metrics = subset(bugsMetrics, metricId %in% c(291,#clinger richness
-                                                      272,#EPT
+                                                      97,#EPT
                                                       268,#diptera richness
-                                                      293,#intolerant
+                                                      118,#intolerant
                                                       280,# noninsect richness
                                                       290#long lived taxa richness
     ))
