@@ -1,0 +1,23 @@
+ut=read.csv('ref_preds_UT.csv')
+orm=read.csv("ref_preds_OR_MWCF.csv")
+orw=read.csv("ref_preds_OR_WCCP.csv")
+west=read.csv("ref_preds_Westwide.csv")
+WY=read.csv("ref_preds_WY.csv")
+AREMP=read.csv("ref_preds_AREMP.csv")
+PIBO=read.csv("ref_preds_PIBO.csv")
+NV_MMI=read.csv("ref_preds_NV_MMI.csv")
+library(reshape2)
+utp=melt(ut,id=1:3)
+ormp=melt(orm,id=1:2)
+orwp=melt(orw,id=1:2)
+westp=melt(west,id=1:2)
+WYp=melt(WY,id=1)
+AREMPp=melt(AREMP,id=1)
+PIBOp=melt(PIBO,id=1)
+NV_MMIp=melt(NV_MMI,id=1)
+
+refpreds=plyr::rbind.fill(utp,ormp,orwp,westp,WYp,AREMPp,PIBOp,NV_MMIp)
+preds=read.csv("C:/Users/jenni/OneDrive - USU/Desktop/GeneralCode/predictors.csv")
+preds$variable=preds$abbreviation
+
+join=dplyr::inner_join(refpreds,preds, by="variable")
