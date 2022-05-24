@@ -7,7 +7,7 @@ ModelApplicability<- function(CalPredsModelApplicability, modelId, prednew){
 #CalPredsModelApplicability=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEModels/Model Applicability/CalPredsModelApplicability.csv")
 
 ##subset calibration set to only include sites used in the appropriate model build
-CalPreds <- subset(CalPredsModelApplicability,modelID=modelId)
+CalPreds <- subset(CalPredsModelApplicability,modelID==modelId)
 logSQ_KM=log(CalPreds$WsAreaSqKm)
 ElevCat_standardized=CalPreds$ElevCat
 logPrecip8110Ws=log(CalPreds$Precip8110Ws)
@@ -36,12 +36,12 @@ for (n in 1:dim(ref.dist)[1]){
 }
 
 
-logSQ_KM=log(applicabilitypreds$WsAreaSqKm)
-ElevCat_standardized=applicabilitypreds$ElevCat
-logPrecip8110Ws=log(applicabilitypreds$Precip8110Ws)
-Tmean8110Ws_standardized=applicabilitypreds$Tmean8110Ws
+logSQ_KM=log(prednew$WsAreaSqKm)
+ElevCat_standardized=prednew$ElevCat
+logPrecip8110Ws=log(prednew$Precip8110Ws)
+Tmean8110Ws_standardized=prednew$Tmean8110Ws
 
-outlier.preds.test.raw=data.frame(logSQ_KM,ElevCat_standardized,logPrecip8110Ws,Tmean8110Ws_standardized, row.names=applicabilitypreds$sampleId)
+outlier.preds.test.raw=data.frame(logSQ_KM,ElevCat_standardized,logPrecip8110Ws,Tmean8110Ws_standardized, row.names=prednew$sampleId)
 
 #standardize by min and max of ref data
 

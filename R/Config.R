@@ -17,7 +17,7 @@ source("R/ModelApplicabilityAll.R")
 
 
 # to run the scripts choose a boxId or projectId
-boxId=2141
+boxId=2770
 # test boxes
 # 2141-UT,2065 OR WCCP and MCCP, null, 2152 PIBO, 2172 CSCI,2107 AREMP, 2054 CO, NV 2140, 1603 westwide and 2055,	2150 WY
 

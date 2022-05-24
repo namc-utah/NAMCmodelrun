@@ -87,9 +87,9 @@ MMI_metrics<-function(sampleIds,translationId,fixedCount){
     ))
     MMI_metrics$metricValue=as.numeric(MMI_metrics$metricValue)
     MMI_metrics$metricModelName=ifelse(MMI_metrics$metricId==291,"CLING_rich",
-                                       ifelse(MMI_metrics$metricId==272,"EPT",
+                                       ifelse(MMI_metrics$metricId==97,"EPT",
                                               ifelse(MMI_metrics$metricId==268,"DIPT_rich",
-                                                     ifelse(MMI_metrics$metricId==293,"INTOL",
+                                                     ifelse(MMI_metrics$metricId==118,"INTOL",
                                                                    ifelse(MMI_metrics$metricId==280,"NON_INSECT_rich",
                                                                           ifelse(MMI_metrics$metricId==290,"LLT_rich",NA)
                                                                    )))))

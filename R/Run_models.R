@@ -67,9 +67,9 @@ if (exists("boxId")){
   modelpred=NAMCr::query("predictors",modelId=modelID)
   def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
 
-  if (any(def_predictors$status!="current")) {
-    print(paste0("predictors need calculated"))
-  } else{
+  # if (any(def_predictors$status!="Valid")) {
+  #   print(paste0("predictors need calculated"))
+  # } else{
     # get predictors into wide format needed for model functions
     prednew = tidyr::pivot_wider(def_predictors,
                                  id_cols="sampleId",
@@ -140,7 +140,6 @@ if (exists("boxId")){
       #if westwide model only one R data file needs loaded in and not one for each model
     }else if (def_models$modelId %in% c(25:26)){
       load(paste0("sysdata.rda/Westwide2018.Rdata"))
-      # need to add an if statement to load conductivity and NV objects but objects named the same so they will be overwritten how do we deal with?
       # all other models should have R data files named identical to model name
     }else{
       load(paste0("sysdata.rda/",def_models$abbreviation, ".Rdata"))
@@ -226,7 +225,8 @@ if (exists("boxId")){
         )
     } else if (def_models$modelId == 3) {# NV MMI
     # need to call conductivity model first before calling the NV model because predicted conductivity is a predictor for the NV model
-        PrdCond = setNames(as.data.frame(
+      load(file="sysdata.rda/EC12.Rdata")
+      PrdCond = setNames(as.data.frame(
         predict(ranfor.mod, prednew, type = "response")# need to subset to only model predictors or maybe it doesnt matter??
       ), c('PrdCond'))
       prednew = cbind(prednew, PrdCond)
@@ -267,6 +267,7 @@ if (exists("boxId")){
                                 sampleIds = def_model_results$sampleId
                                 ) #need list of samples in database with values
     applicabilitypreds = subset(applicabilitypreds, abbreviation %in% c('ElevCat','Tmean8110Ws','WsAreaSqKm','Precip8110Ws'))
+    applicabilitypreds$predictorValue=as.numeric(applicabilitypreds$predictorValue)
     applicabilitypreds = tidyr::pivot_wider(applicabilitypreds,
                                  id_cols="sampleId",
                                  names_from = "abbreviation",
@@ -274,7 +275,7 @@ if (exists("boxId")){
     applicabilitypreds=as.data.frame(applicabilitypreds)
     # run model applicability function
     ModelApplicability = ModelApplicability(CalPredsModelApplicability,
-                                            modelId = def_models$modelId,
+                                            modelId = modelID,
                                             applicabilitypreds) # add to config file or add an R object with calpreds
 
     finalResults=merge(modelResults,ModelApplicability,by="row.names")
@@ -372,7 +373,7 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
   })
 }
 
-  }
+#  }
 #}
 
 
