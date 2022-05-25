@@ -65,17 +65,37 @@ if (exists("boxId")){
                 ),
     sampleIds = def_model_results$sampleId)
   modelpred=NAMCr::query("predictors",modelId=modelID)
-  def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
-  def_predictors$predictorValue=as.numeric(def_predictors$predictorValue)
-  # if (any(def_predictors$status!="Valid")) {
-  #   print(paste0("predictors need calculated"))
-  # } else{
-    # get predictors into wide format needed for model functions
-    prednew = tidyr::pivot_wider(def_predictors,
+
+  if (modelID %in% c(4,5,6,28)){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
+    def_predictors_categorical=subset(def_predictors,predictorId %in% c(111,75))
+    prednew1 = tidyr::pivot_wider(def_predictors_categorical,
                                  id_cols="sampleId",
                                  names_from = "abbreviation",
                                  values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
-    prednew=as.data.frame(prednew)
+    prednew1=as.data.frame(prednew1)
+     '%notin%' <- Negate('%in%')
+    def_predictors=subset(def_predictors,predictorId %notin% c(111,75))
+    def_predictors$predictorValue=as.numeric(def_predictors$predictorValue)
+    prednew2 = tidyr::pivot_wider(def_predictors,
+                                 id_cols="sampleId",
+                                 names_from = "abbreviation",
+                                 values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
+
+    prednew2=as.data.frame(prednew2)
+    prednew=rbind(prednew1,pred2)
+
+    }else {def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
+            def_predictors$predictorValue=as.numeric(def_predictors$predictorValue)
+            # if (any(def_predictors$status!="Valid")) {
+            #   print(paste0("predictors need calculated"))
+            # } else{
+              # get predictors into wide format needed for model functions
+              prednew = tidyr::pivot_wider(def_predictors,
+                                           id_cols="sampleId",
+                                           names_from = "abbreviation",
+                                           values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
+              prednew=as.data.frame(prednew)
+            }
     rownames(prednew)<-prednew$sampleId
     prednew<-prednew[,-1]
     # ---------------------------------------------------------------
