@@ -17,7 +17,7 @@ source("R/ModelApplicabilityAll.R")
 
 
 # to run the scripts choose a boxId or projectId
-boxId=2065
+boxId=2770
 # test boxes
 # 2141-UT,2065 OR WCCP and MCCP, null, 2152 PIBO, 2172 CSCI,2107 AREMP, 2054 CO, NV 2140, 1603 westwide and 2055,	2150 WY
 
@@ -27,7 +27,7 @@ projects=NAMCr::query("projects")
 
 # then input a modelID
 models=NAMCr::query("models")
-modelID=10
+modelID=3
 
 
 # all model results are always calculated
