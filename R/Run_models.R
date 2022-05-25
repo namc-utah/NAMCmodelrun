@@ -33,8 +33,8 @@ if (exists("boxId")){
     api_endpoint = "modelResults",
     sampleIds=def_samples$sampleId
   )
-  def_model_results=subset(def_model_results,modelId==modelID & is.na(modelResult)==TRUE)
-  #def_models_results = def_models_results[def_models_results$status !="current",]
+
+  def_model_results=subset(def_model_results,modelId==modelID)
 
 
   # ---------------------------------------------------------------
@@ -340,6 +340,16 @@ if (exists("boxId")){
     # ---------------------------------------------------------------
     # Save model results
     # ---------------------------------------------------------------
+if (overwrite=='N'){
+  def_model_results2 = NAMCr::query(
+    api_endpoint = "modelResults",
+    sampleIds=def_samples$sampleId
+  )
+
+  def_model_results2=subset(def_model_results2,modelId==modelID & is.na(modelResult)==TRUE)
+  finalResults=subset(finalResults,sampleId %in% def_model_results2$sampleId)
+} else{}
+
 for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to the notes field in some easy fashion???
     #has permission to save then spit out result to console
     # pass Nas for anything not used
@@ -388,7 +398,7 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
     }
 
   }, error =function(e){
-    cat(paste0("\n\tSAMPLE ERROR: ",finalResults$sampleId[i],"\n"))
+    cat(paste0("\n\tSAMPLE ERROR: results may already exist in database and were not overwritten",finalResults$sampleId[i],"\n"))
     str(e,indent.str = "   "); cat("\n")
   })
 }
@@ -400,7 +410,8 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
 
 
 # query the model result table to get conditions automatically applied
-Report=query("modelResults", sampleIds=finalResults$sampleId)
+Report=query("modelResults", sampleIds=def_model_results$sampleId)
+Report=subset(Report,modelId==modelID)
 
 #use the following to see what thresholds were applied
 modelConditions=NAMCr::query("modelConditions",modelId=modelID)
