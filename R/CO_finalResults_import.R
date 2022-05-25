@@ -1,14 +1,13 @@
 # ---------------------------------------------------------------
 # Read in csv with results from COEDAS access database
 # ---------------------------------------------------------------
-modelResults=read.csv("")
-modelResults[,"StationID","BioType","MMI_"] # what about TotalInd_ why is this over 300 in some cases... should this be the fixedcount we use instead of down below?
-modelResults$BioType=ifelse(modelResults$BioType=="1",4,
-                            ifelse(modelResults$BioType=="2",5,
-                                   ifelse(modelResults$BioType=="3",6,NA
-                              )))
-modelResults=setNames(modelResults,c("sampleId","modelId","MMI"))
-
+modelResults=read.csv("/Users/triparmstrong/Library/CloudStorage/Box-Box/NAMC/OE_Modeling/NAMC_Supported_OEmodels/CO/InputAndResults_CO2017MMI/AIM 2021/May19results.csv")
+modelResults = modelResults[,c("StationID","SiteClassification","MMI")] # what about TotalInd_ why is this over 300 in some cases... should this be the fixedcount we use instead of down below?
+modelResults$BioType=ifelse(modelResults$SiteClassification=="1",4,
+                            ifelse(modelResults$SiteClassification=="2",5,
+                                   ifelse(modelResults$SiteClassification=="3",6,NA
+                                   )))
+modelResults=setNames(modelResults,c("sampleId","Biotype","MMI","modelId"))
 
 
 # ---------------------------------------------------------------
