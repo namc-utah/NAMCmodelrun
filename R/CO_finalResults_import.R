@@ -25,6 +25,7 @@ applicabilitypreds = NAMCr::query("samplePredictorValues",
                                   sampleIds = modelResults$sampleId
 ) #need list of samples in database with values
 applicabilitypreds = subset(applicabilitypreds, abbreviation %in% c('ElevCat','Tmean8110Ws','WsAreaSqKm','Precip8110Ws'))
+applicabilitypreds$predictorValue=as.numeric(applicabilitypreds$predictorValue)
 applicabilitypreds = tidyr::pivot_wider(applicabilitypreds,
                                         id_cols="sampleId",
                                         names_from = "abbreviation",
