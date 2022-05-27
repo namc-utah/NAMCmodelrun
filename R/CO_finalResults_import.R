@@ -36,11 +36,21 @@ ModelApplicability = ModelApplicability(CalPredsModelApplicability,
                                         modelId = 4,
                                         applicabilitypreds) # add to config file or add an R object with calpreds
 
-finalResults=merge(modelResults,ModelApplicability,by="row.names")
+finalResults=merge(modelResults,ModelApplicability,by="sampleId")
 
 # ---------------------------------------------------------------
 # Get additional bug metrics (fixed count and invasives)
 # ---------------------------------------------------------------
+def_models = NAMCr::query(
+  api_endpoint = "modelInfo",
+  include = c("modelId",
+              "modelTypeAbbreviation",
+              "abbreviation",
+              "translationId",
+              "fixedCount"),
+  modelId = 4
+)
+
 ##### get fixed count column #####
 bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
                        translationId = def_models$translationId,
