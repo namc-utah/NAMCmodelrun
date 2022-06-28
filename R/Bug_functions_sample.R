@@ -38,7 +38,7 @@ return(bugnew)
 #' @export
 #'
 #' @examples
-MMI_metrics<-function(sampleIds,translationId,fixedCount){
+MMI_metrics<-function(sampleIds,translationId,fixedCount,modelId){
   # need to add list of required metrics to model table as well as random forest input file
   #get needed list of metrics from new end point
   # NV and AREMP relative abundances were OTU standardized too!
@@ -50,7 +50,7 @@ MMI_metrics<-function(sampleIds,translationId,fixedCount){
   #modelInfo = NAMCr::query("modelInfo", modelId = def_model$modelId)
   #MMI_metrics = subset(bugsMetrics, metricId %in% ()) # store translations to metric names in database
   # need to replace metric name with a model specific metric abbreviation
-  if (def_models$translationId==13){
+  if (def_models$modelId==3){
 
     # NV MMI metrics
     MMI_metrics = subset(bugsMetrics, metricId %in% c(276,#insect richness
@@ -75,7 +75,7 @@ MMI_metrics<-function(sampleIds,translationId,fixedCount){
     bugnew$PER_EPHEA=bugnew$EPHEA*100
     bugnew$PER_PLECA=bugnew$PLECA*100
     bugnew=bugnew[,c("sampleId","INSET","NONSET","CLINGER","SHDIVER","PER_CFA","PER_EPHEA","PER_PLECA")]
-  }else if (def_models$translationId==23){
+  }else if (def_models$modelId==8){
 
     #AREMP MMI metrics
     MMI_metrics = subset(bugsMetrics, metricId %in% c(291,#clinger richness
@@ -97,7 +97,17 @@ MMI_metrics<-function(sampleIds,translationId,fixedCount){
     bugnew$PER_EPT=bugnew$EPT*100
     bugnew$PER_INTOL=bugnew$INTOL*100
     bugnew=bugnew[,c("sampleId","CLING_rich","PER_EPT","DIPT_rich","PER_INTOL","NON_INSECT_rich","LLT_rich")]
-  }else{
+
+  }else if (def_models$modelId==136){
+
+  # arid west modeled insect richness
+    MMI_metrics = subset(bugsMetrics, metricId %in% c(364,#unique insect richness
+                                                      362)) #unique richness midges
+    MMI_metrics$metricValue=as.numeric(MMI_metrics$metricValue)
+    MMI_metrics$metricAbbreviation=gsub("-","_",MMI_metrics$metricAbbreviation)
+    bugnew = tidyr::pivot_wider(MMI_metrics,id_cols = "sampleId",names_from = "metricAbbreviation",values_from = "metricValue")
+    bugnew$UniqueRichness_Insecta=bugnew$UniqueRichness_Insecta-bugnew$UniqueRichness_Chironomidae
+    }else{
 
   }
 

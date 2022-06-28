@@ -132,7 +132,7 @@ if (exists("boxId")){
     } else if (def_models$modelId %in% c(1)) {
       bugnew = CSCI_bug(sampleIds = def_model_results$sampleId)
     } else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
-      bugnew = MMI_metrics(sampleIds = def_model_results$sampleId, translationId=def_models$translationId, fixedCount = def_models$fixedCount)
+      bugnew = MMI_metrics(sampleIds = def_model_results$sampleId, translationId=def_models$translationId, fixedCount = def_models$fixedCount,modelId=def_models$modelId)
  }else {
 
     }
@@ -261,6 +261,13 @@ if (exists("boxId")){
           PER_EPHEA.rf,
           PER_PLECA.rf
         )
+    } else if (def_models$modelId == 136){#modeled insect richness
+      UniqueRichness_Insecta_pred=predict(rfmod_UniqueRichness_Insecta, prednew, type="response")
+      # join predicted insect richness to intial data
+      modelResults=cbind(bugnew, UniqueRichness_Insecta_pred)
+      # convert to O/E ratio
+      modelResults$modeledInsectRichness=modelResults$UniqueRichness_Insecta/modelResults$UniqueRichness_Insecta_pred
+
 
       # ------------------------------
       # WQ models
