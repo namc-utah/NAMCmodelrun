@@ -115,16 +115,25 @@ site.pred.dfa<-grpprobs%*%grpocc;
 #temporary data frame to hold nonnull results for all samples. ;
 nsit.new<-dim(prednew)[[1]];
 OE.stats<-data.frame(OBS=rep(NA,nsit.new), E.prd=rep(NA,nsit.new),BC.prd=rep(NA,nsit.new),row.names=row.names(prednew));
-for(i in 1:nsit.new) {;
-   #i<-1;
+for(i in 1:nsit.new) {
+  tryCatch({
+#i<-1;
    cur.prd<-site.pred.dfa[i,]; #vector of predicted probs for current sample;
    spdyn<-names(cur.prd)[cur.prd>=Pc];  #subset of taxa with Pi>=Pcutoff;
    cur.prd<-cur.prd[spdyn]; #vector of Pi for subset of included taxa;
    cur.obs<-bugnew.pa[i,spdyn]; #vector of observed P/A for those taxa;
    OE.stats$OBS[i]<-sum(cur.obs); #observed richness (O);
    OE.stats$E.prd[i]<-sum(cur.prd); #Expected richness (E);
-   OE.stats$BC.prd[i]<-sum(abs(cur.obs-cur.prd))/ (OE.stats$OBS[i]+OE.stats$E.prd[i]); #BC value;
-         }; #finish sample loop;
+   OE.stats$BC.prd[i]<-sum(abs(cur.obs-cur.prd))/ (OE.stats$OBS[i]+OE.stats$E.prd[i]) #BC value;
+          #finish sample loop;
+},  error = function(e) {
+  cat(paste0("\n\tERROR calculating O/E: ",i,"\n"))
+  str(e, indent.str = "   ")
+  cat("\n")
+})
+
+  }
+
 
 #5.2 - Compute Expected richness (E) and BC for null model using taxa >= Pc.
 # Note that the set of taxa included in the null model is fixed for all samples;
