@@ -107,7 +107,24 @@ MMI_metrics<-function(sampleIds,translationId,fixedCount,modelId){
     MMI_metrics$metricAbbreviation=gsub("-","_",MMI_metrics$metricAbbreviation)
     bugnew = tidyr::pivot_wider(MMI_metrics,id_cols = "sampleId",names_from = "metricAbbreviation",values_from = "metricValue")
     bugnew$UniqueRichness_Insecta=bugnew$UniqueRichness_Insecta-bugnew$UniqueRichness_Chironomidae
-    }else{
+  }else if (def_models$modelId==169){
+    MMI_metrics = subset(bugsMetrics, metricId %in% c(351,#total richness
+                                                      352,#ephem richness
+                                                      354,#tricoptera richness
+                                                      356,# diptera richness
+                                                      375,#scraper richness
+                                                      381,#intolerant taxa
+                                                      444,#hilsenhoff
+                                                      176,#ephem relative abundance
+                                                      177,#plecoptera relative abundance
+                                                      199,#scraper relative abundance
+                                                      448#dominant taxa abundance
+                                                      ))
+    MMI_metrics$metricValue=as.numeric(MMI_metrics$metricValue)
+    MMI_metrics$metricAbbreviation=gsub("-","_",MMI_metrics$metricAbbreviation)
+    MMI_metrics$metricValue=ifelse(MMI_metrics$metricId %in% c(176,177,199,448),MMI_metrics$metricValue*100,MMI_metrics$metricValue)# converting relative abundance to %
+      bugnew=MMI_metrics
+  }else{
 
   }
 
@@ -246,4 +263,61 @@ OR_NBR_bug <- function(sampleIds, translationId, fixedCount) {
   bugnew=sumrarefiedOTUTaxa
 return(bugnew)
   }
+
+
+#' AZ EDAS bug data export
+#'
+#' @param sampleIds
+#'
+#' @return raw bug data translated by CO EDAS translation and with column names formatted for CO EDAS access database
+#' @export
+#'
+#' @examples
+AZ_bug_export<-function(sampleIds){
+  bugRaw = NAMCr::query(
+    "sampleTaxa",
+    sampleIds=sampleIds
+  )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
+
+  # bugsTranslation = NAMCr::query(
+  #   "sampleTaxaTranslation",
+  #   translationId = 8,
+  #   sampleIds=sampleIds
+  # )
+  samples = NAMCr::query(
+    "samples",
+    include = c("boxId","sampleId",'siteId','sampleDate',"siteName", "waterbodyName","sampleMethod","habitatName","area"),# possibly add waterbody name to the samples NAMCr::query
+    sampleIds=sampleIds
+  )
+
+  # join that data together into a single dataframe
+  #AZbugs=dplyr::left_join(bugRaw,bugsTranslation, by=c("taxonomyId", "sampleId"))
+  AZbugs=dplyr::left_join(bugRaw,samples, by='sampleId')
+
+  AZbugs$StationID=AZbugs$siteName
+  AZbugs$WaterbodyName=AZbugs$waterbodyName
+  AZbugs$ActivityID=AZbugs$sampleId
+  AZbugs$RepNum=1
+  AZbugs$CommentsSample=NA
+  AZbugs$CollDate=AZbugs$sampleDate
+  AZbugs$CollMeth=AZbugs$sampleMethod
+  AZbugs$CorrectionFactor=AZbugs$labSplit
+  AZbugs$FinalID=AZbugs$scientificName
+  AZbugs$Individuals=AZbugs$splitCount
+  AZbugs$Stage=AZbugs$lifeStageAbbreviation
+  AZbugs$LargeRare='No'
+  AZbugs$Habitat=ifelse(AZbugs$habitatName=='Targeted Riffle','Riffle','Multi-Habitat')
+  AZbugs$Lab='NAMC'
+  AZbugs$LabID=NA
+
+  AZbugs2=AZbugs[,c("StationID","WaterbodyName","ActivityID","RepNum","CollDate","CommentsSample","CollMeth","CorrectionFactor","FinalID","Individuals","Stage","LargeRare","Habitat","Lab","LabID")]
+  #write excel file to workspace
+  write.csv(AZbugs2,file = paste0("AZbugs","boxId_",boxId,"_",Sys.Date(),".csv"),row.names=FALSE)
+  cat(paste("csv with AZbugs has been written out to your current working directory.",
+            "convert this csv to excel 2003 and import into AZ EDAS access database to compute the IBI score.",
+            "\OE_Modeling\NAMC_Supported_OEmodels\AZ\Benthic Data Bulk Upload_SOP.doc",
+             "to import bug and habitat data, harmonize taxa list, rarefy and compute MMI",
+            "then read resulting excel file back into R to save results in the database.", sep="\n"))
+  return(AZbugs)
+}
 
