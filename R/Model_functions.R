@@ -187,4 +187,38 @@ NV_MMI_model<-function(bugnew,prednew,CLINGER.rf,INSET.rf,NONSET.rf,PER_CFA.rf,P
   return(bugnew.rs)
 }
 
+AZ_MMI_model<-function(bugnew,prednew){
 
+  thresholds<-textConnection("metricId	metric	warm	cold
+351	Totaltaxa	37	38
+354	  Trichopterataxa	9	 NA
+352	  Ephemeropterataxa	9 NA
+356	  Dipterataxa	10	11
+375	  Scrapertaxa	7	11
+199	  Percentscraper	23.7	45.1
+176	  PercentEphemeroptera	70  NA
+448	  PercentDominantTaxon	19.1	NA
+444	  HilsenhoffBioticIndex	4.89	4.21
+177	percentplecoptera		19.1  NA
+381	intoleranttaxa		6 NA
+")
+  metricThresholds <- read.table(thresholds, header = TRUE, stringsAsFactors = FALSE)
+
+ j=dplyr::left_join(bugnew,metricThresholds, by='metricId')
+
+ decreasers=subset(j,metricId %in% c(351,354,352,356,375,199,176,177,381))
+ increasers=subset(j,metricId %in% c(444,448))
+ decreasers$coldmetric=(decreasers$metricValue/decreasers$cold)*100
+ decreasers$warmmetric=(decreasers$metricValue/decreasers$warm)*100
+ increasers$coldmetric=ifelse(increasers$metricId==444,(10-increasers$metricValue)/(10-increasers$cold)*100,NA)
+ increasers$warmmetric=ifelse(increasers$metricId==444,(10-increasers$metricValue)/(10-increasers$warm)*100,NA)
+ increasers$warmmetric=ifelse(increasers$metricId==448,(100-increasers$metricValue)/(100-increasers$warm)*100,increasers$warmmetric)
+ metrics=rbind(decreasers,increasers)
+ #join in prednew to modelResults
+ metrics=dplyr::left_join(metrics,prednew, by="sampleId")
+ colddf=subset(metrics,metrics$ElevCat>1524)
+ warmdf=subset(metrics,metrics$ElevCat<1524)
+ coldm=setNames(stats::aggregate(coldmetric~sampleId,data=colddf,FUN=mean,na.rm=TRUE),c("sampleId","MMI"))
+ warmm=setNames(stats::aggregate(warmmetric~sampleId,data=warmdf,FUN=mean,na.rm=TRUE),c("sampleId","MMI"))
+ modelResults=rbind(coldm,warmm)
+}

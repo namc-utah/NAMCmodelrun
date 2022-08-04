@@ -136,12 +136,14 @@ if (exists("boxId")){
  }else {
 
     }
-    bugnew<-subset(bugnew,rownames(bugnew) %in% rownames(prednew))
+    if (def_models$modelId %in% c(12)){#no predictors are needed for OR null model
+
+    }else {bugnew<-subset(bugnew,rownames(bugnew) %in% rownames(prednew))
     prednew<-subset(prednew,rownames(prednew) %in% rownames(bugnew))
     #reorder them the same just in case model functions dont already do this
     bugnew = bugnew[order(rownames(bugnew)),];
     prednew = prednew[order(rownames(prednew)),];
-
+}
 
 
     # ---------------------------------------------------------------
@@ -151,7 +153,7 @@ if (exists("boxId")){
     # the R objects are named with the model abbreviation
     # instead of all these if statements the R file name could be stored in the database... but WY and NV require two models and R file names
     #if CO, CSCI, or OR null model no R data file needs loaded in
-    if (def_models$modelId %in% c(1,4,5,6,12)){
+    if (def_models$modelId %in% c(1,4,5,6,12,169)){
       print("no R object needs loaded")
       #if WY model only one Rdata file needs loaded and not one for each "model" but Alkalinity also needs added
     } else if (def_models$modelId %in% c(13:23)){
@@ -268,7 +270,9 @@ if (exists("boxId")){
       # convert to O/E ratio
       modelResults$modeledInsectRichness=modelResults$UniqueRichness_Insecta/modelResults$UniqueRichness_Insecta_pred
 
+    } else if (def_models$modelId == 169){#AZ perennial model
 
+      modelResults<-AZ_MMI_model(bugnew)
       # ------------------------------
       # WQ models
       # ------------------------------
