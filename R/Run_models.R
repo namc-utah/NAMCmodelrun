@@ -272,9 +272,6 @@ if (exists("boxId")){
       # convert to O/E ratio
       modelResults$modeledInsectRichness=modelResults$UniqueRichness_Insecta/modelResults$UniqueRichness_Insecta_pred
 
-    } else if (def_models$modelId == 169){#AZ perennial model
-
-      modelResults<-AZ_MMI_model(bugnew)
       # ------------------------------
       # WQ models
       # ------------------------------
