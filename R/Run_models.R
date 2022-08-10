@@ -131,7 +131,9 @@ if (exists("boxId")){
       # CSCI requires just the raw taxa list translated for misspelling
     } else if (def_models$modelId %in% c(1)) {
       bugnew = CSCI_bug(sampleIds = def_model_results$sampleId)
-    } else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
+    } else if (def_models$modelId %in% c(169)){
+      bugnew=AZ_bug_export(sampleIds = def_model_results$sampleId)
+    }else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
       bugnew = MMI_metrics(sampleIds = def_model_results$sampleId, translationId=def_models$translationId, fixedCount = def_models$fixedCount,modelId=def_models$modelId)
  }else {
 
