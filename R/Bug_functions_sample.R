@@ -164,16 +164,17 @@ CSCI_bug <- function(sampleIds){
   )
 
  # join that data together into a single dataframe
-  CSCIbugs=dplyr::left_join(bugRaw,bugsTranslation, by=c("taxonomyId", "SampleId"))
-  CSCIbugs=dplyr::left_join(CSCIbugs,sites, by='SampleId')
+  CSCIbugs=dplyr::left_join(bugRaw,bugsTranslation, by=c("taxonomyId", "sampleId"))
+  CSCIbugs=dplyr::left_join(CSCIbugs,sites, by='sampleId')
 
   # rename columns
   # rename columns
   CSCIbugs$boxId = CSCIbugs$boxId
-  CSCIbugs$StationCode = CSCIbugs$siteName#### need to get site info!!!
+  CSCIbugs$StationCode = CSCIbugs$sampleId#### need to get site info!!!
   CSCIbugs$FinalID = CSCIbugs$otuName
   CSCIbugs$class<-ifelse(is.na(CSCIbugs$class)==TRUE,"X",CSCIbugs$class)
-  CSCIbugs$LifeStageCode=ifelse(is.na(CSCIbugs$lifeStageAbbreviation)==TRUE,"X",ifelse(CSCIbugs$class!="Insecta","X",CSCIbugs$lifeStageAbbreviation))
+  CSCIbugs$LifeStageCode=ifelse(CSCIbugs$lifeStageAbbreviation=='U',"L",CSCIbugs$lifeStageAbbreviation)
+  CSCIbugs$LifeStageCode=ifelse(is.na(CSCIbugs$LifeStageCode)==TRUE,"X",ifelse(CSCIbugs$class!="Insecta","X",CSCIbugs$LifeStageCode))
   CSCIbugs$Distinct = 0
   CSCIbugs=CSCIbugs %>% mutate(BAResult=splitCount.x+bigRareCount)
   CSCIbugs=subset(CSCIbugs,is.na(otuName)==FALSE)

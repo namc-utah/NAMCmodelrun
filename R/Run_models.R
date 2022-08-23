@@ -224,6 +224,9 @@ if (exists("boxId")){
 
     # CSCI has its own package and function
     } else if (def_models$modelId == 1) {
+      prednew$sampleId=as.numeric(row.names(prednew))
+      prednew=left_join(prednew,def_samples[,c('siteName','sampleId')],by='sampleId')
+      prednew$StationCode<-prednew$sampleId
       report <- CSCI::CSCI(bugs = bugnew, stations = prednew)
       modelResults = report$core
       rownames(modelResults)=modelResults$SampleID
