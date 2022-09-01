@@ -91,7 +91,7 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
     NAMCr::save(
       api_endpoint = "setModelResult",
       sampleId = finalResults$sampleId[i],
-      modelId = modelResults$modelId[1],
+      modelId = finalResults$modelId[i],
       modelResult = finalResults$MMI[i],
       fixedCount = finalResults$fixedCount[i],
       modelApplicability = finalResults$ModelApplicability[i],

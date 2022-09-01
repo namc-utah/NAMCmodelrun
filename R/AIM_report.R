@@ -17,11 +17,13 @@ NAMCr::query("auth")
 #### Step 3 determine what results exist for all AIM sites ####
 # all AIM sites = projectId=49 but may take a bit to load.
 # each field season/ state has its own boxId
-# consider having NAMC create projects for each field season worth of data
-
-# results may not exist but bugs make have been processed. To view if bugs have been processed go to the webinterface
-# https://instar.namc-usu.org/#/boxes
+# results may not exist but bugs make have been processed. To view if bugs have been processed review list of AIM boxes by running code below
+boxes=NAMCr::query("boxes",include = c('boxId','alias','boxState','sampleCount','boxReceivedDate','processingCompleteDate','projectedCompleteDate','sampleCount'),
+                   entityIds=614)
+#all AIM data
 Report=NAMCr::query("modelResults", projectId=49)
+#Only data for a certain box or boxes of interest
+#Report=NAMCr::query("modelResults", boxId=c())#input list of boxes of interest from above boxes query
 Report=subset(Report, is.na(modelResult)==FALSE)
 
 
@@ -32,6 +34,7 @@ Report=subset(Report, is.na(modelResult)==FALSE)
 Report2=Report[,c("sampleId",'visitId','customerSiteCode','modelId','modelAbbr','fixedCount','oResult','eResult','modelApplicability','modelResult','condition','notes')]
 # rename columns for the AIM database
 Report2=setNames(Report2,c('SampleID','EvaluationID','PointID','modelId','OE_MMI_ModelUsed','MacroinvertebrateCount','ObservedInvertRichness','ExpectedInvertRichness','OE_MMI_ModelApplicability','modelResult','condition','InvasiveInvertSpecies'))
+Report2$OE_MMI_ModelApplicability=ifelse(Report2$OE_MMI_ModelApplicability=='TRUE','Pass',ifelse(Report2$OE_MMI_ModelApplicability=='FALSE','Fail',Report2$OE_MMI_ModelApplicability))
 Report2$MMI_Macroinvertebrate=ifelse(Report2$modelId %in% c(3,4,5,6,8,24),Report2$modelResult,NA)
 Report2$OE_Macroinvertebrate=ifelse(Report2$modelId %in% c(1,2,7,9,10,11,12,13:23,25:26),Report2$modelResult, NA)
 # get standard field office level results for AIM database
@@ -50,7 +53,7 @@ WQ_pivot=tidyr::pivot_wider(WQ,id_cols=c('SampleID','EvaluationID','PointID'),na
 
 #join bug and WQ data
 Final=dplyr::full_join(Report3,WQ_pivot, by=c('SampleID','EvaluationID','PointID'))
-
+write.csv(Final,paste0('AIM_Bug_WQ_results_for_import_',Sys.Date(),'.csv'))
 
 
 
