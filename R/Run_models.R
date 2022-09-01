@@ -348,7 +348,23 @@ if (exists("boxId")){
     additionalbugmetrics[is.na(additionalbugmetrics)]<-"Absent"
 
     finalResults=dplyr::left_join(finalResults,additionalbugmetrics,by="sampleId")
+    write.csv(finalResults,paste0('finalresults_',modelID,"_",Sys.Date(),'.csv'))
 
+    # join in sample info and coordinates
+    finalResults=dplyr::left_join(finalResults,def_samples,by='sampleId')
+    finalResults_sf=sf::st_as_sf(finalResults,coords=c('siteLongitude','siteLatitude',crs=4269))
+    # create modelId column specific to geography
+    if (modelID %in% c(25,26)){
+    ecoregion=sf::st_read(paste0(ecoregion_base_path,"GIS/GIS_Stats/CONUS/ecoregion/hybrid_level_III_ecoregions.shp"))
+    finalResults_sf=sf::st_intersect(finalResults_sf,ecoregion)
+    finalResults=dplyr::left_join(finalResults,finalResults_sf[,c('sampleId','modelId')],by='sampleId')
+    } else if (modelID %in% c(13:23)){
+    ecoregion=sf::st_read(paste0(ecoregion_base_path,"/GIS/GIS_Stats/Wyoming/ecoregion/BIOREGIONS_2011_modifiedCP.shp"))
+    finalResults_sf=sf::st_intersect(finalResults_sf,ecoregion)
+    finalResults=dplyr::left_join(finalResults,finalResults_sf[,c('sampleId','modelId')],by='sampleId')
+    } else{
+    finalResults$modelId=ModelID
+    }
 
     # ---------------------------------------------------------------
     # Save model results
@@ -371,7 +387,7 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
       NAMCr::save(
         api_endpoint = "setModelResult",
         sampleId = finalResults$sampleId[i],
-        modelId = def_model_results$modelId[1],
+        modelId = finalResults$modelId[i],
         oResult = finalResults$O[i],
         eResult = finalResults$E[i],
         modelResult = finalResults$OoverE[i] ,
@@ -379,11 +395,11 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
         modelApplicability = finalResults$ModelApplicability[i],
         notes=finalResults$InvasiveInvertSpecies[i]
       )
-    }else if (def_models$modelTypeAbbreviation == "Both Observed Versus Expected and Multimetric Index") {
+    }else if (def_models$modelTypeAbbreviation == "Hybrid") {
       NAMCr::save(
         api_endpoint = "setModelResult",
         sampleId = finalResults$sampleId[i],
-        modelId = def_model_results$modelId[1],
+        modelId = finalResults$modelId[i],
         modelResult = finalResults$CSCI[i],
         fixedCount = finalResults$fixedCount[i],
         modelApplicability = finalResults$ModelApplicability[i],
@@ -393,7 +409,7 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
       NAMCr::save(
         api_endpoint = "setModelResult",
         sampleId = finalResults$sampleId[i],
-        modelId = def_model_results$modelId[1],
+        modelId = finalResults$modelId[i],
         modelResult = finalResults$MMI[i],
         fixedCount = finalResults$fixedCount[i],
         modelApplicability = finalResults$ModelApplicability[i],
@@ -403,7 +419,7 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
       NAMCr::save(
         api_endpoint = "setModelResult",
         sampleId = finalResults$sampleId[i],
-        modelId = def_model_results$modelId[1],
+        modelId = finalResults$modelId[i],
         modelResult = finalResults$WQ[i],###need to fix....
         modelApplicability = finalResults$ModelApplicability[i]
       )

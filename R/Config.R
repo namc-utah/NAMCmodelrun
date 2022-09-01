@@ -15,19 +15,20 @@ source("R/model.predict.RanFor.4.2.r")
 source("R/model.predict.v4.1.r")
 source("R/ModelApplicabilityAll.R")
 
+ecoregion_base_path="C:/Users/jenni/Box/NAMC (Trip Armstrong)/"
 
 # to run the scripts choose a boxId or projectId
-boxId=2190
+boxId=2214
 # test boxes
 # 2141-UT,2065 OR WCCP and MCCP, null, 2152 PIBO, 2172 CSCI,2107 AREMP, 2054 CO, NV 2140, 1603 westwide and 2055,	2150 WY
 
 projects=NAMCr::query("projects")
-#projectId=
+projectId=387
 
 
 # then input a modelID
 models=NAMCr::query("models")
-modelID=136
+modelID=1
 
 
 # all model results are always calculated
