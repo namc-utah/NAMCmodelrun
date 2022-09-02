@@ -348,23 +348,29 @@ if (exists("boxId")){
     additionalbugmetrics[is.na(additionalbugmetrics)]<-"Absent"
 
     finalResults=dplyr::left_join(finalResults,additionalbugmetrics,by="sampleId")
-    write.csv(finalResults,paste0('finalresults_',modelID,"_",Sys.Date(),'.csv'))
+
 
     # join in sample info and coordinates
-    finalResults=dplyr::left_join(finalResults,def_samples,by='sampleId')
-    finalResults_sf=sf::st_as_sf(finalResults,coords=c('siteLongitude','siteLatitude',crs=4269))
+    finalResults=dplyr::left_join(finalResults,def_samples[,c('sampleId','siteLongitude','siteLatitude')],by='sampleId')
+    finalResults_sf=sf::st_as_sf(finalResults,coords=c('siteLongitude','siteLatitude'),crs=4269)
     # create modelId column specific to geography
     if (modelID %in% c(25,26)){
     ecoregion=sf::st_read(paste0(ecoregion_base_path,"GIS/GIS_Stats/CONUS/ecoregion/hybrid_level_III_ecoregions.shp"))
-    finalResults_sf=sf::st_intersect(finalResults_sf,ecoregion)
-    finalResults=dplyr::left_join(finalResults,finalResults_sf[,c('sampleId','modelId')],by='sampleId')
+    ecoregion=sf::st_make_valid(ecoregion)
+    finalResults_sf=sf::st_transform(finalResults_sf,5070)
+    finalResults_sf=sf::st_intersection(finalResults_sf,ecoregion)
+    finalResults=dplyr::left_join(finalResults,sf::st_drop_geometry(finalResults_sf[,c('sampleId','modelId')]),by='sampleId')
     } else if (modelID %in% c(13:23)){
     ecoregion=sf::st_read(paste0(ecoregion_base_path,"/GIS/GIS_Stats/Wyoming/ecoregion/BIOREGIONS_2011_modifiedCP.shp"))
-    finalResults_sf=sf::st_intersect(finalResults_sf,ecoregion)
-    finalResults=dplyr::left_join(finalResults,finalResults_sf[,c('sampleId','modelId')],by='sampleId')
+    ecoregion=sf::st_make_valid(ecoregion)
+    finalResults_sf=sf::st_transform(finalResults_sf,5070)
+    finalResults_sf=sf::st_intersection(finalResults_sf,ecoregion)
+    finalResults=dplyr::left_join(finalResults,sf::st_drop_geometry(finalResults_sf[,c('sampleId','modelId')]),by='sampleId')
     } else{
     finalResults$modelId=ModelID
     }
+
+    write.csv(finalResults,paste0('finalresults_',modelID,"_",Sys.Date(),'.csv'))
 
     # ---------------------------------------------------------------
     # Save model results
