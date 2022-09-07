@@ -140,7 +140,13 @@ if (exists("boxId")){
     }
     if (def_models$modelId %in% c(12)){#no predictors are needed for OR null model
 
-    }else {bugnew<-subset(bugnew,rownames(bugnew) %in% rownames(prednew))
+    } else if (def_models$modelId %in% c(1,4:6)){#CSCI bug file doesnt have row names and has multiple rows for a given sampleID, so does CO but CO is written out to disk
+      bugnew<-subset(bugnew,bugnew$SampleID %in% rownames(prednew))
+      prednew<-subset(prednew,rownames(prednew) %in% bugnew$SampleID)
+      #reorder them the same just in case model functions dont already do this
+      bugnew = bugnew[order(bugnew$SampleID),];
+      prednew = prednew[order(rownames(prednew)),];
+    } else {bugnew<-subset(bugnew,rownames(bugnew) %in% rownames(prednew))
     prednew<-subset(prednew,rownames(prednew) %in% rownames(bugnew))
     #reorder them the same just in case model functions dont already do this
     bugnew = bugnew[order(rownames(bugnew)),];
