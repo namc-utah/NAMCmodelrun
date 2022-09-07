@@ -326,8 +326,8 @@ if (exists("boxId")){
       dplyr::group_by(sampleId) %>%
       dplyr::summarize(fixedCount = sum(splitCount))
 
-
-    ###### get invasives #####
+    ################################################
+    ###### get invasives ##### comment out this entire invasives section if running "National" AIM westwide reporting
     # get raw bug data
     bugRaw = NAMCr::query(
       "sampleTaxa",
@@ -346,10 +346,17 @@ if (exists("boxId")){
     additionalbugmetrics=dplyr::left_join(sumrarefiedOTUTaxa,invasives, by="sampleId")
     # if no invasives were present set to absent
     additionalbugmetrics[is.na(additionalbugmetrics)]<-"Absent"
+    #################################################
 
+    #IF NATIONAL COMMENT OUT THIS LINE OF CODE AND UNCOMMENT OUT THE FOLLOWING TWO LINES
     finalResults=dplyr::left_join(finalResults,additionalbugmetrics,by="sampleId")
+    # finalResults=dplyr::left_join(finalResults,sumrarefiedOTUTaxa,by="sampleId")
+    # finalResults$InvasiveInvertSpecies='National'
 
 
+    # ---------------------------------------------------------------
+    # Create modelId column to save results by appropriate modelId and write results out to csv
+    # ---------------------------------------------------------------
     # join in sample info and coordinates
     finalResults=dplyr::left_join(finalResults,def_samples[,c('sampleId','siteLongitude','siteLatitude')],by='sampleId')
     finalResults_sf=sf::st_as_sf(finalResults,coords=c('siteLongitude','siteLatitude'),crs=4269)
