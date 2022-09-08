@@ -84,7 +84,7 @@ outlier.preds.test.std2$Status=out.flag90
 modelappinput=rbind(outlier.preds.test.std2,outlier.preds.ref.std2)
 modelappinputactive=modelappinput[,c(1:4)]
 res.pca <- prcomp(modelappinputactive, scale=FALSE)
-fviz_eig(res.pca) #scree plot
+#fviz_eig(res.pca) #scree plot
 groups=as.factor(modelappinput$Status)#create group variable to visualize formal test above
 #create PCA plot in R with 90% confidence ellipses around each group
 png(filename=paste0("model_",modelId,"_PCA_",Sys.Date(),".png"))
