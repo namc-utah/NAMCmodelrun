@@ -380,7 +380,7 @@ if (exists("boxId")){
     finalResults_sf=sf::st_intersection(finalResults_sf,ecoregion)
     finalResults=dplyr::left_join(finalResults,sf::st_drop_geometry(finalResults_sf[,c('sampleId','modelId')]),by='sampleId')
     } else{
-    finalResults$modelId=ModelID
+    finalResults$modelId=modelID
     }
 
     write.csv(finalResults,paste0('finalresults_',modelID,"_",Sys.Date(),'.csv'))
