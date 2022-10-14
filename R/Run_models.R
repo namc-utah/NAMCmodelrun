@@ -159,6 +159,12 @@ if (exists("boxId")){
 if (def_models$modelId %in% c(7,8)){
   prednew$TMAX_WS=prednew$Tmax_WS
 } else{}
+# same issue with RH_WS being included in TP model but different capitalization. However, revisit if we revise TP model
+if (def_models$modelId %in% c(8)){
+      prednew$rh_WS=prednew$RH_WS
+    } else{}
+
+
 
     # ---------------------------------------------------------------
     # load model specific R objects which include reference bug data and predictors RF model objects
@@ -469,3 +475,6 @@ Report=subset(Report,modelId==modelID)
 
 #use the following to see what thresholds were applied
 modelConditions=NAMCr::query("modelConditions",modelId=modelID)
+
+write.csv(Report,paste0('finalresults_',modelID,"_",Sys.Date(),'.csv'))
+
