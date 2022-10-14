@@ -151,8 +151,14 @@ if (exists("boxId")){
     #reorder them the same just in case model functions dont already do this
     bugnew = bugnew[order(rownames(bugnew)),];
     prednew = prednew[order(rownames(prednew)),];
-}
+    }
 
+    ## special handling of AREMP predictor names is needed here.
+    #Tmax_WS is used for NV WQ and other models but for AREMP this same predictor is called TMAX_WS
+    #database is not case sensitive so cant add as unique predictor in database so have to handle here.
+if (def_models$modelId %in% c(7,8)){
+  prednew$TMAX_WS=prednew$Tmax_WS
+} else{}
 
     # ---------------------------------------------------------------
     # load model specific R objects which include reference bug data and predictors RF model objects
