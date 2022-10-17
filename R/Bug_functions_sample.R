@@ -214,7 +214,7 @@ CO_bug_export<-function(sampleIds){
   CObugs=dplyr::left_join(bugRaw,bugsTranslation, by=c("taxonomyId", "sampleId"))
   CObugs=dplyr::left_join(CObugs,samples, by='sampleId')
 
-  CObugs$Project=paste0(boxId)
+  CObugs$Project=CObugs$boxId
   CObugs$Station=CObugs$sampleId
   CObugs$Name=CObugs$siteId
   CObugs$Location=CObugs$siteName # previously used waterbody name.. use that if we export this data for use by CO state
