@@ -1,14 +1,14 @@
 # ---------------------------------------------------------------
 # Read in csv with results from COEDAS access database
 # ---------------------------------------------------------------
-modelResults=read.csv("/Users/triparmstrong/Library/CloudStorage/Box-Box/NAMC/OE_Modeling/NAMC_Supported_OEmodels/CO/InputAndResults_CO2017MMI/AIM 2021/May19results.csv")
+modelResults=read.csv("/Users/namc/Library/CloudStorage/Box-Box/NAMC/OE_Modeling/NAMC_Supported_OEmodels/CO/InputAndResults_CO2017MMI/Results1311.csv")
 modelResults = modelResults[,c("StationID","SiteClassification","MMI", "TotalInd")] # what about TotalInd_ why is this over 300 in some cases... should this be the fixedcount we use instead of down below?
 modelResults$BioType=ifelse(modelResults$SiteClassification=="1",4,
                             ifelse(modelResults$SiteClassification=="2",5,
                                    ifelse(modelResults$SiteClassification=="3",6,NA
                                    )))
 modelResults=setNames(modelResults,c("sampleId","Biotype","MMI","Count","modelId"))
-
+modelResults = modelResults %>%  na.omit()
 
 # ---------------------------------------------------------------
 # Always run model applicability test
@@ -103,3 +103,4 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
     str(e,indent.str = "   "); cat("\n")
   })
 }
+
