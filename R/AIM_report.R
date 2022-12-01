@@ -21,9 +21,10 @@ NAMCr::query("auth")
 boxes=NAMCr::query("boxes",include = c('boxId','alias','boxState','sampleCount','boxReceivedDate','processingCompleteDate','projectedCompleteDate','sampleCount'),
                    entityIds=614)
 #all AIM data
-Report=NAMCr::query("modelResults", projectId=49)
+samples=NAMCr::query("samples",projectId=49)
 #Only data for a certain box or boxes of interest
-#Report=NAMCr::query("modelResults", boxId=c())#input list of boxes of interest from above boxes query
+#samples=NAMCr::query("samples",boxId=c()#input list of boxes of interest from above boxes query
+Report=NAMCr::query("modelResults", sampleIds=samples$sampleId)
 Report=subset(Report, is.na(modelResult)==FALSE)
 
 
