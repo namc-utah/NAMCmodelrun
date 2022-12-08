@@ -270,15 +270,15 @@ return(bugnew)
 #'
 #' @param sampleIds
 #'
-#' @return raw bug data translated by CO EDAS translation and with column names formatted for CO EDAS access database
+#' @return raw bug data translated by AZ EDAS translation and with column names formatted for AZ EDAS access database
 #' @export
 #'
 #' @examples
 AZ_bug_export<-function(sampleIds){
   bugRaw = NAMCr::query(
-    "sampleTaxa",
+    "sampleTaxaUnambiguousRarefied",
     sampleIds=sampleIds
-  )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
+  )# unique rarefied taxa NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
 
   bugsTranslation = NAMCr::query(
   "sampleTaxaTranslation",
@@ -305,7 +305,7 @@ AZ_bug_export<-function(sampleIds){
   AZbugs$CorrectionFactor=AZbugs$labSplit
   AZbugs$FinalID=AZbugs$scientificName
   AZbugs$Individuals=AZbugs$splitCount
-  AZbugs$Stage=AZbugs$lifeStageAbbreviation
+  AZbugs$Stage="L"
   AZbugs$LargeRare='No'
   AZbugs$Habitat=ifelse(AZbugs$habitatName=='Targeted Riffle','Riffle','Multi-Habitat')
   AZbugs$Lab='NAMC'
