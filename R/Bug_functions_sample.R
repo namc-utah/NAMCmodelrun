@@ -276,7 +276,7 @@ return(bugnew)
 #' @examples
 AZ_bug_export<-function(sampleIds){
   bugRaw = NAMCr::query(
-    "sampleTaxaUnambiguousRarefied",
+    "sampleTaxaUnambiguous",
     sampleIds=sampleIds
   )# unique rarefied taxa NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
 
