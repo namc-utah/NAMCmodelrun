@@ -280,7 +280,8 @@ AZ_bug_export<-function(sampleIds){
     sampleIds=sampleIds
   )# unique unrarefied taxa NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
 
-  bugRare =
+  AZsubsamp<-rarify(inbug=bugRaw, sample.ID="sampleId", abund="splitCount", subsiz=500)
+
   bugsTranslation = NAMCr::query(
   "sampleTaxaTranslation",
   translationId = 26,
@@ -293,8 +294,8 @@ AZ_bug_export<-function(sampleIds){
   )
 
   # join that data together into a single dataframe
-  AZbugs=dplyr::left_join(bugRaw,bugsTranslation, by=c("taxonomyId", "sampleId"))
-  AZbugs=dplyr::left_join(bugRaw,samples, by='sampleId')
+  AZbugs=dplyr::left_join(AZsubsamp,bugsTranslation, by=c("taxonomyId", "sampleId"))
+  AZbugs=dplyr::left_join(AZsubsamp,samples, by='sampleId')
 
   AZbugs$StationID=AZbugs$siteName
   AZbugs$WaterbodyName=AZbugs$waterbodyName
