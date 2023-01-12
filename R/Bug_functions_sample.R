@@ -270,15 +270,18 @@ return(bugnew)
 #'
 #' @param sampleIds
 #'
-#' @return raw bug data translated by CO EDAS translation and with column names formatted for CO EDAS access database
+#' @return raw bug data translated by AZ EDAS translation and with column names formatted for AZ EDAS access database
 #' @export
 #'
 #' @examples
 AZ_bug_export<-function(sampleIds){
   bugRaw = NAMCr::query(
-    "sampleTaxa",
+    "sampleTaxaUnambiguous",
     sampleIds=sampleIds
-  )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
+  )# unique unrarefied taxa NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
+
+  AZsubsamp<-rarify(inbug=bugRaw, sample.ID="sampleId", abund="splitCount", subsiz=500)
+  AZsubsamp<-AZsubsamp[AZsubsamp$splitCount>0,]
 
   bugsTranslation = NAMCr::query(
   "sampleTaxaTranslation",
@@ -287,13 +290,13 @@ AZ_bug_export<-function(sampleIds){
   )
   samples = NAMCr::query(
     "samples",
-    include = c("boxId","sampleId",'siteId','sampleDate',"siteName", "waterbodyName","sampleMethod","habitatName","area"),# possibly add waterbody name to the samples NAMCr::query
+    include = c("boxId","sampleId",'siteId','sampleDate',"siteName", "waterbodyName","sampleMethod","habitatName","area", "labSplit"),# possibly add waterbody name to the samples NAMCr::query
     sampleIds=sampleIds
   )
 
   # join that data together into a single dataframe
-  AZbugs=dplyr::left_join(bugRaw,bugsTranslation, by=c("taxonomyId", "sampleId"))
-  AZbugs=dplyr::left_join(bugRaw,samples, by='sampleId')
+  AZbugs=dplyr::left_join(AZsubsamp,bugsTranslation, by=c("taxonomyId", "sampleId"))
+  AZbugs=dplyr::left_join(AZsubsamp,samples, by='sampleId')
 
   AZbugs$StationID=AZbugs$siteName
   AZbugs$WaterbodyName=AZbugs$waterbodyName
@@ -305,13 +308,14 @@ AZ_bug_export<-function(sampleIds){
   AZbugs$CorrectionFactor=AZbugs$labSplit
   AZbugs$FinalID=AZbugs$scientificName
   AZbugs$Individuals=AZbugs$splitCount
-  AZbugs$Stage=AZbugs$lifeStageAbbreviation
+  AZbugs$Stage="L"
   AZbugs$LargeRare='No'
   AZbugs$Habitat=ifelse(AZbugs$habitatName=='Targeted Riffle','Riffle','Multi-Habitat')
   AZbugs$Lab='NAMC'
   AZbugs$LabID=NA
 
-  AZbugs2=AZbugs[,c("StationID","WaterbodyName","ActivityID","RepNum","CollDate","CommentsSample","CollMeth","CorrectionFactor","FinalID","Individuals","Stage","LargeRare","Habitat","Lab","LabID")]
+  AZbugs2=AZbugs[,c("StationID","waterbodyName","ActivityID","RepNum","CollDate","CommentsSample","CollMeth",
+                    "CorrectionFactor","FinalID","Individuals","Stage","LargeRare","Habitat","Lab","LabID")]
   #write excel file to workspace
   write.csv(AZbugs2,file = paste0("AZbugs","boxId_",boxId,"_",Sys.Date(),".csv"),row.names=FALSE)
   cat(paste("csv with AZbugs has been written out to your current working directory.",

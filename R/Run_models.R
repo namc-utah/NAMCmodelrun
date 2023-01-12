@@ -22,6 +22,7 @@ if (exists("boxId")){
 }else {def_samples=NAMCr::query("samples",projectId=projectId)
   }
 
+sampleIds = def_samples$sampleId
   #   # ---------------------------------------------------------------
   # get a list of samples if the needed model has already been run for the sample
   # ---------------------------------------------------------------
