@@ -35,7 +35,7 @@ sampleIds = def_samples$sampleId
     sampleIds=def_samples$sampleId
   )
 
-  def_model_results=subset(def_model_results,modelId==modelID)
+  def_model_results=subset(def_model_results,modelId %in% modelID)
 
 
   # ---------------------------------------------------------------
@@ -65,8 +65,18 @@ sampleIds = def_samples$sampleId
                 "predictorValue"
                 ),
     sampleIds = def_model_results$sampleId)
+<<<<<<< HEAD
   def_predictors <- def_predictors[!duplicated(def_predictors), ]
   modelpred=NAMCr::query("predictors",modelId=modelID)
+=======
+  modelpredlist = list()
+  for (i in 1:length(modelID)){
+    modelpred=NAMCr::query("predictors",modelId=modelID[i])
+    modelpredlist[[i]]=modelpred
+  }
+  modelpredlist = do.call("rbind",modelpredlist)
+
+>>>>>>> 91b853c5fb7431c69a868fef8730c55f5ac0e34c
   def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
   if (modelID %in% c(4,5,6,28)){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
     def_predictors_categorical=subset(def_predictors,predictorId %in% c(111,75))
