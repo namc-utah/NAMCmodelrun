@@ -1,3 +1,5 @@
+rm(list=ls())
+
 # Load all needed packages
 library(randomForest)
 library(NAMCr)
@@ -18,19 +20,17 @@ source("R/ModelApplicabilityAll.R")
 ecoregion_base_path="/Users/triparmstrong/Library/CloudStorage/Box-Box/NAMC/"
 
 # to run the scripts choose a boxId or projectId
-#boxId=2193
-# test boxes
-# 2141-UT,2065 OR WCCP and MCCP, null, 2152 PIBO, 2172 CSCI,2107 AREMP, 2054 CO, NV 2140, 1603 westwide and 2055,	2150 WY
+#boxId=5476
 
 #projects=NAMCr::query("projects")
-projectId=222
+projectId=1971
 
 
 # then input a modelID
 models=NAMCr::query("models")
-modelID=26
+#modelID=25
 
-modelID = c(25,26)
+modelID = c(1)
 
 # all model results are always calculated
 # overwrite controls which are saved in the database
