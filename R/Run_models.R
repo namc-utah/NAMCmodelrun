@@ -65,6 +65,10 @@ sampleIds = def_samples$sampleId
                 "predictorValue"
                 ),
     sampleIds = def_model_results$sampleId)
+<<<<<<< HEAD
+  def_predictors <- def_predictors[!duplicated(def_predictors), ]
+  modelpred=NAMCr::query("predictors",modelId=modelID)
+=======
   modelpredlist = list()
   for (i in 1:length(modelID)){
     modelpred=NAMCr::query("predictors",modelId=modelID[i])
@@ -72,6 +76,7 @@ sampleIds = def_samples$sampleId
   }
   modelpredlist = do.call("rbind",modelpredlist)
 
+>>>>>>> 91b853c5fb7431c69a868fef8730c55f5ac0e34c
   def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
   if (modelID %in% c(4,5,6,28)){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
     def_predictors_categorical=subset(def_predictors,predictorId %in% c(111,75))
@@ -323,6 +328,7 @@ if (def_models$modelId %in% c(8)){
                                   ),
                                 sampleIds = def_model_results$sampleId
                                 ) #need list of samples in database with values
+    applicabilitypreds <- applicabilitypreds[!duplicated(applicabilitypreds), ]
     applicabilitypreds = subset(applicabilitypreds, abbreviation %in% c('ElevCat','Tmean8110Ws','WsAreaSqKm','Precip8110Ws'))
     applicabilitypreds$predictorValue=as.numeric(applicabilitypreds$predictorValue)
     applicabilitypreds = tidyr::pivot_wider(applicabilitypreds,
@@ -376,9 +382,9 @@ if (def_models$modelId %in% c(8)){
     #################################################
 
     #IF NATIONAL COMMENT OUT THIS LINE OF CODE AND UNCOMMENT OUT THE FOLLOWING TWO LINES
-    finalResults=dplyr::left_join(finalResults,additionalbugmetrics,by="sampleId")
-    # finalResults=dplyr::left_join(finalResults,sumrarefiedOTUTaxa,by="sampleId")
-    # finalResults$InvasiveInvertSpecies='National'
+    #finalResults=dplyr::left_join(finalResults,additionalbugmetrics,by="sampleId")
+    finalResults=dplyr::left_join(finalResults,sumrarefiedOTUTaxa,by="sampleId")
+    finalResults$InvasiveInvertSpecies='National'
 
 
     # ---------------------------------------------------------------
