@@ -370,6 +370,9 @@ if (def_models$modelId %in% c(8)){
     additionalbugmetrics=dplyr::left_join(sumrarefiedOTUTaxa,invasives, by="sampleId")
     # if no invasives were present set to absent
     additionalbugmetrics[is.na(additionalbugmetrics)]<-"Absent"
+    ##convert any commas in invasive names to 'and'
+    invasives$InvasiveInvertSpecies <- gsub(',',' and',invasives$InvasiveInvertSpecies)
+
     #################################################
 
     #IF NATIONAL COMMENT OUT THIS LINE OF CODE AND UNCOMMENT OUT THE FOLLOWING TWO LINES
