@@ -17,20 +17,28 @@ source("R/model.predict.RanFor.4.2.r")
 source("R/model.predict.v4.1.r")
 source("R/ModelApplicabilityAll.R")
 
+##TWA office
 ecoregion_base_path="/Users/triparmstrong/Library/CloudStorage/Box-Box/NAMC/"
+CalPredsModelApplicability=read.csv("/Users/triparmstrong/Library/CloudStorage/Box-Box/NAMC/OE_Modeling/NAMC_Supported_OEmodels/Model Applicability/CalPredsModelApplicability.csv")
+
+##TWA home
+ecoregion_base_path="/Users/namc/Library/CloudStorage/Box-Box/NAMC/"
+CalPredsModelApplicability=read.csv("/Users/namc/Library/CloudStorage/Box-Box/NAMC/OE_Modeling/NAMC_Supported_OEmodels/Model Applicability/CalPredsModelApplicability.csv")
 
 # to run the scripts choose a boxId or projectId
-#boxId=5476
+boxId=4816
 
-#projects=NAMCr::query("projects")
-projectId=1971
-
+projects=NAMCr::query("projects")
+#projectId=1641
 
 # then input a modelID
 models=NAMCr::query("models")
+
 #modelID=25
 
-modelID = c(1)
+modelID = c(4)
+
+
 
 # all model results are always calculated
 # overwrite controls which are saved in the database
@@ -39,7 +47,7 @@ overwrite='Y'
 
 # input file path for reference sites attributed with elevation, watershed area, and temperature for model applicability function
 #remove this line once reference sites are all in database with stream cat data
-CalPredsModelApplicability=read.csv("/Users/triparmstrong/Library/CloudStorage/Box-Box/NAMC/OE_Modeling/NAMC_Supported_OEmodels/Model Applicability/CalPredsModelApplicability.csv")
+
 
 
 
