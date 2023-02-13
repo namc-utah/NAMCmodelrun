@@ -1,7 +1,12 @@
 # ---------------------------------------------------------------
 # Read in csv with results from COEDAS access database
 # ---------------------------------------------------------------
-modelResults=read.csv("/Users/namc/Library/CloudStorage/Box-Box/NAMC/OE_Modeling/NAMC_Supported_OEmodels/CO/InputAndResults_CO2017MMI/Results1311.csv")
+##office
+modelResults=read.csv("/Users/triparmstrong/Library/CloudStorage/Box-Box/NAMC/OE_Modeling/NAMC_Supported_OEmodels/CO/InputAndResults_CO2017MMI/4816Results.csv")
+##home
+modelResults=read.csv("/Users/namc/Library/CloudStorage/Box-Box/NAMC/OE_Modeling/NAMC_Supported_OEmodels/CO/InputAndResults_CO2017MMI/4816Results.csv")
+
+
 modelResults = modelResults[,c("StationID","SiteClassification","MMI", "TotalInd")] # what about TotalInd_ why is this over 300 in some cases... should this be the fixedcount we use instead of down below?
 modelResults$BioType=ifelse(modelResults$SiteClassification=="1",4,
                             ifelse(modelResults$SiteClassification=="2",5,
