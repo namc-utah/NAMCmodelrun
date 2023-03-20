@@ -34,21 +34,43 @@ if (exists("boxId")){
     sampleIds=def_samples$sampleId
   )
 
-  def_model_results=subset(def_model_results,modelId==modelID)
+  def_model_results=subset(def_model_results,modelId %in% modelID)
 
 
   # ---------------------------------------------------------------
   # get model metadata needed to run the model - philip said he would change apis so that model id would just be provided and translation id and fixed count wouldnt be needed
   # ---------------------------------------------------------------
-  def_models = NAMCr::query(
+  arbitrary_list<-list()
+
+  if(length(modelID)>1){
+    print("I am looping through all modelIDs")
+  for(i in 1:length(modelID)){
+  x = NAMCr::query(
     api_endpoint = "modelInfo",
     include = c("modelId",
                 "modelTypeAbbreviation",
                 "abbreviation",
                 "translationId",
                 "fixedCount"),
-    modelId = def_model_results$modelId[1]
+    modelId = unique(def_model_results$modelId)[i]
   )
+  arbitrary_list[[i]]<-x
+  }
+  def_models<-as.data.frame(do.call('rbind',arbitrary_list))
+  }else{
+  print("I am only using 1 model ID")
+    def_models = NAMCr::query(
+      api_endpoint = "modelInfo",
+      include = c("modelId",
+                  "modelTypeAbbreviation",
+                  "abbreviation",
+                  "translationId",
+                  "fixedCount"),
+      modelId =def_model_results$modelId[1]
+    )
+    def_models=as.data.frame(do.call('rbind',def_models))
+  }
+
 
   # ---------------------------------------------------------------
   # Get predictor values needed for the model, if they dont exist yet stop here
@@ -64,9 +86,21 @@ if (exists("boxId")){
                 "predictorValue"
                 ),
     sampleIds = def_model_results$sampleId)
-  modelpred=NAMCr::query("predictors",modelId=modelID)
+
+  if(length(modelID)>1){
+    for(i in 1:length(modelID)){
+        modelpred=NAMCr::query("predictors",modelId=modelID[i])
+        arbitrary_list[[i]]<-modelpred
+    }
+    modelpred<-do.call('rbind',arbitrary_list)
+  }else{
+    modelpred=NAMCr::query("predictors",modelId=modelID[i])
+  }
+
+
+
   def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
-  if (modelID %in% c(4,5,6,28)){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
+  if (unique(modelID) %in% c(4,5,6,28)){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
     def_predictors_categorical=subset(def_predictors,predictorId %in% c(111,75))
     prednew1 = tidyr::pivot_wider(def_predictors_categorical,
                                  id_cols="sampleId",
@@ -102,7 +136,7 @@ if (exists("boxId")){
     # ---------------------------------------------------------------
     #
     # if modelType= bug OE get OTU taxa matrix
-    if (def_models$modelId == 12) {
+    if (unique(def_models$modelId) %in% 12) {
       bugnew = OR_NBR_bug(
         sampleIds = def_model_results$sampleId,
         translationId = def_models$translationId,
@@ -116,7 +150,7 @@ if (exists("boxId")){
         fixedCount = def_models$fixedCount
       )
      # CO model must be written out as an excel file using a separate bank of code and function
-    } else if (def_models$modelId %in% c(4, 5, 6)) {
+    } else if (unique(def_models$modelId) %in% c(4, 5, 6)) {
       #write get bugs from database, write out as a csv and save as CObugs object
       CObugs=CO_bug_export(sampleIds=def_model_results$sampleId)
       #write out predictors as a csv
@@ -128,16 +162,16 @@ if (exists("boxId")){
                 "then read resulting excel file back into R to save results in the database.", sep="\n"))
 
       # CSCI requires just the raw taxa list translated for misspelling
-    } else if (def_models$modelId %in% c(1)) {
+    } else if (unique(def_models$modelId) %in% c(1)) {
       bugnew = CSCI_bug(sampleIds = def_model_results$sampleId)
-    } else if (def_models$modelId %in% c(169)){
+    } else if (unique(def_models$modelId) %in% c(169)){
       bugnew=AZ_bug_export(sampleIds = def_model_results$sampleId)
     }else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
       bugnew = MMI_metrics(sampleIds = def_model_results$sampleId, translationId=def_models$translationId, fixedCount = def_models$fixedCount,modelId=def_models$modelId)
  }else {
 
     }
-    if (def_models$modelId %in% c(12)){#no predictors are needed for OR null model
+    if (unique(def_models$modelId) %in% c(12)){#no predictors are needed for OR null model
 
     } else if (def_models$modelId %in% c(1,4:6)){#CSCI bug file doesnt have row names and has multiple rows for a given sampleID, so does CO but CO is written out to disk
       bugnew<-subset(bugnew,bugnew$SampleID %in% rownames(prednew))
@@ -155,11 +189,11 @@ if (exists("boxId")){
     ## special handling of AREMP predictor names is needed here.
     #Tmax_WS is used for NV WQ and other models but for AREMP this same predictor is called TMAX_WS
     #database is not case sensitive so cant add as unique predictor in database so have to handle here.
-if (def_models$modelId %in% c(7,8)){
+if (unique(def_models$modelId)%in% c(7,8)){
   prednew$TMAX_WS=prednew$Tmax_WS
 } else{}
 # same issue with RH_WS being included in TP model but different capitalization. However, revisit if we revise TP model
-if (def_models$modelId %in% c(8)){
+if (unique(def_models$modelId) %in% c(8)){
       prednew$rh_WS=prednew$RH_WS
     } else{}
 
@@ -172,14 +206,14 @@ if (def_models$modelId %in% c(8)){
     # the R objects are named with the model abbreviation
     # instead of all these if statements the R file name could be stored in the database... but WY and NV require two models and R file names
     #if CO, CSCI, or OR null model no R data file needs loaded in
-    if (def_models$modelId %in% c(1,4,5,6,12,169)){
+    if (unique(def_models$modelId) %in% c(1,4,5,6,12,169)){
       print("no R object needs loaded")
       #if WY model only one Rdata file needs loaded and not one for each "model" but Alkalinity also needs added
-    } else if (def_models$modelId %in% c(13:23)){
+    } else if (unique(def_models$modelId) %in% c(13:23)){
       load("sysdata.rda/WY2018.Rdata")
       load("sysdata.rda/Alkalinity.Rdata")### objects named the same so they will be overwritten.... how do we deal with
       #if westwide model only one R data file needs loaded in and not one for each model
-    }else if (def_models$modelId %in% c(25:26)){
+    }else if (unique(def_models$modelId) %in% c(25:26)){
       load(paste0("sysdata.rda/Westwide2018.Rdata"))
       # all other models should have R data files named identical to model name
     }else{
@@ -194,7 +228,7 @@ if (def_models$modelId %in% c(8)){
     # OE models
     # ------------------------------
     # models using john vansickles RIVPACS random forest code : AREMP, UTDEQ15, Westwide, PIBO
-    if (def_models$modelId %in% c(7, 2, 25, 26,9)) {
+    if (unique(def_models$modelId) %in% c(7, 2, 25, 26,9)) {
       OE <-model.predict.RanFor.4.2(
           bugcal.pa,
           grps.final,
@@ -208,7 +242,7 @@ if (def_models$modelId %in% c(8)){
       modelResults<-OE$OE.scores
 
     # models using John VanSickles RIVPACS discriminant function code: OR_WCCP, OR_MWCF
-    } else if (def_models$modelId %in% c(10, 11)) {
+    } else if (unique(def_models$modelId) %in% c(10, 11)) {
       OE <-model.predict.v4.1(bugcal.pa,
                            grps.final,
                            preds.final,
@@ -220,7 +254,7 @@ if (def_models$modelId %in% c(8)){
       modelResults<-OE$OE.scores
 
     # WY also uses John vansickles discriminant function code but requires alkalinity model as a dependency
-    } else if (def_models$modelId %in% (13:23)) {
+    } else if (unique(def_models$modelId) %in% (13:23)) {
       ALK_LOG = setNames(as.data.frame(
         log10(predict(ranfor.mod, prednew, type = "response"))
       ), c("ALK_LOG"))
@@ -236,11 +270,11 @@ if (def_models$modelId %in% c(8)){
       modelResults<-OE$OE.scores
 
     # OR eastern region is a null model and no predictors are used
-    } else if (def_models$modelId == 12) {
+    } else if (unique(def_models$modelId) %in% 12) {
       modelResults <- OR_NBR_model(bugnew)
 
     # CSCI has its own package and function
-    } else if (def_models$modelId == 1) {
+    } else if (unique(def_models$modelId) %in% 1) {
       prednew$sampleId=as.numeric(row.names(prednew))
       prednew=left_join(prednew,def_samples[,c('siteName','sampleId')],by='sampleId')
       prednew$StationCode<-prednew$sampleId
@@ -252,7 +286,7 @@ if (def_models$modelId %in% c(8)){
       # MMI models
       # ------------------------------
       # all MMIs will need their own function added here because there is a rf model for each metric
-    } else if (def_models$modelId == 8) {# AREMP MMI
+    } else if (unique(def_models$modelId)%in% 8) {# AREMP MMI
       modelResults <-
         AREMP_MMI_model(
           bugnew,
@@ -267,7 +301,7 @@ if (def_models$modelId %in% c(8)){
           mdeg_metrics_adj_cal,
           ref_metrics_adj
         )
-    } else if (def_models$modelId == 3) {# NV MMI
+    } else if (unique(def_models$modelId) %in% 3) {# NV MMI
     # need to call conductivity model first before calling the NV model because predicted conductivity is a predictor for the NV model
       load(file="sysdata.rda/EC12.Rdata")
       PrdCond = setNames(as.data.frame(
@@ -285,7 +319,7 @@ if (def_models$modelId %in% c(8)){
           PER_EPHEA.rf,
           PER_PLECA.rf
         )
-    } else if (def_models$modelId == 136){#modeled insect richness
+    } else if (unique(def_models$modelId) %in% 136){#modeled insect richness
       UniqueRichness_Insecta_pred=predict(rfmod_UniqueRichness_Insecta, prednew, type="response")
       # join predicted insect richness to intial data
       modelResults=cbind(bugnew, UniqueRichness_Insecta_pred)
@@ -296,7 +330,7 @@ if (def_models$modelId %in% c(8)){
       # WQ models
       # ------------------------------
       #conductivity, tp, tn,temperature
-    }else if (def_models$modelId %in% c(27, 28, 29, 30)) {
+    }else if (unique(def_models$modelId)%in% c(27, 28, 29, 30)) {
       modelResults = as.data.frame(predict(ranfor.mod, prednew, type = "response"))# make sure prednew has sampleIds as the rows
     }else{
 
@@ -477,3 +511,4 @@ modelConditions=NAMCr::query("modelConditions",modelId=modelID)
 
 write.csv(Report,paste0('finalresults_',modelID,"_",Sys.Date(),'.csv'))
 
+length(modelID[modelID%in%c(4,5,6,9)]==T)

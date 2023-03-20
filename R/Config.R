@@ -1,4 +1,5 @@
 # Load all needed packages
+rm(list=ls())
 library(randomForest)
 library(NAMCr)
 library(tidyverse)
@@ -18,17 +19,17 @@ source("R/ModelApplicabilityAll.R")
 ecoregion_base_path="C:/Users/jenni/Box/NAMC (Trip Armstrong)/"
 
 # to run the scripts choose a boxId or projectId
-boxId=2214
+#boxId=2214
 # test boxes
 # 2141-UT,2065 OR WCCP and MCCP, null, 2152 PIBO, 2172 CSCI,2107 AREMP, 2054 CO, NV 2140, 1603 westwide and 2055,	2150 WY
 
 projects=NAMCr::query("projects")
-projectId=387
+projectId=2301
 
 
 # then input a modelID
 models=NAMCr::query("models")
-modelID=1
+modelID=c(25,26)
 
 
 # all model results are always calculated
