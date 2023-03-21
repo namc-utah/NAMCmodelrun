@@ -16,8 +16,8 @@ source("R/model.predict.RanFor.4.2.r")
 source("R/model.predict.v4.1.r")
 source("R/ModelApplicabilityAll.R")
 
-ecoregion_base_path="C:/Users/jenni/Box/NAMC (Trip Armstrong)/"
-
+#ecoregion_base_path="C:/Users/jenni/Box/NAMC (Trip Armstrong)/"
+ecoregion_base_path="C://Users//andrew.caudillo//Box//NAMC//"
 # to run the scripts choose a boxId or projectId
 #boxId=2214
 # test boxes
@@ -39,6 +39,6 @@ overwrite='N'
 
 # input file path for reference sites attributed with elevation, watershed area, and temperature for model applicability function
 #remove this line once reference sites are all in database with stream cat data
-CalPredsModelApplicability=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEModels/Model Applicability/CalPredsModelApplicability.csv")
-
+#CalPredsModelApplicability=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEModels/Model Applicability/CalPredsModelApplicability.csv")
+CalPredsModelApplicability=read.csv("C://Users//andrew.caudillo//Box//NAMC//OE_Modeling//NAMC_Supported_OEModels//Model Applicability//CalPredsModelApplicability.csv")
 
