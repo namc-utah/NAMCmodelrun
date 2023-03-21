@@ -281,6 +281,7 @@ AZ_bug_export<-function(sampleIds){
   )# unique unrarefied taxa NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
 
   AZsubsamp<-rarify(inbug=bugRaw, sample.ID="sampleId", abund="splitCount", subsiz=500)
+  AZsubsamp<-AZsubsamp[AZsubsamp$splitCount>0,]
 
   bugsTranslation = NAMCr::query(
   "sampleTaxaTranslation",
@@ -289,7 +290,7 @@ AZ_bug_export<-function(sampleIds){
   )
   samples = NAMCr::query(
     "samples",
-    include = c("boxId","sampleId",'siteId','sampleDate',"siteName", "waterbodyName","sampleMethod","habitatName","area"),# possibly add waterbody name to the samples NAMCr::query
+    include = c("boxId","sampleId",'siteId','sampleDate',"siteName", "waterbodyName","sampleMethod","habitatName","area", "labSplit"),# possibly add waterbody name to the samples NAMCr::query
     sampleIds=sampleIds
   )
 
@@ -313,7 +314,8 @@ AZ_bug_export<-function(sampleIds){
   AZbugs$Lab='NAMC'
   AZbugs$LabID=NA
 
-  AZbugs2=AZbugs[,c("StationID","WaterbodyName","ActivityID","RepNum","CollDate","CommentsSample","CollMeth","CorrectionFactor","FinalID","Individuals","Stage","LargeRare","Habitat","Lab","LabID")]
+  AZbugs2=AZbugs[,c("StationID","waterbodyName","ActivityID","RepNum","CollDate","CommentsSample","CollMeth",
+                    "CorrectionFactor","FinalID","Individuals","Stage","LargeRare","Habitat","Lab","LabID")]
   #write excel file to workspace
   write.csv(AZbugs2,file = paste0("AZbugs","boxId_",boxId,"_",Sys.Date(),".csv"),row.names=FALSE)
   cat(paste("csv with AZbugs has been written out to your current working directory.",
