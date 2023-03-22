@@ -69,7 +69,8 @@ def_models<-bind_rows(arbitrary_list)
                   "fixedCount"),
       modelId =def_model_results$modelId[1]
     )
-    def_models=as.data.frame(do.call('rbind',def_models))
+    def_models=as.data.frame(t(as.data.frame(do.call('rbind',def_models))))
+    def_models[,c(1,4,5)]<-as.integer(def_models[,c(1,4,5)])
   }
 
 
@@ -88,11 +89,19 @@ def_models<-bind_rows(arbitrary_list)
                 ),
     sampleIds = def_model_results$sampleId)
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> a4d1701f72a4cbfcc3ab8eafd881ca5326468a85
   def_predictors <- def_predictors[!duplicated(def_predictors), ]
 
 
   modelpredlist = list()
+<<<<<<< HEAD
 for (i in 1:length(modelID)){
+=======
+
+>>>>>>> a4d1701f72a4cbfcc3ab8eafd881ca5326468a85
   if(length(modelID)>1){
     for(i in 1:length(modelID)){
         modelpred=NAMCr::query("predictors",modelId=modelID[i])
@@ -100,9 +109,15 @@ for (i in 1:length(modelID)){
     }
     modelpred<-do.call('rbind',arbitrary_list)
   }else{
+<<<<<<< HEAD
     modelpred=NAMCr::query("predictors",modelId=modelID[i])
   }
 }
+=======
+
+    modelpred=NAMCr::query("predictors",modelId=modelID)
+
+>>>>>>> a4d1701f72a4cbfcc3ab8eafd881ca5326468a85
   def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
   if (length(modelID[modelID%in%c(4,5,6,28)]==T)>=1){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
     def_predictors_categorical=subset(def_predictors,predictorId %in% c(111,75))
@@ -132,7 +147,7 @@ for (i in 1:length(modelID)){
                                            names_from = "abbreviation",
                                            values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
               prednew=as.data.frame(prednew)
-            }
+            }}
     rownames(prednew)<-prednew$sampleId
     prednew<-prednew[,-1]
     # ---------------------------------------------------------------
@@ -151,8 +166,8 @@ for (i in 1:length(modelID)){
       bugnew = OE_bug_matrix(
         sampleIds = def_model_results$sampleId,
         translationId = def_models$translationId[1],
-        fixedCount = def_models$fixedCount[1]
-      )
+        fixedCount = def_models$fixedCount[1])
+
      # CO model must be written out as an excel file using a separate bank of code and function
     } else if (length(def_models$modelId[def_models$modelId %in% c(4,5,6)]==T)>=1) {
       #write get bugs from database, write out as a csv and save as CObugs object
@@ -232,7 +247,7 @@ if (length(def_models$modelId[def_models$modelId %in% 8]==T)>=1){
     # OE models
     # ------------------------------
     # models using john vansickles RIVPACS random forest code : AREMP, UTDEQ15, Westwide, PIBO
-    if (length(def_models$modelId[def_models$modelId %in% c(2,7,25,26,29)]==T)>=1) {
+    if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29)]==T)>=1) {
       OE <-model.predict.RanFor.4.2(
           bugcal.pa,
           grps.final,
