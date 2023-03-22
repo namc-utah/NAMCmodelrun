@@ -69,7 +69,8 @@ sampleIds = def_samples$sampleId
                   "fixedCount"),
       modelId =def_model_results$modelId[1]
     )
-    def_models=as.data.frame(do.call('rbind',def_models))
+    def_models=as.data.frame(t(as.data.frame(do.call('rbind',def_models))))
+    def_models[,c(1,4,5)]<-as.integer(def_models[,c(1,4,5)])
   }
 
 
@@ -95,7 +96,7 @@ sampleIds = def_samples$sampleId
     }
     modelpred<-do.call('rbind',arbitrary_list)
   }else{
-    modelpred=NAMCr::query("predictors",modelId=modelID[i])
+    modelpred=NAMCr::query("predictors",modelId=modelID)
   }
 
 
@@ -148,8 +149,8 @@ sampleIds = def_samples$sampleId
       bugnew = OE_bug_matrix(
         sampleIds = def_model_results$sampleId,
         translationId = def_models$translationId[1],
-        fixedCount = def_models$fixedCount[1]
-      )
+        fixedCount = def_models$fixedCount[1])
+
      # CO model must be written out as an excel file using a separate bank of code and function
     } else if (length(def_models$modelId[def_models$modelId %in% c(4,5,6)]==T)>=1) {
       #write get bugs from database, write out as a csv and save as CObugs object
@@ -229,7 +230,7 @@ if (length(def_models$modelId[def_models$modelId %in% 8]==T)>=1){
     # OE models
     # ------------------------------
     # models using john vansickles RIVPACS random forest code : AREMP, UTDEQ15, Westwide, PIBO
-    if (length(def_models$modelId[def_models$modelId %in% c(2,7,25,26,29)]==T)>=1) {
+    if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29)]==T)>=1) {
       OE <-model.predict.RanFor.4.2(
           bugcal.pa,
           grps.final,
