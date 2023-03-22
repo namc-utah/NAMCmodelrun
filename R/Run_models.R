@@ -43,7 +43,7 @@ sampleIds = def_samples$sampleId
   # ---------------------------------------------------------------
   arbitrary_list<-list()
 
-  if(length(modelID)>1){
+  if(length(unique(def_model_results$modelId))>1){
     print("There are multiple modelIDs in this set")
   for(i in 1:length(modelID)){
   x = NAMCr::query(
@@ -57,7 +57,7 @@ sampleIds = def_samples$sampleId
   )
   arbitrary_list[[i]]<-x
   }
-  def_models<-bind_rows(arbitrary_list)
+def_models<-bind_rows(arbitrary_list)
   }else{
   print("There is only one modelID for this set")
     def_models = NAMCr::query(
@@ -88,13 +88,11 @@ sampleIds = def_samples$sampleId
                 ),
     sampleIds = def_model_results$sampleId)
 
-<<<<<<< HEAD
   def_predictors <- def_predictors[!duplicated(def_predictors), ]
-  modelpred=NAMCr::query("predictors",modelId=modelID)
+
 
   modelpredlist = list()
-  for (i in 1:length(modelID)){
-=======
+for (i in 1:length(modelID)){
   if(length(modelID)>1){
     for(i in 1:length(modelID)){
         modelpred=NAMCr::query("predictors",modelId=modelID[i])
@@ -102,15 +100,9 @@ sampleIds = def_samples$sampleId
     }
     modelpred<-do.call('rbind',arbitrary_list)
   }else{
->>>>>>> 52125ed3f83dc96af157d6da1ff71829750cdb39
     modelpred=NAMCr::query("predictors",modelId=modelID[i])
   }
-
-<<<<<<< HEAD
-=======
-
-
->>>>>>> 52125ed3f83dc96af157d6da1ff71829750cdb39
+}
   def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
   if (length(modelID[modelID%in%c(4,5,6,28)]==T)>=1){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
     def_predictors_categorical=subset(def_predictors,predictorId %in% c(111,75))
