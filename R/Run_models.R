@@ -89,6 +89,12 @@ sampleIds = def_samples$sampleId
                 ),
     sampleIds = def_model_results$sampleId)
 
+
+  def_predictors <- def_predictors[!duplicated(def_predictors), ]
+  modelpred=NAMCr::query("predictors",modelId=modelID)
+
+  modelpredlist = list()
+
   if(length(modelID)>1){
     for(i in 1:length(modelID)){
         modelpred=NAMCr::query("predictors",modelId=modelID[i])
@@ -96,10 +102,8 @@ sampleIds = def_samples$sampleId
     }
     modelpred<-do.call('rbind',arbitrary_list)
   }else{
+
     modelpred=NAMCr::query("predictors",modelId=modelID)
-  }
-
-
 
   def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
   if (length(modelID[modelID%in%c(4,5,6,28)]==T)>=1){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
@@ -130,7 +134,7 @@ sampleIds = def_samples$sampleId
                                            names_from = "abbreviation",
                                            values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
               prednew=as.data.frame(prednew)
-            }
+            }}
     rownames(prednew)<-prednew$sampleId
     prednew<-prednew[,-1]
     # ---------------------------------------------------------------
