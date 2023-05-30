@@ -37,7 +37,7 @@ modelID=25
 
 ##TWA home
 ecoregion_base_path="/Users/namc/Library/CloudStorage/Box-Box/NAMC/"
-CalPredsModelApplicability=read.csv("/Users/namc/Library/CloudStorage/Box-Box/NAMC/OE_Modeling/NAMC_Supported_OEmodels/Model Applicability/CalPredsModelApplicability.csv")
+CalPredsModelApplicability=read.csv("/Users/namc/Library/CloudStorage/Box-Box/NAMC/OEModeling/NAMC_Supported_OEmodels/Model Applicability/CalPredsModelApplicability.csv")
 
 
 # all model results are always calculated
