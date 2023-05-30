@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-=======
+
 rm(list=ls())
 
 # Load all needed packages
@@ -20,7 +19,7 @@ source("R/model.predict.v4.1.r")
 source("R/ModelApplicabilityAll.R")
 
 # to run the scripts choose a boxId or projectId
-boxId=4816
+boxId=6862
 # test boxes
 # 2141-UT,2065 OR WCCP and MCCP, null, 2152 PIBO, 2172 CSCI,2107 AREMP, 2054 CO, NV 2140, 1603 westwide and 2055,	2150 WY
 
