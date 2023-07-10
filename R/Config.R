@@ -19,17 +19,17 @@ source("R/ModelApplicabilityAll.R")
 #ecoregion_base_path="C:/Users/jenni/Box/NAMC (Trip Armstrong)/"
 ecoregion_base_path="C://Users//andrew.caudillo//Box//NAMC//"
 # to run the scripts choose a boxId or projectId
-#boxId=2214
+boxId=4487
 # test boxes
 # 2141-UT,2065 OR WCCP and MCCP, null, 2152 PIBO, 2172 CSCI,2107 AREMP, 2054 CO, NV 2140, 1603 westwide and 2055,	2150 WY
 
-projects=NAMCr::query("projects")
-projectId=2301
+#projects=NAMCr::query("projects")
+#projectId=2631
 
 
 # then input a modelID
 models=NAMCr::query("models")
-modelID=c(25,26)
+modelID=c(9,25)
 
 
 # all model results are always calculated
@@ -40,5 +40,6 @@ overwrite='N'
 # input file path for reference sites attributed with elevation, watershed area, and temperature for model applicability function
 #remove this line once reference sites are all in database with stream cat data
 #CalPredsModelApplicability=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEModels/Model Applicability/CalPredsModelApplicability.csv")
-CalPredsModelApplicability=read.csv("C://Users//andrew.caudillo//Box//NAMC//OE_Modeling//NAMC_Supported_OEModels//Model Applicability//CalPredsModelApplicability.csv")
-
+setwd("C://Users//andrew.caudillo//Box//NAMC//OEModeling//NAMC_Supported_OEModels//Model Applicability")
+CalPredsModelApplicability=read.csv("CalPredsModelApplicability.csv")
+ID_lookup<-read.csv('BLM_ID_COMID_metadata.csv',stringsAsFactors = F)
