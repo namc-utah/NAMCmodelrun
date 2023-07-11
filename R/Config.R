@@ -1,5 +1,6 @@
 # Load all needed packages
 rm(list=ls())
+setwd('C://Users//andrew.caudillo//Documents//R_code//NAMCmodelrun')
 library(randomForest)
 library(NAMCr)
 library(tidyverse)
@@ -29,7 +30,7 @@ boxId=4487
 
 # then input a modelID
 models=NAMCr::query("models")
-modelID=c(9,25)
+modelID=9
 
 
 # all model results are always calculated
@@ -40,6 +41,25 @@ overwrite='N'
 # input file path for reference sites attributed with elevation, watershed area, and temperature for model applicability function
 #remove this line once reference sites are all in database with stream cat data
 #CalPredsModelApplicability=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OE_Modeling/NAMC_Supported_OEModels/Model Applicability/CalPredsModelApplicability.csv")
-setwd("C://Users//andrew.caudillo//Box//NAMC//OEModeling//NAMC_Supported_OEModels//Model Applicability")
-CalPredsModelApplicability=read.csv("CalPredsModelApplicability.csv")
-ID_lookup<-read.csv('BLM_ID_COMID_metadata.csv',stringsAsFactors = F)
+
+CalPredsModelApplicability=read.csv("C://Users//andrew.caudillo//Box//NAMC//OEModeling//NAMC_Supported_OEModels//Model Applicability//CalPredsModelApplicability.csv")
+
+#only need to run this part of CONFIG if AIM ID is the client
+
+#This is ONLY for AIM Idaho
+#The BLM has requested that we assign certain models
+#to critical salmonid habitat, and another model for non-critical habitat.
+ID_lookup<-read.csv('C://Users//andrew.caudillo//Box//NAMC//OEModeling//NAMC_Supported_OEModels//Model Applicability//BLM_ID_COMID_metadata.csv',stringsAsFactors = F)
+names(ID_lookup)[2]<-'waterbodyCode'
+ID_lookup<-ID_lookup[!duplicated(ID_lookup$waterbodyCode),]
+#crit is 9, not crit 25
+
+ID_lookup$modelId<-ifelse(ID_lookup$CritHab=='No',25,9)
+IDsites= query(
+  api_endpoint = "sites",
+  args = list(boxIds = boxId) #change box number as needed
+)
+ID_lookup_table<-plyr::join(IDsites[,c('waterbodyCode','siteId')],ID_lookup[,c('waterbodyCode','CritHab','modelId')],by='waterbodyCode',type='inner')
+CritHab<-ID_lookup_table[ID_lookup_table$modelId==9,]
+NonCrit<-ID_lookup_table[ID_lookup_table$modelId==25,]
+

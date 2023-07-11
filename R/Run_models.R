@@ -17,6 +17,7 @@
 #   # ---------------------------------------------------------------
 # get a list of samples in a box or project
 # ---------------------------------------------------------------
+
 if (exists("boxId")){
   def_samples=NAMCr::query("samples",boxId=boxId)
 }else {def_samples=NAMCr::query("samples",projectId=projectId)
@@ -89,36 +90,30 @@ def_models<-bind_rows(arbitrary_list)
                 ),
     sampleIds = def_model_results$sampleId)
 
-<<<<<<< HEAD
-=======
 
->>>>>>> a4d1701f72a4cbfcc3ab8eafd881ca5326468a85
   def_predictors <- def_predictors[!duplicated(def_predictors), ]
 
 
-  modelpredlist = list()
-<<<<<<< HEAD
-for (i in 1:length(modelID)){
-=======
+modelpredlist = list()
 
->>>>>>> a4d1701f72a4cbfcc3ab8eafd881ca5326468a85
+for (j in 1:length(modelID)){
+
+
+
   if(length(modelID)>1){
     for(i in 1:length(modelID)){
+      print('there are multiple modelIDs')
         modelpred=NAMCr::query("predictors",modelId=modelID[i])
         arbitrary_list[[i]]<-modelpred
     }
     modelpred<-do.call('rbind',arbitrary_list)
   }else{
-<<<<<<< HEAD
-    modelpred=NAMCr::query("predictors",modelId=modelID[i])
+
+    modelpred=NAMCr::query("predictors",modelId=modelID[j])
   }
 }
-=======
 
-    modelpred=NAMCr::query("predictors",modelId=modelID)
-
->>>>>>> a4d1701f72a4cbfcc3ab8eafd881ca5326468a85
-  def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
+def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
   if (length(modelID[modelID%in%c(4,5,6,28)]==T)>=1){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
     def_predictors_categorical=subset(def_predictors,predictorId %in% c(111,75))
     prednew1 = tidyr::pivot_wider(def_predictors_categorical,
@@ -147,7 +142,7 @@ for (i in 1:length(modelID)){
                                            names_from = "abbreviation",
                                            values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
               prednew=as.data.frame(prednew)
-            }}
+            }
     rownames(prednew)<-prednew$sampleId
     prednew<-prednew[,-1]
     # ---------------------------------------------------------------
@@ -163,13 +158,32 @@ for (i in 1:length(modelID)){
       )
       #need a way to distinguish this model from others.. call NULL OE?
     } else if (length(def_models$modelTypeAbbreviation[def_models$modelTypeAbbreviation=='OE'])>=1) {
-      bugnew = OE_bug_matrix(
+      if(length(def_models$modelId)==1){
+        print('O/E')
+        bugnew = OE_bug_matrix(
+          sampleIds = def_model_results$sampleId,
+          translationId = def_models$translationId[1],
+          fixedCount = def_models$fixedCount[1])}
+      if(length(def_models$modelId)>1){
+      print('multiple O/E models')
+      #if and for loop for multiple modelIDs vs just 1 (usual)
+
+        bug_list<-list()
+      for(i in 1:length(unique(def_model_results$translationId))){
+        x = OE_bug_matrix(
         sampleIds = def_model_results$sampleId,
-        translationId = def_models$translationId[1],
-        fixedCount = def_models$fixedCount[1])
+        translationId = def_models$translationId[i],
+        fixedCount = def_models$fixedCount[i])
+        bug_list[[i]]<-x
+        names(bug_list)[i]<-paste('bugnew',def_models$modelId[i])
+      }
+
+      }
+
 
      # CO model must be written out as an excel file using a separate bank of code and function
     } else if (length(def_models$modelId[def_models$modelId %in% c(4,5,6)]==T)>=1) {
+      print('CO MMI')
       #write get bugs from database, write out as a csv and save as CObugs object
       CObugs=CO_bug_export(sampleIds=def_model_results$sampleId)
       #write out predictors as a csv
@@ -247,18 +261,26 @@ if (length(def_models$modelId[def_models$modelId %in% 8]==T)>=1){
     # OE models
     # ------------------------------
     # models using john vansickles RIVPACS random forest code : AREMP, UTDEQ15, Westwide, PIBO
+   # ##Code breaks here on 5/16/2023, in model.predict.v4.2.r## #
     if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29)]==T)>=1) {
+      OE_list<-list()
+      for(i in 1:length(unique(def_models$modelId))){
       OE <-model.predict.RanFor.4.2(
           bugcal.pa,
           grps.final,
           preds.final,
           ranfor.mod,
           prednew,
-          bugnew,
+          bugnew=bugnew,
           Pc = 0.5,
           Cal.OOB = FALSE
         )#....
       modelResults<-OE$OE.scores
+      modelResults$modelID<-def_models$abbreviation[i]
+      OE_list[[i]]<-modelResults
+if(length(OE_list)==1)
+  modelResults<-OE_list[[1]]
+      }
 
     # models using John VanSickles RIVPACS discriminant function code: OR_WCCP, OR_MWCF
     } else if (length(def_models$modelId[def_models$modelId %in% 10:11]==T)>=1) {
@@ -458,6 +480,18 @@ if (length(def_models$modelId[def_models$modelId %in% 8]==T)>=1){
     finalResults$modelId=modelID
     }
 
+if(modelID==25 & unique(def_samples$customerAbbreviation)=='BLM-AIM' & unique(def_samples$usState=="Idaho")){
+  finalResults_tosub<-finalResults
+  intermediate<-plyr::join(def_samples[,c('sampleId','siteId'),],IDsites[,c('siteId','waterbodyCode')],by='siteId','left')
+  finalResults_tosub<-plyr::join(finalResults_tosub,intermediate,by='sampleId','left')
+  finalResults<-finalResults_tosub[which(finalResults_tosub$siteId %in% NonCrit$siteId),]
+}
+if(modelID==9 & unique(def_samples$customerAbbreviation)=='BLM-AIM'){
+  finalResults_tosub<-finalResults
+  intermediate<-plyr::join(def_samples[,c('sampleId','siteId'),],IDsites[,c('siteId','waterbodyCode')],by='siteId','left')
+  finalResults_tosub<-plyr::join(finalResults_tosub,intermediate,by='sampleId','left')
+  finalResults<-finalResults_tosub[which(finalResults_tosub$siteId %in% CritHab$siteId),]
+}
     write.csv(finalResults,paste0('finalresults_',paste(modelID,collapse='_'),"_",Sys.Date(),'.csv'))
 
     # ---------------------------------------------------------------
