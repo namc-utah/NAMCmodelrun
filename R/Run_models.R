@@ -89,19 +89,13 @@ def_models<-bind_rows(arbitrary_list)
                 ),
     sampleIds = def_model_results$sampleId)
 
-<<<<<<< HEAD
-=======
-
->>>>>>> a4d1701f72a4cbfcc3ab8eafd881ca5326468a85
   def_predictors <- def_predictors[!duplicated(def_predictors), ]
 
 
   modelpredlist = list()
-<<<<<<< HEAD
-for (i in 1:length(modelID)){
-=======
 
->>>>>>> a4d1701f72a4cbfcc3ab8eafd881ca5326468a85
+for (i in 1:length(modelID)){
+
   if(length(modelID)>1){
     for(i in 1:length(modelID)){
         modelpred=NAMCr::query("predictors",modelId=modelID[i])
@@ -109,15 +103,13 @@ for (i in 1:length(modelID)){
     }
     modelpred<-do.call('rbind',arbitrary_list)
   }else{
-<<<<<<< HEAD
     modelpred=NAMCr::query("predictors",modelId=modelID[i])
   }
 }
-=======
+
 
     modelpred=NAMCr::query("predictors",modelId=modelID)
 
->>>>>>> a4d1701f72a4cbfcc3ab8eafd881ca5326468a85
   def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
   if (length(modelID[modelID%in%c(4,5,6,28)]==T)>=1){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
     def_predictors_categorical=subset(def_predictors,predictorId %in% c(111,75))
@@ -147,7 +139,7 @@ for (i in 1:length(modelID)){
                                            names_from = "abbreviation",
                                            values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
               prednew=as.data.frame(prednew)
-            }}
+            }
     rownames(prednew)<-prednew$sampleId
     prednew<-prednew[,-1]
     # ---------------------------------------------------------------
