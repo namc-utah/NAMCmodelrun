@@ -93,21 +93,11 @@ def_predictors = NAMCr::query(
 
 def_predictors <- def_predictors[!duplicated(def_predictors), ]
 
-<<<<<<< HEAD
-  def_predictors <- def_predictors[!duplicated(def_predictors), ]
-
-
-  modelpredlist = list()
-
-for (i in 1:length(modelID)){
-=======
 
 modelpredlist = list()
 
 for (j in 1:length(modelID)){
 
-
->>>>>>> 3f782962b85503525d01c4a6c7310b19823dc1fa
 
   if(length(modelID)>1){
     for(i in 1:length(modelID)){
@@ -117,13 +107,9 @@ for (j in 1:length(modelID)){
     }
     modelpred<-do.call('rbind',arbitrary_list)
   }else{
-<<<<<<< HEAD
     modelpred=NAMCr::query("predictors",modelId=modelID[i])
   }
 }
-
-
-    modelpred=NAMCr::query("predictors",modelId=modelID)
 
   def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
   if (length(modelID[modelID%in%c(4,5,6,28)]==T)>=1){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
@@ -195,12 +181,10 @@ for (j in 1:length(modelID)){
     }else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
       bugnew = MMI_metrics(sampleIds = def_model_results$sampleId, translationId=def_models$translationId, fixedCount = def_models$fixedCount,modelId=def_models$modelId)
  }else {
-=======
 
     modelpred=NAMCr::query("predictors",modelId=modelID[j])
   }
 }
->>>>>>> 3f782962b85503525d01c4a6c7310b19823dc1fa
 
 def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
 if (length(modelID[modelID%in%c(4,5,6,28)]==T)>=1){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
