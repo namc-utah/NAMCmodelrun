@@ -1,5 +1,6 @@
 # Load all needed packages
 rm(list=ls())
+#setwd('C://Users//andrew.caudillo//Documents//R_code//NAMCmodelrun')
 library(randomForest)
 library(NAMCr)
 library(tidyverse)
@@ -19,18 +20,20 @@ source("R/ModelApplicabilityAll.R")
 ecoregion_base_path="C:/Users/jenni/Box/NAMC (Trip Armstrong)/"
 #ecoregion_base_path="C://Users//andrew.caudillo//Box//NAMC//"
 # to run the scripts choose a boxId or projectId
-#boxId=2214
+boxId=4487
 # test boxes
 # 2141-UT,2065 OR WCCP and MCCP, null, 2152 PIBO, 2172 CSCI,2107 AREMP, 2054 CO, NV 2140, 1603 westwide and 2055,	2150 WY
+
 
 projects=NAMCr::query("projects")
 projectId=2466
 
 
+
 # then input a modelID
 models=NAMCr::query("models")
-modelID=c(2)
 
+modelID=c(2)
 
 # all model results are always calculated
 # overwrite controls which are saved in the database
@@ -39,6 +42,25 @@ overwrite='N'
 
 # input file path for reference sites attributed with elevation, watershed area, and temperature for model applicability function
 #remove this line once reference sites are all in database with stream cat data
-CalPredsModelApplicability=read.csv("C:/Users/jenni/Box/NAMC (Trip Armstrong)/OEModeling/NAMC_Supported_OEmodels/Model Applicability/CalPredsModelApplicability.csv")
-#CalPredsModelApplicability=read.csv("C://Users//andrew.caudillo//Box//NAMC//OE_Modeling//NAMC_Supported_OEModels//Model Applicability//CalPredsModelApplicability.csv")
+CalPredsModelApplicability=read.csv(paste0(ecoregion_base_path,"OEModeling/NAMC_Supported_OEModels/Model Applicability/CalPredsModelApplicability.csv"))
+
+#only need to run this part of CONFIG if AIM ID is the client
+
+#This is ONLY for AIM Idaho
+#The BLM has requested that we assign certain models
+#to critical salmonid habitat, and another model for non-critical habitat.
+ID_lookup<-read.csv(paste0(ecoregionbasepath,"OEModeling/NAMC_Supported_OEModels/Model Applicability/BLM_ID_COMID_metadata.csv",stringsAsFactors = F))
+names(ID_lookup)[2]<-'waterbodyCode'
+ID_lookup<-ID_lookup[!duplicated(ID_lookup$waterbodyCode),]
+#crit is 9, not crit 25
+
+ID_lookup$modelId<-ifelse(ID_lookup$CritHab=='No',25,9)
+IDsites= query(
+  api_endpoint = "sites",
+  args = list(boxIds = boxId) #change box number as needed
+)
+ID_lookup_table<-plyr::join(IDsites[,c('waterbodyCode','siteId')],ID_lookup[,c('waterbodyCode','CritHab','modelId')],by='waterbodyCode',type='inner')
+CritHab<-ID_lookup_table[ID_lookup_table$modelId==9,]
+NonCrit<-ID_lookup_table[ID_lookup_table$modelId==25,]
+
 
