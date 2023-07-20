@@ -107,7 +107,7 @@ for (j in 1:length(modelID)){
     }
     modelpred<-do.call('rbind',arbitrary_list)
   }else{
-    modelpred=NAMCr::query("predictors",modelId=modelID[i])
+    modelpred=NAMCr::query("predictors",modelId=modelID)
   }
 }
 
@@ -184,7 +184,7 @@ for (j in 1:length(modelID)){
 
     modelpred=NAMCr::query("predictors",modelId=modelID[j])
   }
-}
+
 
 def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
 if (length(modelID[modelID%in%c(4,5,6,28)]==T)>=1){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
