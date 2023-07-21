@@ -238,7 +238,7 @@ if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1) {
       translationId = def_models$translationId[1],
       fixedCount = def_models$fixedCount[1])}
   if(length(def_models$modelId)>1){
-    print('multiple O/E models')
+    print('multiple models')
     #if and for loop for multiple modelIDs vs just 1 (usual)
 
     bug_list<-list()
