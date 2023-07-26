@@ -444,7 +444,7 @@ if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29)]==T)>=1)
   # WQ models
   # ------------------------------
   #conductivity, tp, tn,temperature
-}else if (length(def_models$modelId[def_models$modelId %in% 27:30]==T)>=1) {
+}else if (length(def_models$modelId[def_models$modelId %in% c(27:30,301:303)]==T)>=1) {
   modelResults = as.data.frame(predict(ranfor.mod, prednew, type = "response"))# make sure prednew has sampleIds as the rows
 }else{
 
