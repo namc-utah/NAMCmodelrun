@@ -281,7 +281,7 @@ if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1){#no predictors
 
 } else if (length(def_models$modelId[def_models$modelId %in% c(1,4:6)]==T)>=1){#CSCI bug file doesnt have row names and has multiple rows for a given sampleID, so does CO but CO is written out to disk
   bugnew<-subset(bugnew,bugnew$SampleID %in% rownames(prednew))
-  prednew<-subset(prednew,rownames(prednew) %in% row.names(bugnew))
+  prednew<-subset(prednew,rownames(prednew) %in% bugnew$SampleID)
   #reorder them the same just in case model functions dont already do this
   bugnew = bugnew[order(row.names(bugnew)),];
   prednew = prednew[order(rownames(prednew)),];
