@@ -45,8 +45,7 @@
 #3 - CSCI
 #4- WQ
 basic_models = query(
-  api_endpoint = "models"
-)
+  api_endpoint = "models")
 
 OEs<-basic_models$modelId[basic_models$modelTypeId==1 & basic_models$modelId !=12]
 MMIs<-basic_models$modelId[basic_models$modelTypeId==2]
@@ -281,8 +280,8 @@ if(nrow(sampleOEs)>=1){
     y<-sampleOEs[sampleOEs$modelId==unique(sampleOEs$modelId)[i],]
   bugnew = OE_bug_matrix(
     sampleIds =y$sampleId,
-    translationId = y$translationId[1],
-    fixedCount = y$fixedCount[1])
+    translationId = y$translationId[i],
+    fixedCount = y$fixedCount[i])
   OE_list[[i]]<-bugnew
   names(OE_list)[i]<-unique(sampleOEs$modelId)[i]
   }
@@ -297,7 +296,7 @@ if(nrow(sampleOEs)>=1){
 
 
     for(i in 1:n_unique_OE_mods){
-      print('getting OE results, watch this!')
+      print('getting OE results')
       model_id_burn<-as.character(unique(bug_sub_list$modelId)[i])
       model_sub<-bug_sub_list[bug_sub_list$modelId==as.integer(model_id_burn),]
       oe_bug_burn<-OE_list[[model_id_burn]]
@@ -340,8 +339,8 @@ if(nrow(sampleOEs)>=1){
 
 
       bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
-                             translationId = model_sub$translationId[1],
-                             fixedCount = model_sub$fixedCount[1],
+                             translationId = model_sub$translationId[i],
+                             fixedCount = model_sub$fixedCount[i],
                              sampleIds=model_sub$sampleId
       )
       sumrarefiedOTUTaxa = bugsOTU  %>%
@@ -397,7 +396,7 @@ if(nrow(sampleOEs)>=1){
       General_OE_results<-General_OE_results[[1]]
 
 
-#now for the non-null OR indices
+#this section if for non PREDATOR O/E indices
     if (nrow(sampleOEs[sampleOEs$modelId %in% 10:11,])>=1) {
       print('running O/E using 4.1RF')
       bug_sub_list<-sampleOEs[sampleOEs$modelId %in% 10:11,]
