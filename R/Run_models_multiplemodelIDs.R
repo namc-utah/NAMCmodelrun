@@ -201,7 +201,7 @@ def_predictors = NAMCr::query(
   sampleIds = def_model_results$sampleId)
 
 
-def_predictors <- def_predictors[!duplicated(def_predictors), ]
+#def_predictors <- def_predictors[!duplicated(def_predictors), ]
 
   if(length(modelID)>1){
     for(i in 1:length(modelID)){
@@ -286,10 +286,12 @@ if(nrow(sampleOEs)>=1){
   names(OE_list)[i]<-unique(sampleOEs$modelId)[i]
   }
 }
+
+#westwide models or PIBO
   if (nrow(sampleOEs[sampleOEs$modelId %in% c(2,7,9,25,26,29),])>=1) {
     print('running O/Es using 4.2RF')
-    print(unique(sampleOEs$modelId[sampleOEs$modelId %in% c(2,7,9,25,26,29)]))
-    bug_sub_list<-sampleOEs[sampleOEs$modelId %in% c(2,7,9,25,26,29),]
+    print(unique(sampleOEs$modelId[which(sampleOEs$modelId %in% c(2,7,9,25,26,29))]))
+    bug_sub_list<-sampleOEs[which(sampleOEs$modelId %in% c(2,7,9,25,26,29)),]
     n_unique_OE_mods<-length(unique(bug_sub_list$modelId))
     print(n_unique_OE_mods)
     General_OE_results<-list()
@@ -310,7 +312,10 @@ if(nrow(sampleOEs)>=1){
         bugnew=oe_bug_burn,
         Pc = 0.5,
         Cal.OOB = FALSE)
-      modelResults<-OE$OE.scores
+
+
+      modelResults<-OE$OE.scores[(grepl("NA", row.names(OE$OE.scores), fixed = TRUE))==F,]
+      #modelResults$modelID<-as.integer(model_id_burn)
       General_OE_results[[i]]<-modelResults
       names(General_OE_results)[i]<-model_id_burn
       print('model app time')
@@ -334,7 +339,8 @@ if(nrow(sampleOEs)>=1){
         GeneralOEResults_sf=sf::st_intersection(GeneralOEResults_sf,ecoregion)
         General_OE_results[[i]]=dplyr::left_join(General_OE_results[[i]],sf::st_drop_geometry(GeneralOEResults_sf[,c('sampleId','modelId')]),by='sampleId')
       } else{
-      print('not a westwide model')
+      print('not a westwide model, going to other options (WY, OR)')
+      }
       General_OE_results[[i]]$modelId=as.integer(model_id_burn)}
 
 
@@ -375,19 +381,22 @@ if(nrow(sampleOEs)>=1){
       # finalResults$InvasiveInvertSpecies='National'
 
       print('writing O/E results')
-      dat_to_pass<-list(sampleId = General_OE_results[[i]]$sampleId,
-                        modelId = General_OE_results[[i]]$modelId,
-                        oResult = General_OE_results[[i]]$O,
-                        eResult = General_OE_results[[i]]$E,
-                        modelResult = General_OE_results[[i]]$OoverE ,
-                        fixedCount = General_OE_results[[i]]$fixedCount,
-                        modelApplicability = General_OE_results[[i]]$ModelApplicability,
-                        notes=General_OE_results[[i]]$InvasiveInvertSpecies)
+      for(j in 1:nrow(model_sub)){
+      dat_to_pass<-list(sampleId = General_OE_results[[i]]$sampleId[j],
+                        modelId = General_OE_results[[i]]$modelId[j],
+                        oResult = General_OE_results[[i]]$O[j],
+                        eResult = General_OE_results[[i]]$E[j],
+                        modelResult = General_OE_results[[i]]$OoverE[j] ,
+                        fixedCount = General_OE_results[[i]]$fixedCount[j],
+                        modelApplicability = General_OE_results[[i]]$ModelApplicability[j],
+                        notes=General_OE_results[[i]]$InvasiveInvertSpecies[j])
+
       NAMCr::save(
         api_endpoint = "setModelResult",
         args=dat_to_pass)
+      }
     }
-  }
+
 #if only one model met that condition above
 #force the list to a df. maybe keeping it a list is better... for looping
 #the output would work with the latter option.
