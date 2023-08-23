@@ -287,7 +287,7 @@ if(nrow(sampleOEs)>=1){
   }
 }
 
-#westwide models or PIBO
+#non OR O/E indices (WW, PIBO, etc.)
   if (nrow(sampleOEs[sampleOEs$modelId %in% c(2,7,9,25,26,29),])>=1) {
     print('running O/Es using 4.2RF')
     print(unique(sampleOEs$modelId[which(sampleOEs$modelId %in% c(2,7,9,25,26,29))]))
@@ -342,7 +342,6 @@ if(nrow(sampleOEs)>=1){
       print('not a westwide model, going to other options (WY, OR)')
       }
       General_OE_results[[i]]$modelId=as.integer(model_id_burn)}
-
 
       bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
                              translationId = model_sub$translationId[i],
@@ -401,8 +400,8 @@ if(nrow(sampleOEs)>=1){
 #force the list to a df. maybe keeping it a list is better... for looping
 #the output would work with the latter option.
 
-    if(length(General_OE_results)==1)
-      General_OE_results<-General_OE_results[[1]]
+    #if(length(General_OE_results)==1)
+    #  General_OE_results<-General_OE_results[[1]]
 
 
 #this section if for non PREDATOR O/E indices
@@ -414,7 +413,7 @@ if(nrow(sampleOEs)>=1){
       print(n_unique_OE_mods)
       OR_OE_result<-list()
       for(i in 1:n_unique_OE_mods){
-        print('getting OR OE results, watch this!')
+        print('getting OR OE results')
         model_id_burn<-as.character(unique(bug_sub_list$modelId)[i])
         oe_bug_burn<-OE_list[[model_id_burn]]
         OE <-model.predict.v4.1(bugcal.pa,
@@ -426,13 +425,85 @@ if(nrow(sampleOEs)>=1){
                                 bugnew=oe_bug_burn,
                                 Pc = 0.5)
         modelResults<-OE$OE.scores
+        modelResults<-OE$OE.scores[(grepl("NA", row.names(OE$OE.scores), fixed = TRUE))==F,]
         OR_OE_result[[i]]<-modelResults
+
+        names(OR_OE_result)[i]<-model_id_burn
+        print('model app time')
+
+        ModelApplicability_obj = ModelApplicability(CalPredsModelApplicability,
+                                                    modelId = as.integer(model_id_burn),
+                                                    applicabilitypreds)
+        OR_OE_result[[i]]<-merge(OR_OE_result[[i]],
+                                       ModelApplicability_obj,
+                                       by='row.names')
+
+        OR_OE_result[[i]]<-dplyr::left_join(OR_OE_result[[i]],def_samples[,c('sampleId','siteLongitude','siteLatitude')],by='sampleId')
+
+
+
+        OR_OE_result[[i]]$modelId=as.integer(model_id_burn)}
+
+      bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
+                             translationId = model_sub$translationId[i],
+                             fixedCount = model_sub$fixedCount[i],
+                             sampleIds=model_sub$sampleId
+      )
+      sumrarefiedOTUTaxa = bugsOTU  %>%
+        dplyr::group_by(sampleId) %>%
+        dplyr::summarize(fixedCount = sum(splitCount))
+
+      ################################################
+      ###### get invasives ##### comment out this entire invasives section if running "National" AIM westwide reporting
+      # get raw bug data
+      bugRaw = NAMCr::query(
+        "sampleTaxa",
+        sampleIds=model_sub$sampleId
+      )
+      #subset taxa in samples to only invasives
+      bugraw = subset(bugRaw,taxonomyId %in% c(1330,1331,2633, 2671,4933,4934,4935,4936,4937,4938,4939,4940,4941,4942,1019,1994,5096,1515,1518,1604,2000,4074,1369,2013,1579))
+      #create list of invasives present at a site
+      invasives<-bugraw %>% dplyr::group_by(sampleId) %>% dplyr::summarize(InvasiveInvertSpecies=paste0(list(unique(scientificName)),collapse=''))
+      # remove list formatting
+      invasives$InvasiveInvertSpecies=gsub("^c()","",invasives$InvasiveInvertSpecies)
+      invasives$InvasiveInvertSpecies=gsub("\"","",invasives$InvasiveInvertSpecies)
+      invasives$InvasiveInvertSpecies=gsub("\\(","",invasives$InvasiveInvertSpecies)
+      invasives$InvasiveInvertSpecies=gsub("\\)","",invasives$InvasiveInvertSpecies)
+      # join to list of all samples with fixed counts
+      additionalbugmetrics=dplyr::left_join(sumrarefiedOTUTaxa,invasives, by="sampleId")
+      # if no invasives were present set to absent
+      additionalbugmetrics[is.na(additionalbugmetrics)]<-"Absent"
+      #################################################
+
+      #IF NATIONAL COMMENT OUT THIS LINE OF CODE AND UNCOMMENT OUT THE FOLLOWING TWO LINES
+      OR_OE_result[[i]]=dplyr::left_join(OR_OE_result[[i]],additionalbugmetrics,by="sampleId")
+      # finalResults=dplyr::left_join(finalResults,sumrarefiedOTUTaxa,by="sampleId")
+      # finalResults$InvasiveInvertSpecies='National'
+
+      print('writing O/E results')
+      for(j in 1:nrow(model_sub)){
+        dat_to_pass<-list(sampleId = OR_OE_result[[i]]$sampleId[j],
+                          modelId = OR_OE_result[[i]]$modelId[j],
+                          oResult = OR_OE_result[[i]]$O[j],
+                          eResult = OR_OE_result[[i]]$E[j],
+                          modelResult = OR_OE_result[[i]]$OoverE[j] ,
+                          fixedCount = OR_OE_result[[i]]$fixedCount[j],
+                          modelApplicability = OR_OE_result[[i]]$ModelApplicability[j],
+                          notes=OR_OE_result[[i]]$InvasiveInvertSpecies[j])
+
+        NAMCr::save(
+          api_endpoint = "setModelResult",
+          args=dat_to_pass)
       }
     }
+
       #if only one model met that condition above
       #force the list to a df
-      if(length(OE_L)==1)
-        OR_OE_ModelResults<-OR_OE_list[[1]]
+      #if(length(OE_L)==1)
+      #  OR_OE_ModelResults<-OR_OE_list[[1]]
+
+
+
 ##WY O/Es
 #these will never have just one model ID, so no need to
 #coerce to a single dataframe, unlike the O/Es before.
