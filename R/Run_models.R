@@ -76,10 +76,12 @@ if(length(unique(def_model_results$modelId))>1){
 
 
 # ---------------------------------------------------------------
-# Get predictor values needed for the model, if they dont exist yet stop here
+# Get predictor values needed for the model and format them, if they dont exist yet stop here
 # ---------------------------------------------------------------
 
 # getting predictor values associated with those samples and models coming out of the def_models query above
+
+##get all predictors associated with the samples
 def_predictors = NAMCr::query(
   api_endpoint = "samplePredictorValues",
   include = c("sampleId",
@@ -89,16 +91,12 @@ def_predictors = NAMCr::query(
               "predictorValue"
   ),
   sampleIds = def_model_results$sampleId)
-
-
 def_predictors <- def_predictors[!duplicated(def_predictors), ]
 
 
+##get a list of predictors needed for the models that you are running
 modelpredlist = list()
-
 for (j in 1:length(modelID)){
-
-
   if(length(modelID)>1){
     for(i in 1:length(modelID)){
       print('there are multiple modelIDs')
@@ -111,8 +109,11 @@ for (j in 1:length(modelID)){
   }
 }
 
-  def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
-  if (length(modelID[modelID%in%c(4,5,6,28)]==T)>=1){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
+##subset predictors to only those needed for the models that you are running
+def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
+
+## Format predictors and convert to numeric where needed
+if (length(modelID[modelID%in%c(4,5,6,28)]==T)>=1){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
     def_predictors_categorical=subset(def_predictors,predictorId %in% c(111,75))
     prednew1 = tidyr::pivot_wider(def_predictors_categorical,
                                  id_cols="sampleId",
@@ -130,94 +131,33 @@ for (j in 1:length(modelID)){
     prednew2=as.data.frame(prednew2)
     prednew=cbind(prednew1,prednew2)
 
-    }else {def_predictors$predictorValue=as.numeric(def_predictors$predictorValue)
-            # if (any(def_predictors$status!="Valid")) {
-            #   print(paste0("predictors need calculated"))
-            # } else{
-              # get predictors into wide format needed for model functions
-              prednew = tidyr::pivot_wider(def_predictors,
-                                           id_cols="sampleId",
-                                           names_from = "abbreviation",
-                                           values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
-              prednew=as.data.frame(prednew)
-            }
-    rownames(prednew)<-prednew$sampleId
-    prednew<-prednew[,-1]
-    # ---------------------------------------------------------------
-    # Get bug data for model functions
-    # ---------------------------------------------------------------
-    #
-    # if modelType= bug OE get OTU taxa matrix
-    if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1) {
-      bugnew = OR_NBR_bug(
-        sampleIds = def_model_results$sampleId,
-        translationId = def_models$translationId[1],
-        fixedCount = def_models$fixedCount[1]
-      )
-      #need a way to distinguish this model from others.. call NULL OE?
-    } else if (length(def_models$modelTypeAbbreviation[def_models$modelTypeAbbreviation=='OE'])>=1) {
-      bugnew = OE_bug_matrix(
-        sampleIds = def_model_results$sampleId,
-        translationId = def_models$translationId[1],
-        fixedCount = def_models$fixedCount[1])
-
-     # CO model must be written out as an excel file using a separate bank of code and function
-    } else if (length(def_models$modelId[def_models$modelId %in% c(4,5,6)]==T)>=1) {
-      #write get bugs from database, write out as a csv and save as CObugs object
-      CObugs=CO_bug_export(sampleIds=def_model_results$sampleId)
-      #write out predictors as a csv
-      write.csv(prednew,file = paste0("COpredictors","boxId_",CObugs$Project[1],"_",Sys.Date(),".csv"),row.names=FALSE)
-      cat(paste("csv with COpredictors has been written out to your current working directory.",
-                "Convert this csv to excel 2003 and import into CO EDAS access database to compute the CSCI score.",
-                "Follow instructions in this pdf Box\\NAMC\\OE_Modeling\\NAMC_Supported_OEmodels\\CO\\Documentation\\EDAS2017\\Tutorial Guide to EDAS_Version 1.7.pdf",
-                "to import bug and habitat data, harmonize taxa list, rarefy and compute MMI",
-                "then read resulting excel file back into R to save results in the database.", sep="\n"))
-
-      # CSCI requires just the raw taxa list translated for misspelling
-    } else if (length(def_models$modelId[def_models$modelId %in% 1]==T)>=1) {
-      bugnew = CSCI_bug(sampleIds = def_model_results$sampleId)
-    } else if (length(def_models$modelId[def_models$modelId %in% 169]==T)>=1){
-      bugnew=AZ_bug_export(sampleIds = def_model_results$sampleId)
-    }else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
-      bugnew = MMI_metrics(sampleIds = def_model_results$sampleId, translationId=def_models$translationId, fixedCount = def_models$fixedCount,modelId=def_models$modelId)
- }else {
-
-    modelpred=NAMCr::query("predictors",modelId=modelID[j])
-  }
-
-
-def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
-if (length(modelID[modelID%in%c(4,5,6,28)]==T)>=1){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
-  def_predictors_categorical=subset(def_predictors,predictorId %in% c(111,75))
-  prednew1 = tidyr::pivot_wider(def_predictors_categorical,
-                                id_cols="sampleId",
-                                names_from = "abbreviation",
-                                values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
-  prednew1=as.data.frame(prednew1)
-  '%notin%' <- Negate('%in%')
-  def_predictors=subset(def_predictors,predictorId %notin% c(111,75))
-  def_predictors$predictorValue=as.numeric(def_predictors$predictorValue)
-  prednew2 = tidyr::pivot_wider(def_predictors,
-                                id_cols="sampleId",
-                                names_from = "abbreviation",
-                                values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
-
-  prednew2=as.data.frame(prednew2)
-  prednew=cbind(prednew1,prednew2)
-
-}else {def_predictors$predictorValue=as.numeric(def_predictors$predictorValue)
-# if (any(def_predictors$status!="Valid")) {
-#   print(paste0("predictors need calculated"))
-# } else{
-# get predictors into wide format needed for model functions
-prednew = tidyr::pivot_wider(def_predictors,
-                             id_cols="sampleId",
-                             names_from = "abbreviation",
-                             values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
-prednew=as.data.frame(prednew)
-}
+  }else {def_predictors$predictorValue=as.numeric(def_predictors$predictorValue)
+        # if (any(def_predictors$status!="Valid")) {
+        #   print(paste0("predictors need calculated"))
+        # } else{
+          # get predictors into wide format needed for model functions
+          prednew = tidyr::pivot_wider(def_predictors,
+                                       id_cols="sampleId",
+                                       names_from = "abbreviation",
+                                       values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
+          prednew=as.data.frame(prednew)
+        }
 rownames(prednew)<-prednew$sampleId
 prednew<-prednew[,-1]
+
+
+## special handling of AREMP predictor names is needed here.
+#Tmax_WS is used for NV WQ and other models but for AREMP this same predictor is called TMAX_WS
+#database is not case sensitive so cant add as unique predictor in database so have to handle here.
+if (length(def_models$modelId[def_models$modelId %in% c(7,8)]==T)>=1){
+  prednew$TMAX_WS=prednew$Tmax_WS
+} else{}
+# same issue with RH_WS being included in TP model but different capitalization. However, revisit if we revise TP model
+if (length(def_models$modelId[def_models$modelId %in% 8]==T)>=1){
+  prednew$rh_WS=prednew$RH_WS
+} else{}
+
+
 # ---------------------------------------------------------------
 # Get bug data for model functions
 # ---------------------------------------------------------------
@@ -253,7 +193,6 @@ if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1) {
 
   }
 
-
   # CO model must be written out as an excel file using a separate bank of code and function
 } else if (length(def_models$modelId[def_models$modelId %in% c(4,5,6)]==T)>=1) {
   print('CO MMI')
@@ -277,6 +216,10 @@ if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1) {
 }else {
 
 }
+
+# ---------------------------------------------------------------
+# make sure predictors and bug data are in same sample order and all samples match up
+# ---------------------------------------------------------------
 if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1){#no predictors are needed for OR null model
 
 } else if (length(def_models$modelId[def_models$modelId %in% c(1,4:6)]==T)>=1){#CSCI bug file doesnt have row names and has multiple rows for a given sampleID, so does CO but CO is written out to disk
@@ -291,19 +234,6 @@ prednew<-subset(prednew,rownames(prednew) %in% rownames(bugnew))
 bugnew = bugnew[order(rownames(bugnew)),];
 prednew = prednew[order(rownames(prednew)),];
 }
-
-## special handling of AREMP predictor names is needed here.
-#Tmax_WS is used for NV WQ and other models but for AREMP this same predictor is called TMAX_WS
-#database is not case sensitive so cant add as unique predictor in database so have to handle here.
-if (length(def_models$modelId[def_models$modelId %in% c(7,8)]==T)>=1){
-  prednew$TMAX_WS=prednew$Tmax_WS
-} else{}
-# same issue with RH_WS being included in TP model but different capitalization. However, revisit if we revise TP model
-if (length(def_models$modelId[def_models$modelId %in% 8]==T)>=1){
-  prednew$rh_WS=prednew$RH_WS
-} else{}
-
-
 
 # ---------------------------------------------------------------
 # load model specific R objects which include reference bug data and predictors RF model objects
