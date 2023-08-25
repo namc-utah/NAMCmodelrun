@@ -273,6 +273,8 @@ if(nrow(sampleNullOEs)>=1){
 }
 
 #get bug info for the non-null models
+#we will call this data in each specific loop
+#for each modelID.
 if(nrow(sampleOEs)>=1){
   print('Running O/E')
   OE_list<-list()
@@ -280,8 +282,8 @@ if(nrow(sampleOEs)>=1){
     y<-sampleOEs[sampleOEs$modelId==unique(sampleOEs$modelId)[i],]
   bugnew = OE_bug_matrix(
     sampleIds =y$sampleId,
-    translationId = y$translationId[i],
-    fixedCount = y$fixedCount[i])
+    translationId = y$translationId[1],
+    fixedCount = y$fixedCount[1])
   OE_list[[i]]<-bugnew
   names(OE_list)[i]<-unique(sampleOEs$modelId)[i]
   }
@@ -481,7 +483,7 @@ if(nrow(sampleOEs)>=1){
       # finalResults$InvasiveInvertSpecies='National'
 
       print('writing O/E results')
-    }
+
 
       for(j in 1:nrow(model_sub)){
         dat_to_pass<-list(sampleId = OR_OE_result[[i]]$sampleId[j],
