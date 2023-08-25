@@ -261,12 +261,12 @@ prednew<-prednew[,-1]
 # models using john vansickles RIVPACS random forest code : AREMP, UTDEQ15, Westwide, PIBO
 
 #AND collect bug into simultaneously
-
+sids<-sampleNullOEs$sampleId
 if(nrow(sampleNullOEs)>=1){
   Nullbugnew = OR_NBR_bug(
     sampleIds = sampleNullOEs$sampleId,
-    translationId = sampleNullOEs$translationId[1],
-    fixedCount = sampleNullOEs$fixedCount[1]
+    translationId = 14,
+    fixedCount = 300
   )
   #run the model right here!
   NullOR_modelResults <- OR_NBR_model(Nullbugnew)
@@ -481,6 +481,8 @@ if(nrow(sampleOEs)>=1){
       # finalResults$InvasiveInvertSpecies='National'
 
       print('writing O/E results')
+    }
+
       for(j in 1:nrow(model_sub)){
         dat_to_pass<-list(sampleId = OR_OE_result[[i]]$sampleId[j],
                           modelId = OR_OE_result[[i]]$modelId[j],
