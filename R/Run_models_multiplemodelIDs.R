@@ -261,7 +261,7 @@ prednew<-prednew[,-1]
 # models using john vansickles RIVPACS random forest code : AREMP, UTDEQ15, Westwide, PIBO
 
 #AND collect bug into simultaneously
-sids<-sampleNullOEs$sampleId
+
 if(nrow(sampleNullOEs)>=1){
   Nullbugnew = OR_NBR_bug(
     sampleIds = sampleNullOEs$sampleId,
@@ -269,7 +269,23 @@ if(nrow(sampleNullOEs)>=1){
     fixedCount = 300
   )
   #run the model right here!
+  #NBR PREDATOR doest not get model applicability.
   NullOR_modelResults <- OR_NBR_model(Nullbugnew)
+
+  for(n in 1:nrow(NullOR_modelResults)){
+    n_dat_to_pass<-list(sampleId = NullOR_modelResults$sampleId[n],
+                      modelId = NullOR_modelResults$modelId[n],
+                      oResult = NullOR_modelResults$O[n],
+                      eResult = NullOR_modelResults$E[n],
+                      modelResult = NullOR_modelResults$OoverE[n],
+                      fixedCount = NullOR_modelResults$fixedCount[n],
+                      modelApplicability = NullOR_modelResults$ModelApplicability[n],
+                      notes=NullOR_modelResults$InvasiveInvertSpecies[n])
+
+    NAMCr::save(
+      api_endpoint = "setModelResult",
+      args=n_dat_to_pass)
+  }
 }
 
 #get bug info for the non-null models
