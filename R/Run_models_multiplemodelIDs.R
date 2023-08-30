@@ -53,8 +53,8 @@ CSCIs<-basic_models$modelId[basic_models$modelTypeId==3]
 WQs<-basic_models$modelId[basic_models$modelTypeId==4]
 AREMP<-c(7,8)
 NullOE<-12
-MIR<-136 #change
-PIBO <-9 #change
+MIR<-136
+PIBO <-9
 
 
 if (exists("boxId")){
@@ -63,6 +63,7 @@ if (exists("boxId")){
 }
 
 sampleIds = def_samples$sampleId
+
 #   # ---------------------------------------------------------------
 # get a list of samples if the needed model has already been run for the sample
 # ---------------------------------------------------------------
@@ -72,7 +73,7 @@ sampleIds = def_samples$sampleId
 # not ready status if predictors are not there
 def_model_results = NAMCr::query(
   api_endpoint = "modelResults",
-  sampleIds=def_samples$sampleId
+  sampleIds=sampleIds
 )
 
 def_model_results=subset(def_model_results,modelId %in% modelID)
@@ -271,16 +272,22 @@ if(nrow(sampleNullOEs)>=1){
   #run the model right here!
   #NBR PREDATOR doest not get model applicability.
   NullOR_modelResults <- OR_NBR_model(Nullbugnew)
-
+NullOR_modelResults$modelId<-rep(12,nrow(NullOR_modelResults))
   for(n in 1:nrow(NullOR_modelResults)){
+    #this yields split count. Should be rarefied to 300, but if we have
+    #a sample with fewer than 300, it will yield that number instead.
+    taxa_counts = query(
+      api_endpoint = "sampleTaxaTranslationRarefied",
+      args = list(translationId = 16, fixedCount = 300, sampleIds=NullOR_modelResults$sampleId[n])
+    )
+    agged_tax_counts<-aggregate(splitCount~sampleId,data=taxa_counts,FUN=sum)
+
     n_dat_to_pass<-list(sampleId = NullOR_modelResults$sampleId[n],
                       modelId = NullOR_modelResults$modelId[n],
                       oResult = NullOR_modelResults$O[n],
                       eResult = NullOR_modelResults$E[n],
                       modelResult = NullOR_modelResults$OoverE[n],
-                      fixedCount = NullOR_modelResults$fixedCount[n],
-                      modelApplicability = NullOR_modelResults$ModelApplicability[n],
-                      notes=NullOR_modelResults$InvasiveInvertSpecies[n])
+                      fixedCount=agged_tax_counts$splitCount)
 
     NAMCr::save(
       api_endpoint = "setModelResult",
@@ -295,11 +302,13 @@ if(nrow(sampleOEs)>=1){
   print('Running O/E')
   OE_list<-list()
   for(i in 1:length(unique(sampleOEs$modelId))){
+    uniq_mod<-unique(sampleOEs$modelId)[i]
+    mod_val<-def_models[def_models$modelId==uniq_mod,]
     y<-sampleOEs[sampleOEs$modelId==unique(sampleOEs$modelId)[i],]
   bugnew = OE_bug_matrix(
     sampleIds =y$sampleId,
-    translationId = y$translationId[1],
-    fixedCount = y$fixedCount[1])
+    translationId = mod_val$translationId[1],
+    fixedCount = mod_val$fixedCount[1])
   OE_list[[i]]<-bugnew
   names(OE_list)[i]<-unique(sampleOEs$modelId)[i]
   }
@@ -426,20 +435,25 @@ if(nrow(sampleOEs)>=1){
     if (nrow(sampleOEs[sampleOEs$modelId %in% 10:11,])>=1) {
       print('running O/E using 4.1RF')
       bug_sub_list<-sampleOEs[sampleOEs$modelId %in% 10:11,]
+      model_id_burn<-as.character(unique(bug_sub_list$modelId)[i])
+      model_sub<-bug_sub_list[bug_sub_list$modelId==as.integer(model_id_burn),]
       print(unique(sampleOEs$modelId[sampleOEs$modelId %in% 10:11]))
       n_unique_OE_mods<-length(unique(bug_sub_list$modelId))
       print(n_unique_OE_mods)
       OR_OE_result<-list()
       for(i in 1:n_unique_OE_mods){
         print('getting OR OE results')
+        uniq_mod<-unique(sampleOEs$modelId)[i]
+        mod_val<-def_models[def_models$modelId==uniq_mod,]
         model_id_burn<-as.character(unique(bug_sub_list$modelId)[i])
         oe_bug_burn<-OE_list[[model_id_burn]]
+        pred_burn<-prednew[row.names(prednew) %in% row.names(oe_bug_burn),]
         OE <-model.predict.v4.1(bugcal.pa,
                                 grps.final,
                                 preds.final,
                                 grpmns,
                                 covpinv,
-                                prednew,
+                                prednew=pred_burn,
                                 bugnew=oe_bug_burn,
                                 Pc = 0.5)
         modelResults<-OE$OE.scores
@@ -452,6 +466,7 @@ if(nrow(sampleOEs)>=1){
         ModelApplicability_obj = ModelApplicability(CalPredsModelApplicability,
                                                     modelId = as.integer(model_id_burn),
                                                     applicabilitypreds)
+        print("Model app done")
         OR_OE_result[[i]]<-merge(OR_OE_result[[i]],
                                        ModelApplicability_obj,
                                        by='row.names')
@@ -463,8 +478,8 @@ if(nrow(sampleOEs)>=1){
         OR_OE_result[[i]]$modelId=as.integer(model_id_burn)}
 
       bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
-                             translationId = model_sub$translationId[i],
-                             fixedCount = model_sub$fixedCount[i],
+                             translationId = mod_val$translationId,
+                             fixedCount = mod_val$fixedCount,
                              sampleIds=model_sub$sampleId
       )
       sumrarefiedOTUTaxa = bugsOTU  %>%
@@ -517,41 +532,43 @@ if(nrow(sampleOEs)>=1){
       }
     }
 
-      #if only one model met that condition above
-      #force the list to a df
-      #if(length(OE_L)==1)
-      #  OR_OE_ModelResults<-OR_OE_list[[1]]
-
 
 
 ##WY O/Es
 #these will never have just one model ID, so no need to
 #coerce to a single dataframe, unlike the O/Es before.
- if (nrow(sampleOEs[sampleOEs$modelId %in% 13:23,])>=1) {
+
+ if (nrow(sampleOEs[sampleOEs$modelId %in% 13:23,])>=1) { #if T
     print ('Running OE for WY models')
-    WY_sub_list<-sampleOEs$modelId[sampleOEs$modelId %in% 13:23]
-    print(unique(sampleOEs$modelId[sampleOEs$modelId %in% 13:23]))
-    n_unique_WYmods<-length(unique(WY_sub_list))
+    WY_sub_list<-sampleOEs[sampleOEs$modelId %in% 13:23,]
+    n_unique_WYmods<-length(unique(WY_sub_list$modelId))
     ALK_LOG = setNames(as.data.frame(
     log10(predict(ranfor.mod, prednew, type = "response"))
       ), c("ALK_LOG"))
       prednew = cbind(prednew, ALK_LOG)
       WY_OE_results<-list()
         ## need to subset to only model predictors or maybe it doesnt matter??
-        for(i in 1:n_unique_WYmods){
-          model_id_burn<-unique(WY_sub_list$modelId)[i]
+        for(i in 1:n_unique_WYmods){ #for i
+          print('getting WY model id')
+          model_id_burn<-as.character(unique(WY_sub_list$modelId)[i])
+          print(model_id_burn)
+          model_sub<-WY_sub_list[WY_sub_list$modelId==as.integer(model_id_burn),]
           oe_bug_burn<-OE_list[[model_id_burn]]
+          pred_burn<-prednew[row.names(prednew) %in% row.names(oe_bug_burn),]
           OE <-model.predict.v4.1(bugcal.pa,
                                   grps.final,
                                   preds.final,
                                   grpmns,
                                   covpinv,
-                                  prednew,
+                                  prednew=pred_burn,
                                   bugnew=oe_bug_burn,
                                   Pc = 0.5)
+          print('OE done')
           modelResults<-OE$OE.scores
           WY_OE_results[[i]]<-modelResults
           names(WY_OE_results)[i]<-model_id_burn
+          if(model_id_burn!="13")
+            if(0){
 
           print('model app time')
 
@@ -559,23 +576,108 @@ if(nrow(sampleOEs)>=1){
                                                       modelId = as.integer(model_id_burn),
                                                       applicabilitypreds)
 
-          General_OE_results[[i]]<-merge(WY_OE_results[[i]],
+         WY_OE_results[[i]]<-merge(WY_OE_results[[i]],
                                          ModelApplicability_obj,
                                          by='row.names')
+            }
+          WY_OE_results[[i]]$sampleId<-as.integer(row.names(WY_OE_results[[i]]))
 
           WY_OE_results[[i]]<-dplyr::left_join(WY_OE_results[[i]],def_samples[,c('sampleId','siteLongitude','siteLatitude')],by='sampleId')
-
+          #using the extraction method in sf returns too many
+          #modelIds for WY because of the strong overlap in the regions
+          #use what INSTAR has assigned to it and skip over this section.
+          #assign modelId via model_id_burn
+if(0){
           WYOEResults_sf<-sf::st_as_sf(WY_OE_results[[i]],coords=c('siteLongitude','siteLatitude'),crs=4269)
           #fix to work with above code
             ecoregion=sf::st_read(paste0(ecoregion_base_path,"GIS//GIS_Stats//Wyoming//ecoregion//BIOREGIONS_2011_modifiedCP.shp"))
             ecoregion=sf::st_make_valid(ecoregion)
-            WY_OE_results_sf=sf::st_transform(WY_OE_results_sf,5070)
+            WY_OE_results_sf=sf::st_transform(WYOEResults_sf,5070)
             WYOEresults_sf=sf::st_intersection(WY_OE_results_sf,ecoregion)
+            WYOEresults_sf<-WYOEresults_sf[WYOEresults_sf$modelId==as.integer(model_id_burn),]
+
             WY_OE_results[[i]]=dplyr::left_join(WY_OE_results[[i]],sf::st_drop_geometry(WYOEresults_sf[,c('sampleId','modelId')]),by='sampleId')
-
-    }
-
 }
+            bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
+                                   translationId = mod_val$translationId,
+                                   fixedCount = mod_val$fixedCount,
+                                   sampleIds=model_sub$sampleId
+            )
+            sumrarefiedOTUTaxa = bugsOTU  %>%
+              dplyr::group_by(sampleId) %>%
+              dplyr::summarize(fixedCount = sum(splitCount))
+
+            ################################################
+            ###### get invasives ##### comment out this entire invasives section if running "National" AIM westwide reporting
+            # get raw bug data
+            bugRaw = NAMCr::query(
+              "sampleTaxa",
+              sampleIds=model_sub$sampleId
+            )
+            #subset taxa in samples to only invasives
+            bugraw = subset(bugRaw,taxonomyId %in% c(1330,1331,2633, 2671,4933,4934,4935,4936,4937,4938,4939,4940,4941,4942,1019,1994,5096,1515,1518,1604,2000,4074,1369,2013,1579))
+            #create list of invasives present at a site
+            invasives<-bugraw %>% dplyr::group_by(sampleId) %>% dplyr::summarize(InvasiveInvertSpecies=paste0(list(unique(scientificName)),collapse=''))
+            # remove list formatting
+            invasives$InvasiveInvertSpecies=gsub("^c()","",invasives$InvasiveInvertSpecies)
+            invasives$InvasiveInvertSpecies=gsub("\"","",invasives$InvasiveInvertSpecies)
+            invasives$InvasiveInvertSpecies=gsub("\\(","",invasives$InvasiveInvertSpecies)
+            invasives$InvasiveInvertSpecies=gsub("\\)","",invasives$InvasiveInvertSpecies)
+            # join to list of all samples with fixed counts
+            additionalbugmetrics=dplyr::left_join(sumrarefiedOTUTaxa,invasives, by="sampleId")
+            # if no invasives were present set to absent
+            additionalbugmetrics[is.na(additionalbugmetrics)]<-"Absent"
+            #################################################
+
+            #IF NATIONAL COMMENT OUT THIS LINE OF CODE AND UNCOMMENT OUT THE FOLLOWING TWO LINES
+            WY_OE_results[[i]]=dplyr::left_join(WY_OE_results[[i]],additionalbugmetrics,by="sampleId")
+            # finalResults=dplyr::left_join(finalResults,sumrarefiedOTUTaxa,by="sampleId")
+            # finalResults$InvasiveInvertSpecies='National'
+
+            print('writing O/E results')
+
+
+
+            for(j in 1:nrow(WY_OE_results[[i]])){ #for j
+              if(model_id_burn=="13"){
+                print('only WY model with applicability attached')
+              dat_to_pass<-list(sampleId = WY_OE_results[[i]]$sampleId[j],
+                                modelId = WY_OE_results[[i]]$modelId[j],
+                                oResult = WY_OE_results[[i]]$O[j],
+                                eResult = WY_OE_results[[i]]$E[j],
+                                modelResult = WY_OE_results[[i]]$OoverE[j] ,
+                                fixedCount = WY_OE_results[[i]]$fixedCount[j],
+                                modelApplicability = WY_OE_results[[i]]$ModelApplicability[j],
+                                notes=WY_OE_results[[i]]$InvasiveInvertSpecies[j])
+              }else{ #else
+                print('all other WY models here')
+                dat_to_pass<-list(sampleId = WY_OE_results[[i]]$sampleId[j],
+                                  modelId = as.integer(model_id_burn),
+                                  oResult = WY_OE_results[[i]]$O[j],
+                                  eResult = WY_OE_results[[i]]$E[j],
+                                  modelResult = WY_OE_results[[i]]$OoverE[j] ,
+                                  fixedCount = WY_OE_results[[i]]$fixedCount[j],
+                                  notes=WY_OE_results[[i]]$InvasiveInvertSpecies[j])
+              }#else
+
+              NAMCr::save(
+                api_endpoint = "setModelResult",
+                args=dat_to_pass)
+            }# for j
+
+
+        } #for i
+      print(i)
+} #if T
+oof<-WY_OE_results[[1]][WY_OE_results[[1]]$sampleId==211555,]
+lil_dat<-list(sampleId = oof$sampleId,
+              modelId = 23,
+              oResult = 0,
+              eResult = WY_OE_results[[i]]$E[j],
+              modelResult = 0 ,
+              fixedCount = 0,
+              notes=WY_OE_results[[i]]$InvasiveInvertSpecies[j])
+
 
   #Starting off the MMI section is the CO MMI, a quick and easy export
 if (sampleMMIs$modelId %in% c(4,5,6)) {
