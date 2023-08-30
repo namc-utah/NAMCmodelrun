@@ -669,15 +669,6 @@ if(0){
         } #for i
       print(i)
 } #if T
-oof<-WY_OE_results[[1]][WY_OE_results[[1]]$sampleId==211555,]
-lil_dat<-list(sampleId = oof$sampleId,
-              modelId = 23,
-              oResult = 0,
-              eResult = WY_OE_results[[i]]$E[j],
-              modelResult = 0 ,
-              fixedCount = 0,
-              notes=WY_OE_results[[i]]$InvasiveInvertSpecies[j])
-
 
   #Starting off the MMI section is the CO MMI, a quick and easy export
 if (sampleMMIs$modelId %in% c(4,5,6)) {
