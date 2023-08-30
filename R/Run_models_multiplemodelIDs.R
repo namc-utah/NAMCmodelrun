@@ -218,6 +218,7 @@ def_predictors = NAMCr::query(
 
 
 def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
+#edit this for CO only
 if (nrow(sampleMMIs)>=1 | nrow(sampleWQs)>=1){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
   print("CO or TP model")
   def_predictors_categorical=subset(def_predictors,predictorId %in% c(111,75))
@@ -281,18 +282,55 @@ NullOR_modelResults$modelId<-rep(12,nrow(NullOR_modelResults))
       args = list(translationId = 16, fixedCount = 300, sampleIds=NullOR_modelResults$sampleId[n])
     )
     agged_tax_counts<-aggregate(splitCount~sampleId,data=taxa_counts,FUN=sum)
+    #getting invasives
+    bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
+                           translationId = 14,
+                           fixedCount = 300,
+                           sampleIds=sampleNullOEs$sampleId
+    )
+    sumrarefiedOTUTaxa = bugsOTU  %>%
+      dplyr::group_by(sampleId) %>%
+      dplyr::summarize(fixedCount = sum(splitCount))
 
-    n_dat_to_pass<-list(sampleId = NullOR_modelResults$sampleId[n],
-                      modelId = NullOR_modelResults$modelId[n],
-                      oResult = NullOR_modelResults$O[n],
-                      eResult = NullOR_modelResults$E[n],
-                      modelResult = NullOR_modelResults$OoverE[n],
-                      fixedCount=agged_tax_counts$splitCount)
+    ################################################
+    ###### get invasives ##### comment out this entire invasives section if running "National" AIM westwide reporting
+    # get raw bug data
+    bugRaw = NAMCr::query(
+      "sampleTaxa",
+      sampleIds=sampleNullOEs$sampleId
+    )
+    #subset taxa in samples to only invasives
+    bugraw = subset(bugRaw,taxonomyId %in% c(1330,1331,2633, 2671,4933,4934,4935,4936,4937,4938,4939,4940,4941,4942,1019,1994,5096,1515,1518,1604,2000,4074,1369,2013,1579))
+    #create list of invasives present at a site
+    invasives<-bugraw %>% dplyr::group_by(sampleId) %>% dplyr::summarize(InvasiveInvertSpecies=paste0(list(unique(scientificName)),collapse=''))
+    # remove list formatting
+    invasives$InvasiveInvertSpecies=gsub("^c()","",invasives$InvasiveInvertSpecies)
+    invasives$InvasiveInvertSpecies=gsub("\"","",invasives$InvasiveInvertSpecies)
+    invasives$InvasiveInvertSpecies=gsub("\\(","",invasives$InvasiveInvertSpecies)
+    invasives$InvasiveInvertSpecies=gsub("\\)","",invasives$InvasiveInvertSpecies)
+    # join to list of all samples with fixed counts
+    additionalbugmetrics=dplyr::left_join(sumrarefiedOTUTaxa,invasives, by="sampleId")
+    # if no invasives were present set to absent
+    additionalbugmetrics[is.na(additionalbugmetrics)]<-"Absent"
+    #################################################
+
+    #IF NATIONAL COMMENT OUT THIS LINE OF CODE AND UNCOMMENT OUT THE FOLLOWING TWO LINES
+    NullOR_modelResults_burn=dplyr::left_join(NullOR_modelResults,additionalbugmetrics,by="sampleId")
+    n_dat_to_pass<-list(sampleId = NullOR_modelResults_burn$sampleId[n],
+                      modelId = NullOR_modelResults_burn$modelId[n],
+                      oResult = NullOR_modelResults_burn$O[n],
+                      eResult = NullOR_modelResults_burn$E[n],
+                      modelResult = NullOR_modelResults_burn$OoverE[n],
+                      fixedCount=agged_tax_counts$splitCount,
+                      notes=NullOR_modelResults_burn$InvasiveInvertSpecies[n])
 
     NAMCr::save(
-      api_endpoint = "setModelResult",
+     api_endpoint = "setModelResult",
       args=n_dat_to_pass)
+    print('results saved!')
+    print(n)
   }
+
 }
 
 #get bug info for the non-null models
@@ -685,7 +723,7 @@ if (sampleMMIs$modelId %in% c(4,5,6)) {
     #throwing in CSCI and MIR here, just because they are small
 } else if (nrow(sampleCSCIs)>=1) {
   bugnew = CSCI_bug(sampleIds = def_model_results$sampleId)
-} else if (sampleMMIs$modelId %in% 169){
+} else if (sampleMMIs$modelId %in% c(169,263)){
   bugnew=AZ_bug_export(sampleIds = def_model_results$sampleId)
 }else if (nrow(sampleMMIs)>=1) {
 
