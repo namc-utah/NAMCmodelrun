@@ -1,4 +1,4 @@
-AZ_bug_export<-function(sampleIds){
+ADEQ_bug_export<-function(sampleIds){
   bugRaw = NAMCr::query(
     "sampleTaxaUnambiguous",
     sampleIds=sampleIds

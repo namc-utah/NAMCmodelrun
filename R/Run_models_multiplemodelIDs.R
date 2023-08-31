@@ -257,6 +257,13 @@ prednew<-prednew[,-1]
 # Run models
 # ---------------------------------------------------------------
 
+#quick export section (CO MMI and ADEQ IBI)
+#no analyses performed by NAMC for these indices
+#so we will just export the appropriate file
+#for MS Access ingestion.
+ if (sampleMMIs$modelId %in% c(169)){
+  bugnew=AZ_bug_export(sampleIds = def_model_results$sampleId)
+}
 # ------------------------------
 # OE models
 # ------------------------------
@@ -723,9 +730,7 @@ if (sampleMMIs$modelId %in% c(4,5,6)) {
     #throwing in CSCI and MIR here, just because they are small
 } else if (nrow(sampleCSCIs)>=1) {
   bugnew = CSCI_bug(sampleIds = def_model_results$sampleId)
-} else if (sampleMMIs$modelId %in% c(169,263)){
-  bugnew=AZ_bug_export(sampleIds = def_model_results$sampleId)
-}else if (nrow(sampleMMIs)>=1) {
+} else if (nrow(sampleMMIs)>=1) {
 
 #Now the MMI section starts.
 #Make MMI list, like OE list
