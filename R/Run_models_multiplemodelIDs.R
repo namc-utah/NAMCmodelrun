@@ -261,8 +261,9 @@ prednew<-prednew[,-1]
 #no analyses performed by NAMC for these indices
 #so we will just export the appropriate file
 #for MS Access ingestion.
- if (sampleMMIs$modelId %in% c(169)){
-  bugnew=AZ_bug_export(sampleIds = def_model_results$sampleId)
+ if (nrow(sampleMMIs[sampleMMIs$modelId %in% c(169),])>=1){
+   setwd('C://Users//andrew.caudillo//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//Arizona//InputFiles')
+  ADEQ_bug_export(sampleIds = def_model_results$sampleId)
 }
 # ------------------------------
 # OE models
