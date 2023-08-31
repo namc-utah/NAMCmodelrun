@@ -49,7 +49,7 @@ ADEQ_bug_export<-function(sampleIds){
 
 
 
-AZbugs2
+AZbugs2<-AZbugs2[which(is.na(AZbugs2$FinalID)==F),]
 
   #write excel file to workspace
   write.csv(AZbugs2,file = paste0("AZbugs","boxId_",boxId,"_",Sys.Date(),".csv"),row.names=FALSE)
