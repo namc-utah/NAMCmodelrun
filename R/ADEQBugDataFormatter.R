@@ -49,7 +49,7 @@ ADEQ_bug_export<-function(sampleIds){
 
 
 
-
+AZbugs2
 
   #write excel file to workspace
   write.csv(AZbugs2,file = paste0("AZbugs","boxId_",boxId,"_",Sys.Date(),".csv"),row.names=FALSE)
@@ -58,5 +58,6 @@ ADEQ_bug_export<-function(sampleIds){
             "/OE_Modeling/NAMC_Supported_OEmodels/AZ/Benthic Data Bulk Upload_SOP.doc",
             "to import bug and habitat data, harmonize taxa list, rarefy and compute MMI",
             "then read resulting excel file back into R to save results in the database.", sep="\n"))
-  return(AZbugs)
+  return(AZbugs2)
+
 }
