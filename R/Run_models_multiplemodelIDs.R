@@ -717,10 +717,10 @@ if(0){
 } #if T
 
   #Starting off the MMI section is the CO MMI, a quick and easy export
-if (sampleMMIs$modelId %in% c(4,5,6)) {
+if (nrow(sampleMMIs[sampleMMIs$modelId %in% c(4,5,6),])>=1) {
     print('CO MMI, this is run in Access. Only predictors and bugs needed')
     #write get bugs from database, write out as a csv and save as CObugs object
-    CObugs=CO_bug_export(sampleIds=def_model_results$sampleId)
+    CObugs=CO_bug_export(sampleIds=sampleIds)
     #write out predictors as a csv
     write.csv(prednew,file = paste0("COpredictors","boxId_",CObugs$Project[1],"_",Sys.Date(),".csv"),row.names=FALSE)
     cat(paste("csv with COpredictors has been written out to your current working directory.",
