@@ -17,11 +17,13 @@ outlier.preds.ref.raw=data.frame(logSQ_KM,ElevCat_standardized,logPrecip8110Ws,T
 
 #standardize by min and max of ref data
 outlier.preds.ref.std=matrix(nrow=dim(outlier.preds.ref.raw)[1], ncol=0)
+
 for (n in 1:dim(outlier.preds.ref.raw)[2]){
   cur.var=outlier.preds.ref.raw[,n]
   cur.var.std=(cur.var-min(outlier.preds.ref.raw[,n]))/(max(outlier.preds.ref.raw[,n])-min(outlier.preds.ref.raw[,n]))
   outlier.preds.ref.std=cbind(outlier.preds.ref.std, cur.var.std)
-}
+  }
+
 colnames(outlier.preds.ref.std)=names(outlier.preds.ref.raw)
 row.names(outlier.preds.ref.std)=row.names(outlier.preds.ref.raw)
 
@@ -36,12 +38,13 @@ for (n in 1:dim(ref.dist)[1]){
 }
 
 
-logSQ_KM=log(prednew$WsAreaSqKm)
-ElevCat_standardized=prednew$ElevCat
-logPrecip8110Ws=log(prednew$Precip8110Ws)
-Tmean8110Ws_standardized=prednew$Tmean8110Ws
+prednew$logSQ_KM=log(prednew$WsAreaSqKm)
+prednew$ElevCat_standardized=prednew$ElevCat
+prednew$logPrecip8110Ws=log(prednew$Precip8110Ws)
+prednew$Tmean8110Ws_standardized=prednew$Tmean8110Ws
 
-outlier.preds.test.raw=data.frame(logSQ_KM,ElevCat_standardized,logPrecip8110Ws,Tmean8110Ws_standardized, row.names=prednew$sampleId)
+
+outlier.preds.test.raw=prednew[,c('logSQ_KM','ElevCat_standardized','logPrecip8110Ws','Tmean8110Ws_standardized')]
 
 #standardize by min and max of ref data
 
@@ -50,7 +53,8 @@ for (n in 1:dim(outlier.preds.test.raw)[2]){
   cur.var=outlier.preds.test.raw[,n]
   cur.var.std=(cur.var-min(outlier.preds.ref.raw[,n]))/(max(outlier.preds.ref.raw[,n])-min(outlier.preds.ref.raw[,n]))
   outlier.preds.test.std=cbind(outlier.preds.test.std, cur.var.std)
-}
+  }
+
 colnames(outlier.preds.test.std)=names(outlier.preds.ref.raw)
 row.names(outlier.preds.test.std)=row.names(outlier.preds.test.raw)
 
@@ -61,6 +65,8 @@ test.dist=test.dist[row.names(outlier.preds.test.std),row.names(outlier.preds.re
 test.top10mean.dist=vector()
 out.flag90=vector()
 sample.list = row.names(outlier.preds.test.raw)
+
+tryCatch({
 for (n in 1:length(sample.list)){
   if(length(sample.list)>1){cur.dist=test.dist[n,]}
   if(length(sample.list)==1){cur.dist=test.dist}
@@ -70,6 +76,12 @@ for (n in 1:length(sample.list)){
   if (mean10dist>quantile(ref.top10mean.dist,0.90)) flag90="Yes" else flag90="No"
   out.flag90=append(out.flag90, flag90)
 }
+  }, error =function(e){
+    cat(paste0("\n\tSAMPLE ERROR: model applicability preds not present",sample.list[i],"\n"))
+    str(e,indent.str = "   "); cat("\n")
+
+
+  })
 
 
 #
@@ -104,7 +116,7 @@ dev.off()
 
 final=cbind(out.flag90,applicabilitypreds,outlier.preds.test.std)
 final$ModelApplicability=ifelse(out.flag90=="Yes","false","true")
-ModelApplicability=ifelse(out.flag90=="Yes","false","true")
+row.names(final)=final$sampleId
 return(final)
 }
 
