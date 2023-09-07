@@ -20,8 +20,8 @@ ADEQ_bug_export<-function(sampleIds){
   )
 
   # join that data together into a single dataframe
-  AZbugs=dplyr::left_join(AZsubsamp,bugsTranslation, by=c("taxonomyId", "sampleId"))
-  AZbugs=dplyr::left_join(AZsubsamp,samples, by='sampleId')
+  AZbugs=dplyr::left_join(AZsubsamp,bugsTranslation[,c('otuName','taxonomyId','sampleId')], by=c("taxonomyId", "sampleId"))
+  AZbugs=dplyr::left_join(AZbugs,samples, by='sampleId')
 
   sampletax = NAMCr::query(
     "sampleTaxa",
@@ -39,7 +39,7 @@ ADEQ_bug_export<-function(sampleIds){
   AZbugs2$CollMeth=rep('ADEQ Riffle bugs',nrow(AZbugs))
   #correction factor is 100 * 1/labsplit %. So we need to force decimal to %.
   AZbugs2$CorrectionFactor=100*(1/(AZbugs$labSplit*100))
-  AZbugs2$FinalID=AZbugs$scientificName
+  AZbugs2$FinalID=AZbugs$otuName
   AZbugs2$Individuals=AZbugs$splitCount
   AZbugs2$Stage=AZbugs$lifeStageAbbreviation
   AZbugs2$LargeRare='No'
@@ -49,7 +49,7 @@ ADEQ_bug_export<-function(sampleIds){
 
 
 
-AZbugs2
+AZbugs2<-AZbugs2[which(is.na(AZbugs2$FinalID)==F),]
 
   #write excel file to workspace
   write.csv(AZbugs2,file = paste0("AZbugs","boxId_",boxId,"_",Sys.Date(),".csv"),row.names=FALSE)
