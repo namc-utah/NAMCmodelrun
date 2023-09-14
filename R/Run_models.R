@@ -171,27 +171,11 @@ if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1) {
   )
   #need a way to distinguish this model from others.. call NULL OE?
 } else if (length(def_models$modelTypeAbbreviation[def_models$modelTypeAbbreviation=='OE'])>=1) {
-  if(length(def_models$modelId)==1){
     print('O/E')
     bugnew = OE_bug_matrix(
       sampleIds = def_model_results$sampleId,
       translationId = def_models$translationId[1],
-      fixedCount = def_models$fixedCount[1])}
-  if(length(def_models$modelId)>1){
-    print('multiple models')
-    #if and for loop for multiple modelIDs vs just 1 (usual)
-
-    bug_list<-list()
-    for(i in 1:length(unique(def_model_results$translationId))){
-      x = OE_bug_matrix(
-        sampleIds = def_model_results$sampleId,
-        translationId = def_models$translationId[i],
-        fixedCount = def_models$fixedCount[i])
-      bug_list[[i]]<-x
-      names(bug_list)[i]<-paste('bugnew',def_models$modelId[i])
-    }
-
-  }
+      fixedCount = def_models$fixedCount[1])
 
   # CO model must be written out as an excel file using a separate bank of code and function
 } else if (length(def_models$modelId[def_models$modelId %in% c(4,5,6)]==T)>=1) {
