@@ -64,6 +64,7 @@ if (exists("boxId")){
 
 sampleIds = def_samples$sampleId
 
+
 #   # ---------------------------------------------------------------
 # get a list of samples if the needed model has already been run for the sample
 # ---------------------------------------------------------------
@@ -92,12 +93,6 @@ sampleNullOEs<-def_model_results[def_model_results$modelId %in% NullOE,]
 sampleAREMP<-def_model_results[def_model_results$modelId %in% AREMP,]
 sampleMIRs<-def_model_results[def_model_results$modelId %in% MIR,]
 samplePIBO<-def_model_results[def_model_results$modelId %in% PIBO,]
-
-All_OE_results<-list()
-ALL_MMI_results<-list()
-ALL_CSCI_results<-list()
-ALL_MIR_results<-list()
-ALL_WQ_Results<-list()
 
 #get base model applicability info
 
@@ -360,6 +355,7 @@ if(nrow(sampleOEs)>=1){
   }
 }
 
+
 #non OR O/E indices (WW, PIBO, etc.)
   if (nrow(sampleOEs[sampleOEs$modelId %in% c(2,7,9,25,26,29),])>=1) {
     print('running O/Es using 4.2RF')
@@ -417,8 +413,8 @@ if(nrow(sampleOEs)>=1){
       General_OE_results[[i]]$modelId=as.integer(model_id_burn)}
 
       bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
-                             translationId = model_sub$translationId[i],
-                             fixedCount = model_sub$fixedCount[i],
+                             translationId = mod_val$translationId,
+                             fixedCount = mod_val$fixedCount,
                              sampleIds=model_sub$sampleId
       )
       sumrarefiedOTUTaxa = bugsOTU  %>%
@@ -448,9 +444,9 @@ if(nrow(sampleOEs)>=1){
       #################################################
 
       #IF NATIONAL COMMENT OUT THIS LINE OF CODE AND UNCOMMENT OUT THE FOLLOWING TWO LINES
-      General_OE_results[[i]]=dplyr::left_join(General_OE_results[[i]],additionalbugmetrics,by="sampleId")
-      # finalResults=dplyr::left_join(finalResults,sumrarefiedOTUTaxa,by="sampleId")
-      # finalResults$InvasiveInvertSpecies='National'
+      #General_OE_results[[i]]=dplyr::left_join(General_OE_results[[i]],additionalbugmetrics,by="sampleId")
+      General_OE_results[[i]]=dplyr::left_join(General_OE_results[[i]],sumrarefiedOTUTaxa,by="sampleId")
+      General_OE_results[[i]]$InvasiveInvertSpecies='National'
 
       print('writing O/E results')
       for(j in 1:nrow(model_sub)){
