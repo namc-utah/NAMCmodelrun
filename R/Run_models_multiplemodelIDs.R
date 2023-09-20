@@ -609,8 +609,6 @@ if(nrow(sampleOEs)>=1){
           modelResults<-OE$OE.scores
           WY_OE_results[[i]]<-modelResults
           names(WY_OE_results)[i]<-model_id_burn
-          if(model_id_burn!="13")
-            if(0){
 
           print('model app time')
 
@@ -621,8 +619,7 @@ if(nrow(sampleOEs)>=1){
          WY_OE_results[[i]]<-merge(WY_OE_results[[i]],
                                          ModelApplicability_obj,
                                          by='row.names')
-            }
-          WY_OE_results[[i]]$sampleId<-as.integer(row.names(WY_OE_results[[i]]))
+         # WY_OE_results[[i]]$sampleId<-as.integer(row.names(WY_OE_results[[i]]))
 
           WY_OE_results[[i]]<-dplyr::left_join(WY_OE_results[[i]],def_samples[,c('sampleId','siteLongitude','siteLatitude')],by='sampleId')
           #using the extraction method in sf returns too many
@@ -679,38 +676,28 @@ if(0){
             print('writing O/E results')
 
 
-
-            for(j in 1:nrow(WY_OE_results[[i]])){ #for j
-              if(model_id_burn=="13"){
-                print('only WY model with applicability attached')
-              dat_to_pass<-list(sampleId = WY_OE_results[[i]]$sampleId[j],
-                                modelId = WY_OE_results[[i]]$modelId[j],
-                                oResult = WY_OE_results[[i]]$O[j],
-                                eResult = WY_OE_results[[i]]$E[j],
-                                modelResult = WY_OE_results[[i]]$OoverE[j] ,
-                                fixedCount = WY_OE_results[[i]]$fixedCount[j],
-                                modelApplicability = WY_OE_results[[i]]$ModelApplicability[j],
-                                notes=WY_OE_results[[i]]$InvasiveInvertSpecies[j])
-              }else{ #else
-                print('all other WY models here')
+#nested for loop
+#because namcr requires 1 record at a time
+for(j in 1:nrow(WY_OE_results[[i]])){
                 dat_to_pass<-list(sampleId = WY_OE_results[[i]]$sampleId[j],
                                   modelId = as.integer(model_id_burn),
                                   oResult = WY_OE_results[[i]]$O[j],
                                   eResult = WY_OE_results[[i]]$E[j],
                                   modelResult = WY_OE_results[[i]]$OoverE[j] ,
                                   fixedCount = WY_OE_results[[i]]$fixedCount[j],
-                                  notes=WY_OE_results[[i]]$InvasiveInvertSpecies[j])
-              }#else
+                                  notes=WY_OE_results[[i]]$InvasiveInvertSpecies[j],
+                                  modelApplicability = WY_OE_results[[i]]$ModelApplicability[j])
 
               NAMCr::save(
                 api_endpoint = "setModelResult",
                 args=dat_to_pass)
+              print('results saved to db')
             }# for j
 
 
         } #for i
-      print(i)
-} #if T
+
+}#if
 
   #Starting off the MMI section is the CO MMI, a quick and easy export
 if (nrow(sampleMMIs[sampleMMIs$modelId %in% c(4,5,6),])>=1) {
