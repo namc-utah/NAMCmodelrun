@@ -10,7 +10,7 @@ library(elevatr)
 library(NAMCr)
 library(sf)
 #change the boxID as needed
-boxID=3793
+boxID=7159
 #read in samples
 samps = NAMCr::query(
   "samples",
@@ -18,9 +18,12 @@ samps = NAMCr::query(
 )
 #create spatial df
 spatdf<-st_as_sf(samps,coords=c("siteLongitude",'siteLatitude'))
+
 #assing lat/long projection
-spatdf<-st_set_crs(spatdf,"+proj=longlat")
+spatdf<-st_set_crs(spatdf$geometry,"+proj=longlat")
 #get the elevation (returns a df)
+
+#get elevation, returns a DF
 invertreg_values<-get_elev_point(spatdf)
 #convert meters to feet (we could keep meters and just make a new
 #conditional statement, but this is fine.)
@@ -35,3 +38,4 @@ invertreg_values$sampleId<-samps$sampleId
 #assigning InvertReg on EDAS, since the ActivityID is less intuitive there.
 #(i.e., filter by the site names below and then add "warm" or "cold" accordingly)
 invertreg_values$site<-samps$siteName
+invertreg_values
