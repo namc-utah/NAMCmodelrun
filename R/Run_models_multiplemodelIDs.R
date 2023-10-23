@@ -65,6 +65,7 @@ if (exists("boxId")){
 sampleIds = def_samples$sampleId
 
 
+
 #   # ---------------------------------------------------------------
 # get a list of samples if the needed model has already been run for the sample
 # ---------------------------------------------------------------
@@ -72,27 +73,30 @@ sampleIds = def_samples$sampleId
 # getting a list of samples and associated models that do not already have results in the table
 # has site location changed or predictor values changed if not dont rerun by excluding status=current
 # not ready status if predictors are not there
+
+
 def_model_results = NAMCr::query(
   api_endpoint = "modelResults",
   sampleIds=sampleIds
 )
 
+#def_model_results<-read.csv('C://Users//andrew.caudillo//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//WestWide//2023_09_21_model_results_project_1773.csv')
 def_model_results=subset(def_model_results,modelId %in% modelID)
-
+def_model_results<-def_model_results[def_model_results$sampleId %in% def_samples$sampleId,]
 #subset only necessary modelIDs. for example,
 #box 2162 has 4 models assigned to it, but only 3 were needed
 #based on geography
 modelID<-modelID[modelID %in% def_model_results$modelId]
 
 
-sampleOEs<-def_model_results[def_model_results$modelId %in% OEs,]
-sampleMMIs<-def_model_results[def_model_results$modelId %in% MMIs,]
+sampleOEs<-def_model_results[def_model_results$modelId %in% OEs ,]
+sampleMMIs<-def_model_results[def_model_results$modelId %in% MMIs ,]
 sampleCSCIs<-def_model_results[def_model_results$modelId %in% CSCIs,]
-sampleWQs<-def_model_results[def_model_results$modelId %in% WQs,]
-sampleNullOEs<-def_model_results[def_model_results$modelId %in% NullOE,]
+sampleWQs<-def_model_results[def_model_results$modelId %in% WQs ,]
+sampleNullOEs<-def_model_results[def_model_results$modelId %in% NullOE ,]
 sampleAREMP<-def_model_results[def_model_results$modelId %in% AREMP,]
 sampleMIRs<-def_model_results[def_model_results$modelId %in% MIR,]
-samplePIBO<-def_model_results[def_model_results$modelId %in% PIBO,]
+samplePIBO<-def_model_results[def_model_results$modelId %in% PIBO ,]
 
 #get base model applicability info
 
@@ -198,7 +202,7 @@ def_predictors = NAMCr::query(
 
 
 #def_predictors <- def_predictors[!duplicated(def_predictors), ]
-
+#loop the predictors and combine the preds into one datarframe
   if(length(modelID)>1){
     for(i in 1:length(modelID)){
       print('there are multiple modelIDs')
@@ -206,6 +210,7 @@ def_predictors = NAMCr::query(
       arbitrary_list[[i]]<-modelpred
     }
     modelpred<-do.call('rbind',arbitrary_list)
+    #or just one query if only 1 modelID
   }else{
     print("there is only 1 modelID here")
     modelpred=NAMCr::query("predictors",modelId=modelID)
@@ -213,9 +218,9 @@ def_predictors = NAMCr::query(
 
 
 def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
-#edit this for CO only
-if (nrow(sampleMMIs)>=1 | nrow(sampleWQs)>=1){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
-  print("CO or TP model")
+
+if (nrow(sampleWQs)>=1){ #TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
+  print("TP model")
   def_predictors_categorical=subset(def_predictors,predictorId %in% c(111,75))
   prednew1 = tidyr::pivot_wider(def_predictors_categorical,
                                 id_cols="sampleId",
@@ -245,8 +250,10 @@ prednew = tidyr::pivot_wider(def_predictors,
 prednew=as.data.frame(prednew)
 rownames(prednew)<-prednew$sampleId
 prednew<-prednew[,-1]
+#remove this after!
+#prednew<-prednew[which(row.names(prednew) %in% c(211367,211550,210561,211211,211254)==F),]
 }
-
+prednew[rowSums(is.na(prednew)) > 0,]
 
 # ---------------------------------------------------------------
 # Run models
@@ -259,7 +266,20 @@ prednew<-prednew[,-1]
  if (nrow(sampleMMIs[sampleMMIs$modelId %in% c(169),])>=1){
    setwd('C://Users//andrew.caudillo//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//Arizona//InputFiles')
   ADEQ_bug_export(sampleIds = def_model_results$sampleId)
-}
+ }else{
+   if (nrow(sampleMMIs[sampleMMIs$modelId %in% c(4,5,6),])>=1) {
+     print('CO MMI, this is run in Access. Only predictors and bugs needed')
+     #write get bugs from database, write out as a csv and save as CObugs object
+     CObugs=CO_bug_export(sampleIds=sampleIds)
+     #write out predictors as a csv
+     write.csv(prednew,file = paste0("COpredictors","boxId_",CObugs$Project[1],"_",Sys.Date(),".csv"),row.names=FALSE)
+     cat(paste("csv with COpredictors has been written out to your current working directory.",
+               "Convert this csv to excel 2003 and import into CO EDAS access database to compute the CSCI score.",
+               "Follow instructions in this pdf Box\\NAMC\\OE_Modeling\\NAMC_Supported_OEmodels\\CO\\Documentation\\EDAS2017\\Tutorial Guide to EDAS_Version 1.7.pdf",
+               "to import bug and habitat data, harmonize taxa list, rarefy and compute MMI",
+               "then read resulting excel file back into R to save results in the database.", sep="\n"))
+   }
+ }
 # ------------------------------
 # OE models
 # ------------------------------
@@ -325,7 +345,8 @@ NullOR_modelResults$modelId<-rep(12,nrow(NullOR_modelResults))
                       eResult = NullOR_modelResults_burn$E[n],
                       modelResult = NullOR_modelResults_burn$OoverE[n],
                       fixedCount=agged_tax_counts$splitCount,
-                      notes=NullOR_modelResults_burn$InvasiveInvertSpecies[n])
+                      notes='National')
+                      #notes=NullOR_modelResults_burn$InvasiveInvertSpecies[n])
 
     NAMCr::save(
      api_endpoint = "setModelResult",
@@ -348,8 +369,8 @@ if(nrow(sampleOEs)>=1){
     y<-sampleOEs[sampleOEs$modelId==unique(sampleOEs$modelId)[i],]
   bugnew = OE_bug_matrix(
     sampleIds =y$sampleId,
-    translationId = mod_val$translationId[1],
-    fixedCount = mod_val$fixedCount[1])
+    translationId = mod_val$translationId,
+    fixedCount = mod_val$fixedCount)
   OE_list[[i]]<-bugnew
   names(OE_list)[i]<-unique(sampleOEs$modelId)[i]
   }
@@ -357,7 +378,7 @@ if(nrow(sampleOEs)>=1){
 
 
 #non OR O/E indices (WW, PIBO, etc.)
-  if (nrow(sampleOEs[sampleOEs$modelId %in% c(2,7,9,25,26,29),])>=1) {
+  if(nrow(sampleOEs[sampleOEs$modelId %in% c(2,7,9,25,26,29),])>=1){
     print('running O/Es using 4.2RF')
     print(unique(sampleOEs$modelId[which(sampleOEs$modelId %in% c(2,7,9,25,26,29))]))
     bug_sub_list<-sampleOEs[which(sampleOEs$modelId %in% c(2,7,9,25,26,29)),]
@@ -371,6 +392,7 @@ if(nrow(sampleOEs)>=1){
       model_id_burn<-as.character(unique(bug_sub_list$modelId)[i])
       model_sub<-bug_sub_list[bug_sub_list$modelId==as.integer(model_id_burn),]
       oe_bug_burn<-OE_list[[model_id_burn]]
+      oe_bug_burn<-oe_bug_burn[row.names(oe_bug_burn) %in% c(211367,211550,211211,210561,211254)==F,]
       #colnames(oe_bug_burn)<-sub(c('X2.','X7.','X9.','X25.','X26.','X29.'),colnames(oe_bug_burn))
       OE <-model.predict.RanFor.4.2(
         bugcal.pa,
@@ -384,6 +406,7 @@ if(nrow(sampleOEs)>=1){
 
 
       modelResults<-OE$OE.scores[(grepl("NA", row.names(OE$OE.scores), fixed = TRUE))==F,]
+
       #modelResults$modelID<-as.integer(model_id_burn)
       General_OE_results[[i]]<-modelResults
       names(General_OE_results)[i]<-model_id_burn
@@ -410,7 +433,7 @@ if(nrow(sampleOEs)>=1){
       } else{
       print('not a westwide model, going to other options (WY, OR)')
       }
-      General_OE_results[[i]]$modelId=as.integer(model_id_burn)}
+      General_OE_results[[i]]$modelId=as.integer(model_id_burn)
 
       bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
                              translationId = mod_val$translationId,
@@ -450,6 +473,8 @@ if(nrow(sampleOEs)>=1){
 
       print('writing O/E results')
       for(j in 1:nrow(model_sub)){
+
+
       dat_to_pass<-list(sampleId = General_OE_results[[i]]$sampleId[j],
                         modelId = General_OE_results[[i]]$modelId[j],
                         oResult = General_OE_results[[i]]$O[j],
@@ -457,13 +482,19 @@ if(nrow(sampleOEs)>=1){
                         modelResult = General_OE_results[[i]]$OoverE[j] ,
                         fixedCount = General_OE_results[[i]]$fixedCount[j],
                         modelApplicability = General_OE_results[[i]]$ModelApplicability[j],
-                        notes=General_OE_results[[i]]$InvasiveInvertSpecies[j])
+                        #notes=General_OE_results[[i]]$InvasiveInvertSpecies[j])
+                        notes='National')
 
       NAMCr::save(
         api_endpoint = "setModelResult",
         args=dat_to_pass)
+      print(paste(j, ' results saved!'))
       }
+
     }
+    }
+
+
 
 #if only one model met that condition above
 #force the list to a df. maybe keeping it a list is better... for looping
@@ -566,7 +597,8 @@ if(nrow(sampleOEs)>=1){
                           modelResult = OR_OE_result[[i]]$OoverE[j] ,
                           fixedCount = OR_OE_result[[i]]$fixedCount[j],
                           modelApplicability = OR_OE_result[[i]]$ModelApplicability[j],
-                          notes=OR_OE_result[[i]]$InvasiveInvertSpecies[j])
+                          #notes=OR_OE_result[[i]]$InvasiveInvertSpecies[j])
+                          notes='National')
 
         NAMCr::save(
           api_endpoint = "setModelResult",
@@ -699,21 +731,81 @@ for(j in 1:nrow(WY_OE_results[[i]])){
 
 }#if
 
-  #Starting off the MMI section is the CO MMI, a quick and easy export
-if (nrow(sampleMMIs[sampleMMIs$modelId %in% c(4,5,6),])>=1) {
-    print('CO MMI, this is run in Access. Only predictors and bugs needed')
-    #write get bugs from database, write out as a csv and save as CObugs object
-    CObugs=CO_bug_export(sampleIds=sampleIds)
-    #write out predictors as a csv
-    write.csv(prednew,file = paste0("COpredictors","boxId_",CObugs$Project[1],"_",Sys.Date(),".csv"),row.names=FALSE)
-    cat(paste("csv with COpredictors has been written out to your current working directory.",
-              "Convert this csv to excel 2003 and import into CO EDAS access database to compute the CSCI score.",
-              "Follow instructions in this pdf Box\\NAMC\\OE_Modeling\\NAMC_Supported_OEmodels\\CO\\Documentation\\EDAS2017\\Tutorial Guide to EDAS_Version 1.7.pdf",
-              "to import bug and habitat data, harmonize taxa list, rarefy and compute MMI",
-              "then read resulting excel file back into R to save results in the database.", sep="\n"))
-    #throwing in CSCI and MIR here, just because they are small
-} else if (nrow(sampleCSCIs)>=1) {
+
+#throwing in CSCI and MIR here, just because they are small
+ if (nrow(sampleCSCIs)>=1) {
   bugnew = CSCI_bug(sampleIds = def_model_results$sampleId)
+  bugnew<-subset(bugnew,bugnew$SampleID %in% rownames(prednew))
+  prednew<-subset(prednew,rownames(prednew) %in% bugnew$SampleID)
+  #reorder them the same just in case model functions dont already do this
+  bugnew = bugnew[order(row.names(bugnew)),];
+  prednew = prednew[order(rownames(prednew)),];
+  prednew$sampleId=as.numeric(row.names(prednew))
+  prednew=left_join(prednew,def_samples[,c('siteName','sampleId')],by='sampleId')
+  prednew$StationCode<-prednew$sampleId
+  report <- CSCI::CSCI(bugs = bugnew, stations = prednew)
+  modelResults = report$score
+  rownames(modelResults)=modelResults$SampleID
+  CSCI_scores<-report$core
+
+
+  #model app
+  ModelApplicability_obj = ModelApplicability(CalPredsModelApplicability,
+                                              modelId = 1,
+                                              applicabilitypreds)
+  ModelApplicability_obj$SampleID<-row.names(ModelApplicability_obj)
+
+
+  bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
+                         translationId = 9,
+                         fixedCount = 300,
+                         sampleIds=CSCI_scores$SampleID
+  )
+  sumrarefiedOTUTaxa = bugsOTU  %>%
+    dplyr::group_by(sampleId) %>%
+    dplyr::summarize(fixedCount = sum(splitCount))
+
+  ################################################
+  ###### get invasives ##### comment out this entire invasives section if running "National" AIM westwide reporting
+  # get raw bug data
+  bugRaw = NAMCr::query(
+    "sampleTaxa",
+    sampleIds=CSCI_scores$SampleID
+  )
+  #subset taxa in samples to only invasives
+  bugraw = subset(bugRaw,taxonomyId %in% c(1330,1331,2633, 2671,4933,4934,4935,4936,4937,4938,4939,4940,4941,4942,1019,1994,5096,1515,1518,1604,2000,4074,1369,2013,1579))
+  #create list of invasives present at a site
+  invasives<-bugraw %>% dplyr::group_by(sampleId) %>% dplyr::summarize(InvasiveInvertSpecies=paste0(list(unique(scientificName)),collapse=''))
+  # remove list formatting
+  invasives$InvasiveInvertSpecies=gsub("^c()","",invasives$InvasiveInvertSpecies)
+  invasives$InvasiveInvertSpecies=gsub("\"","",invasives$InvasiveInvertSpecies)
+  invasives$InvasiveInvertSpecies=gsub("\\(","",invasives$InvasiveInvertSpecies)
+  invasives$InvasiveInvertSpecies=gsub("\\)","",invasives$InvasiveInvertSpecies)
+  # join to list of all samples with fixed counts
+  additionalbugmetrics=dplyr::left_join(sumrarefiedOTUTaxa,invasives, by="sampleId")
+  # if no invasives were present set to absent
+  additionalbugmetrics[is.na(additionalbugmetrics)]<-"Absent"
+  #################################################
+  names(additionalbugmetrics)[1]<-'SampleID'
+  additionalbugmetrics$SampleID<-as.character(additionalbugmetrics$SampleID)
+  #IF NATIONAL COMMENT OUT THIS LINE OF CODE AND UNCOMMENT OUT THE FOLLOWING TWO LINES
+  #National on 10/18/2023
+  CSCI_scores=dplyr::left_join(CSCI_scores,additionalbugmetrics,by="SampleID")
+  CSCI_final_results<-merge(CSCI_scores,
+                            ModelApplicability_obj,
+                            by='SampleID')
+  for(j in 1:nrow(CSCI_final_results)){
+    NAMCr::save(
+      api_endpoint = "setModelResult",
+      sampleId = CSCI_final_results$SampleID[j],
+      modelId = 1,
+      fixedCount= ifelse(CSCI_final_results$Count[j]>=600,300,CSCI_final_results$Count[j]),
+      modelResult = CSCI_final_results$CSCI[j],
+      modelApplicability = CSCI_final_results$ModelApplicability[j],
+      notes="National"
+    )
+  }
+
 } else if (nrow(sampleMMIs)>=1) {
 
 #Now the MMI section starts.
@@ -723,9 +815,11 @@ if (nrow(sampleMMIs[sampleMMIs$modelId %in% c(4,5,6),])>=1) {
   MMI_list<-list()
   for(i in 1:length(unique(sampleMMIs$modelId))){
   m<-sampleMMIs[sampleMMIs$modelId==unique(sampleMMIs$modelId)[i],]
+  uniq_mod<-unique(sampleMMIs$modelId)[i]
+  mod_val<-def_models[def_models$modelId==uniq_mod,]
   bugnew = MMI_metrics(sampleIds = m$sampleId,
-                       translationId=m$translationId[1],
-                       fixedCount = m$fixedCount[1],
+                       translationId=mod_val$translationId,
+                       fixedCount = mod_val$fixedCount,
                        modelId=m$modelId[1])
   MMI_list[[i]]<-bugnew
   names(MMI_list)<-as.character(m$modelId[1])
@@ -759,9 +853,9 @@ if (nrow(sampleAREMP[sampleAREMP$modelId==8])>=1) {# AREMP MMI
     predict(ranfor.mod, prednew, type = "response")# need to subset to only model predictors or maybe it doesnt matter??
   ), c('PrdCond'))
   prednew = cbind(prednew, PrdCond)
-  modelResults <-
+  NV_modelResults <-
     NV_MMI_model(
-      bugnew,
+      NV_bugnew,
       prednew,
       CLINGER.rf,
       INSET.rf,
@@ -835,7 +929,7 @@ if (nrow(sampleCSCIs)>=1) {
   prednew=left_join(prednew,def_samples[,c('siteName','sampleId')],by='sampleId')
   prednew$StationCode<-prednew$sampleId
   report <- CSCI::CSCI(bugs = bugnew, stations = prednew)
-  modelResults = report$core
+  modelResults = report$score
   rownames(modelResults)=modelResults$SampleID
 
 

@@ -2,7 +2,7 @@
 ADEQ_bug_export<-function(sampleIds){
   bugRaw = NAMCr::query(
     "sampleTaxaUnambiguous",
-    sampleIds=sampleIds
+    sampleIds=210531#sampleIds
   )# unique unrarefied taxa NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
 
   AZsubsamp<-rarify(inbug=bugRaw, sample.ID="sampleId", abund="splitCount", subsiz=500)
@@ -52,7 +52,8 @@ ADEQ_bug_export<-function(sampleIds){
 AZbugs2<-AZbugs2[which(is.na(AZbugs2$FinalID)==F),]
 
   #write excel file to workspace
-  write.csv(AZbugs2,file = paste0("AZbugs","boxId_",boxId,"_",Sys.Date(),".csv"),row.names=FALSE)
+
+  write.csv(AZbugs2,file = paste0("C://Users//andrew.caudillo//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//Arizona//InputFiles//AZbugs","boxId_",boxId,"_",Sys.Date(),".csv"),row.names=FALSE)
   cat(paste("csv with AZbugs has been written out to your current working directory.",
             "convert this csv to excel 2003 and import into AZ EDAS access database to compute the IBI score.",
             "/OE_Modeling/NAMC_Supported_OEmodels/AZ/Benthic Data Bulk Upload_SOP.doc",
@@ -61,3 +62,4 @@ AZbugs2<-AZbugs2[which(is.na(AZbugs2$FinalID)==F),]
   return(AZbugs2)
 
 }
+getwd()

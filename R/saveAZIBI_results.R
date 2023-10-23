@@ -16,7 +16,7 @@ CalPredsModelApplicability=read.csv(paste0(ecoregion_base_path,"OEModeling/NAMC_
 #read in the ADEQ IBI results
 #remember that this needs to be calculated using the ADEQ IBI Access database,
 #much like the CO EDAS.
-AZ_IBI_results<-read.csv('C://Users//andrew.caudillo//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//Arizona//Results//AZAIM2022_results.csv')
+AZ_IBI_results<-read.csv('C://Users//andrew.caudillo//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//Arizona//Results//WRSA_2022_results.csv')
 #calculate applicability preds
 applicabilitypreds = NAMCr::query("samplePredictorValues",
                                   include = c(
@@ -85,7 +85,8 @@ dat_to_pass<-list(
   modelResult=AZ_IBI_results$IBI[i],
   fixedCount=AZ_IBI_results$TotalIndividualsRaw[i],
   modelApplicability=AZ_IBI_results$ModelApplicability[i],
-  notes=AZ_IBI_results$InvasiveInvertSpecies[i])
+  #notes=AZ_IBI_results$InvasiveInvertSpecies[i])
+notes='National')
 
 NAMCr::save(
   api_endpoint = "setModelResult",
