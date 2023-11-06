@@ -80,6 +80,7 @@ ADEQ_bug_export<-function(sampleIds){
   AZbugs2$LabID=NA
   AZbugs2$Latitude=AZbugs$siteLatitude
   AZbugs2$Longitude=AZbugs$siteLongitude
+  AZbugs2$InvertReg=AZbugs$Type
   AZbugs2<-AZbugs2[which(is.na(AZbugs2$FinalID)==F),]
 
   #write excel file to workspace
