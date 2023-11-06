@@ -19,7 +19,7 @@ NAMCr::query("auth")
 # each field season/ state has its own boxId
 # results may not exist but bugs make have been processed. To view if bugs have been processed review list of AIM boxes by running code below
 boxes=NAMCr::query("boxes",include = c('boxId','alias','boxState','sampleCount','boxReceivedDate','processingCompleteDate','projectedCompleteDate','sampleCount'),
-                   entityIds=614)
+                   entityIds=4396)
 #all AIM data
 samples=NAMCr::query("samples",projectId=49)
 #Only data for a certain box or boxes of interest
@@ -44,13 +44,35 @@ Report3=subset(Report2, modelId %in% c(1:7,9:26) & InvasiveInvertSpecies!='Natio
 ##Report3=subset(Report2, modelId %in% c(25,26))
 
 
+###### get invasives ##### comment out this entire invasives section if running "National" AIM westwide reporting
+# get raw bug data
+bugRaw = NAMCr::query(
+  "sampleTaxa",
+  sampleIds=def_model_results$sampleId
+)
+#subset taxa in samples to only invasives
+bugraw = subset(bugRaw,taxonomyId %in% c(1330,1331,2633, 2671,4933,4934,4935,4936,4937,4938,4939,4940,4941,4942,1019,1994,5096,1515,1518,1604,2000,4074,1369,2013,1579))
+#create list of invasives present at a site
+invasives<-bugraw %>% dplyr::group_by(sampleId) %>% dplyr::summarize(InvasiveInvertSpecies=paste0(list(unique(scientificName)),collapse=''))
+# remove list formatting
+invasives$InvasiveInvertSpecies=gsub("^c()","",invasives$InvasiveInvertSpecies)
+invasives$InvasiveInvertSpecies=gsub("\"","",invasives$InvasiveInvertSpecies)
+invasives$InvasiveInvertSpecies=gsub("\\(","",invasives$InvasiveInvertSpecies)
+invasives$InvasiveInvertSpecies=gsub("\\)","",invasives$InvasiveInvertSpecies)
+# join to list of all samples with fixed counts
+additionalbugmetrics=dplyr::left_join(sumrarefiedOTUTaxa,invasives, by="sampleId")
+# if no invasives were present set to absent
+additionalbugmetrics[is.na(additionalbugmetrics)]<-"Absent"
+#################################################
+Report3<-left_join(Report3,additionalbugmetrics, by='sampleId')
+
 # WQ data (predicted WQ values only) raw WQ data back from the Baker lab is not stored by NAMC and rather just excel spreadsheet is forwarded on
-WQ=subset(Report2,modelId %in% c(27,28,29), select=c('SampleID','EvaluationID','PointID','OE_MMI_ModelUsed','modelResult'))
-WQ$OE_MMI_ModelUsed=ifelse(WQ$OE_MMI_ModelUsed=='TN','PredictedTotalNitrogen',
-                           ifelse(WQ$OE_MMI_ModelUsed=='TP','PredictedTotalPhosphorous',
-                                  ifelse(WQ$OE_MMI_ModelUsed=='EC12','PredictedSpecificConductance',
+WQ=subset(Report2,modelId %in% c(301,302,303), select=c('SampleID','EvaluationID','PointID','OE_MMI_ModelUsed','oResult','eResult','modelResult'))
+WQ$OE_MMI_ModelUsed=ifelse(WQ$OE_MMI_ModelUsed=='TN_2023','PredictedTotalNitrogen',
+                           ifelse(WQ$OE_MMI_ModelUsed=='TP_2023','PredictedTotalPhosphorous',
+                                  ifelse(WQ$OE_MMI_ModelUsed=='SC_2023','PredictedSpecificConductance',
                                          WQ$OE_MMI_ModelUsed)))
-WQ_pivot=tidyr::pivot_wider(WQ,id_cols=c('SampleID','EvaluationID','PointID'),names_from=c('OE_MMI_ModelUsed'), values_from=c("modelResult"))
+WQ_pivot=tidyr::pivot_wider(WQ,id_cols=c('SampleID','EvaluationID','PointID'),names_from=c('OE_MMI_ModelUsed'), values_from=c("eResult"))
 
 #join bug and WQ data
 Final=dplyr::full_join(Report3,WQ_pivot, by=c('SampleID','EvaluationID','PointID'))
