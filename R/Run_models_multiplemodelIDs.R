@@ -58,7 +58,7 @@ PIBO <-9
 
 
 if (exists("boxId")){
-  def_samples=NAMCr::query("samples",boxId=boxId)
+  def_samples=NAMCr::query("samples",sampleIds=c(178415,178675,212718,212719,178427))
 }else {def_samples=NAMCr::query("samples",projectId=projectId)
 }
 
@@ -102,7 +102,12 @@ samplePIBO<-def_model_results[def_model_results$modelId %in% PIBO ,]
 
 # ---------------------------------------------------------------
 # get all predictor values needed for a box or project # note this either needs a loop written over it or a different API end point
-applicabilitypreds = NAMCr::query("samplePredictorValues",
+#applicability isn't working as of 11/10/23 with a vector??
+#quick and dirty list workaround
+applica_list<-list()
+for(i in 1:length(sampleIds)){
+#applicabilitypreds
+  z = NAMCr::query("samplePredictorValues",
                                   include = c(
                                     "sampleId",
                                     "predictorId",
@@ -110,8 +115,10 @@ applicabilitypreds = NAMCr::query("samplePredictorValues",
                                     "abbreviation",
                                     "predictorValue"
                                   ),
-                                  sampleIds = def_model_results$sampleId
-) #need list of samples in database with values
+                                  sampleIds = sampleIds[i])
+  applica_list[[i]]<- z
+}#need list of samples in database with values
+applicabilitypreds<-do.call(rbind,applica_list)
 applicabilitypreds = subset(applicabilitypreds, abbreviation %in% c('ElevCat','Tmean8110Ws','WsAreaSqKm','Precip8110Ws'))
 applicabilitypreds$predictorValue=as.numeric(applicabilitypreds$predictorValue)
 applicabilitypreds = tidyr::pivot_wider(applicabilitypreds,
@@ -190,7 +197,10 @@ for(i in 1:nrow(def_models)){
 # ---------------------------------------------------------------
 
 # getting predictor values associated with those samples and models coming out of the def_models query above
-def_predictors = NAMCr::query(
+defpred_list<-list()
+for(i in 1:length(sampleIds)){
+#def_predictors
+  z = NAMCr::query(
   api_endpoint = "samplePredictorValues",
   include = c("sampleId",
               "predictorId",
@@ -198,9 +208,11 @@ def_predictors = NAMCr::query(
               "abbreviation",
               "predictorValue"
   ),
-  sampleIds = def_model_results$sampleId)
+  sampleIds = sampleIds[i])
+defpred_list[[i]]<- z
 
-
+}
+def_predictors<-do.call(rbind,defpred_list)
 #def_predictors <- def_predictors[!duplicated(def_predictors), ]
 #loop the predictors and combine the preds into one datarframe
   if(length(modelID)>1){
@@ -264,8 +276,7 @@ prednew[rowSums(is.na(prednew)) > 0,]
 #so we will just export the appropriate file
 #for MS Access ingestion.
  if (nrow(sampleMMIs[sampleMMIs$modelId %in% c(169),])>=1){
-   setwd('C://Users//andrew.caudillo//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//Arizona//InputFiles')
-  ADEQ_bug_export(sampleIds = def_model_results$sampleId)
+  ADEQ_bug_export(sampleIds = sampleIds)
  }else{
    if (nrow(sampleMMIs[sampleMMIs$modelId %in% c(4,5,6),])>=1) {
      print('CO MMI, this is run in Access. Only predictors and bugs needed')
@@ -280,6 +291,89 @@ prednew[rowSums(is.na(prednew)) > 0,]
                "then read resulting excel file back into R to save results in the database.", sep="\n"))
    }
  }
+
+#empty samples
+#samples with 0 bugs are a rare, but still
+#real occurence within NAMC.
+#this code will trick the script into thinking there is at least 1 bug there to get an
+#expected value, then force Observed to be 0.
+#will likely need to add an MMI section, but empty samples
+#seem to come from regions where we use an O/E.
+
+if(projectId==3192){
+model_id=2 #change as needed
+empty_samps<-210561 #could do the whole project if it is one model type
+#but it may be easier to go sample by sample within a project.
+
+fake_bugs<-data.frame(sampleId=rep(empty_samps,2),
+                      taxonomyId=c(135,59),
+                      scientificName=c('Optioservus','Hygrobatidae'),
+                      levelId=c(23,19),
+                      levelName=c('Genus','Family'),
+                      otuName=c('Optioservus','Acarina'),
+                      splitCount=c(1,0))
+
+sumrarefiedOTUTaxa = fake_bugs  %>%
+  dplyr::group_by(sampleId, otuName) %>%
+  dplyr::summarize(sumSplitCount = sum(splitCount)) # why are multiple records exported here per OTU???
+
+sumrarefiedOTUTaxa$presence = ifelse(sumrarefiedOTUTaxa$sumSplitCount >=1, 1, 0)
+bug_fake = tidyr::pivot_wider(sumrarefiedOTUTaxa,id_cols = "sampleId", names_from = "otuName",values_from = "presence")
+bug_fake[is.na(bug_fake)]<-0
+bug_fake=as.data.frame(bug_fake)
+rownames(bug_fake)<-bug_fake$sampleId
+bug_fake<-bug_fake[,-1]
+
+
+
+fake_OE <-model.predict.RanFor.4.2(
+  bugcal.pa,
+  grps.final,
+  preds.final,
+  ranfor.mod,
+  prednew,
+  bugnew=bug_fake,
+  Pc = 0.5,
+  Cal.OOB = FALSE)
+
+
+applicabilitypreds = NAMCr::query("samplePredictorValues",
+                                  include = c(
+                                    "sampleId",
+                                    "predictorId",
+                                    "status",
+                                    "abbreviation",
+                                    "predictorValue"),sampleIds=empty_samps) #need list of samples in database with values
+applicabilitypreds = subset(applicabilitypreds, abbreviation %in% c('ElevCat','Tmean8110Ws','WsAreaSqKm','Precip8110Ws'))
+applicabilitypreds$predictorValue=as.numeric(applicabilitypreds$predictorValue)
+applicabilitypreds = tidyr::pivot_wider(applicabilitypreds,
+                                        id_cols="sampleId",
+                                        names_from = "abbreviation",
+                                        values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
+applicabilitypreds=as.data.frame(applicabilitypreds)
+
+
+ModelApplicability_obj = ModelApplicability(CalPredsModelApplicability,
+                                            modelId = model_id,
+                                            applicabilitypreds)
+Empty_OE<-merge(fake_OE,ModelApplicability_obj,by='row.names')
+
+dat_to_pass<-list(sampleId = 210561,
+                  modelId = 2,
+                  oResult = Empty_OE$OE.scores.O,
+                  eResult = Empty_OE$OE.scores.E,
+                  modelResult = Empty_OE$OE.scores.OoverE ,
+                  fixedCount = 0,
+                  modelApplicability = ModelApplicability_obj$ModelApplicability,
+                  notes=General_OE_results[[i]]$InvasiveInvertSpecies[j])
+#notes='National')
+
+NAMCr::save(
+  api_endpoint = "setModelResult",
+  args=dat_to_pass)
+} #END EMPTY SAMPLES
+
+
 # ------------------------------
 # OE models
 # ------------------------------
@@ -345,8 +439,8 @@ NullOR_modelResults$modelId<-rep(12,nrow(NullOR_modelResults))
                       eResult = NullOR_modelResults_burn$E[n],
                       modelResult = NullOR_modelResults_burn$OoverE[n],
                       fixedCount=agged_tax_counts$splitCount,
-                      notes='National')
-                      #notes=NullOR_modelResults_burn$InvasiveInvertSpecies[n])
+                      #notes='National')
+                      notes=NullOR_modelResults_burn$InvasiveInvertSpecies[n])
 
     NAMCr::save(
      api_endpoint = "setModelResult",
@@ -392,7 +486,7 @@ if(nrow(sampleOEs)>=1){
       model_id_burn<-as.character(unique(bug_sub_list$modelId)[i])
       model_sub<-bug_sub_list[bug_sub_list$modelId==as.integer(model_id_burn),]
       oe_bug_burn<-OE_list[[model_id_burn]]
-      oe_bug_burn<-oe_bug_burn[row.names(oe_bug_burn) %in% c(211367,211550,211211,210561,211254)==F,]
+      #oe_bug_burn<-oe_bug_burn[row.names(oe_bug_burn) %in% c(211367,211550,211211,210561,211254)==F,]
       #colnames(oe_bug_burn)<-sub(c('X2.','X7.','X9.','X25.','X26.','X29.'),colnames(oe_bug_burn))
       OE <-model.predict.RanFor.4.2(
         bugcal.pa,
@@ -435,11 +529,17 @@ if(nrow(sampleOEs)>=1){
       }
       General_OE_results[[i]]$modelId=as.integer(model_id_burn)
 
+      #list workaround
+      OTUlist<-list()
+      for(b in 1:nrow(model_sub)){
       bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
                              translationId = mod_val$translationId,
                              fixedCount = mod_val$fixedCount,
-                             sampleIds=model_sub$sampleId
+                             sampleIds=model_sub$sampleId[b]
       )
+      OTUlist[[b]]<-bugsOTU
+      }
+      bugsOTU<-do.call(rbind,OTUlist)
       sumrarefiedOTUTaxa = bugsOTU  %>%
         dplyr::group_by(sampleId) %>%
         dplyr::summarize(fixedCount = sum(splitCount))
@@ -447,10 +547,17 @@ if(nrow(sampleOEs)>=1){
       ################################################
       ###### get invasives ##### comment out this entire invasives section if running "National" AIM westwide reporting
       # get raw bug data
+
+      #list workaround
+      rawlist<-list()
+      for(r in 1:nrow(model_sub)){
       bugRaw = NAMCr::query(
         "sampleTaxa",
-        sampleIds=model_sub$sampleId
+        sampleIds=model_sub$sampleId[r]
       )
+      rawlist[[r]]<-bugRaw
+      }
+      bugRaw<-as.data.frame(do.call('rbind',rawlist))
       #subset taxa in samples to only invasives
       bugraw = subset(bugRaw,taxonomyId %in% c(1330,1331,2633, 2671,4933,4934,4935,4936,4937,4938,4939,4940,4941,4942,1019,1994,5096,1515,1518,1604,2000,4074,1369,2013,1579))
       #create list of invasives present at a site
@@ -467,9 +574,9 @@ if(nrow(sampleOEs)>=1){
       #################################################
 
       #IF NATIONAL COMMENT OUT THIS LINE OF CODE AND UNCOMMENT OUT THE FOLLOWING TWO LINES
-      #General_OE_results[[i]]=dplyr::left_join(General_OE_results[[i]],additionalbugmetrics,by="sampleId")
-      General_OE_results[[i]]=dplyr::left_join(General_OE_results[[i]],sumrarefiedOTUTaxa,by="sampleId")
-      General_OE_results[[i]]$InvasiveInvertSpecies='National'
+      General_OE_results[[i]]=dplyr::left_join(General_OE_results[[i]],additionalbugmetrics,by="sampleId")
+      #General_OE_results[[i]]=dplyr::left_join(General_OE_results[[i]],sumrarefiedOTUTaxa,by="sampleId")
+      #General_OE_results[[i]]$InvasiveInvertSpecies='National'
 
       print('writing O/E results')
       for(j in 1:nrow(model_sub)){
@@ -597,8 +704,8 @@ if(nrow(sampleOEs)>=1){
                           modelResult = OR_OE_result[[i]]$OoverE[j] ,
                           fixedCount = OR_OE_result[[i]]$fixedCount[j],
                           modelApplicability = OR_OE_result[[i]]$ModelApplicability[j],
-                          #notes=OR_OE_result[[i]]$InvasiveInvertSpecies[j])
-                          notes='National')
+                          notes=OR_OE_result[[i]]$InvasiveInvertSpecies[j])
+                          #notes='National')
 
         NAMCr::save(
           api_endpoint = "setModelResult",
@@ -658,7 +765,7 @@ if(nrow(sampleOEs)>=1){
           #modelIds for WY because of the strong overlap in the regions
           #use what INSTAR has assigned to it and skip over this section.
           #assign modelId via model_id_burn
-if(0){
+if(1){
           WYOEResults_sf<-sf::st_as_sf(WY_OE_results[[i]],coords=c('siteLongitude','siteLatitude'),crs=4269)
           #fix to work with above code
             ecoregion=sf::st_read(paste0(ecoregion_base_path,"GIS//GIS_Stats//Wyoming//ecoregion//BIOREGIONS_2011_modifiedCP.shp"))
