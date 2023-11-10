@@ -404,7 +404,7 @@ if(length(modelID)>1){
   finalResults=merge(modelResults,ModelApplicability_obj,by="row.names")
 }
 # ---------------------------------------------------------------
-# Get additional bug metrics (fixed count and invasives)
+# Get additional bug metrics (fixed count)
 # ---------------------------------------------------------------
 ##### get fixed count column #####
 bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
@@ -417,31 +417,11 @@ sumrarefiedOTUTaxa = bugsOTU  %>%
   dplyr::summarize(fixedCount = sum(splitCount))
 
 ################################################
-###### get invasives ##### comment out this entire invasives section if running "National" AIM westwide reporting
-# get raw bug data
-bugRaw = NAMCr::query(
-  "sampleTaxa",
-  sampleIds=def_model_results$sampleId
-)
-#subset taxa in samples to only invasives
-bugraw = subset(bugRaw,taxonomyId %in% c(1330,1331,2633, 2671,4933,4934,4935,4936,4937,4938,4939,4940,4941,4942,1019,1994,5096,1515,1518,1604,2000,4074,1369,2013,1579))
-#create list of invasives present at a site
-invasives<-bugraw %>% dplyr::group_by(sampleId) %>% dplyr::summarize(InvasiveInvertSpecies=paste0(list(unique(scientificName)),collapse=''))
-# remove list formatting
-invasives$InvasiveInvertSpecies=gsub("^c()","",invasives$InvasiveInvertSpecies)
-invasives$InvasiveInvertSpecies=gsub("\"","",invasives$InvasiveInvertSpecies)
-invasives$InvasiveInvertSpecies=gsub("\\(","",invasives$InvasiveInvertSpecies)
-invasives$InvasiveInvertSpecies=gsub("\\)","",invasives$InvasiveInvertSpecies)
-# join to list of all samples with fixed counts
-additionalbugmetrics=dplyr::left_join(sumrarefiedOTUTaxa,invasives, by="sampleId")
-# if no invasives were present set to absent
-additionalbugmetrics[is.na(additionalbugmetrics)]<-"Absent"
-#################################################
 
-#IF NATIONAL COMMENT OUT THIS LINE OF CODE AND UNCOMMENT OUT THE FOLLOWING TWO LINES
-finalResults=dplyr::left_join(finalResults,additionalbugmetrics,by="sampleId")
-# finalResults=dplyr::left_join(finalResults,sumrarefiedOTUTaxa,by="sampleId")
-# finalResults$InvasiveInvertSpecies='National'
+
+finalResults=dplyr::left_join(finalResults,sumrarefiedOTUTaxa,by="sampleId")
+#IF NATIONAL UNCOMMENT OUT THE LINE BELOW
+# finalResults$notes='National'
 
 
 # ---------------------------------------------------------------
@@ -512,7 +492,7 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
                         modelResult = finalResults$OoverE[i] ,
                         fixedCount = finalResults$fixedCount[i],
                         modelApplicability = finalResults$ModelApplicability[i],
-                        notes=finalResults$InvasiveInvertSpecies[i])
+                        notes=finalResults$notes[i])
       NAMCr::save(
         api_endpoint = "setModelResult",
         args=dat_to_pass)
@@ -525,7 +505,7 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
         modelResult = finalResults$CSCI[i],
         fixedCount = finalResults$fixedCount[i],
         modelApplicability = finalResults$ModelApplicability[i],
-        notes=finalResults$InvasiveInvertSpecies[i]
+        notes=finalResults$notes[i]
       )
     }else if (length(def_models$modelTypeAbbreviation[def_models$modelTypeAbbreviation == "MMI"]>=1)) {
       print('MMI')
@@ -536,7 +516,7 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
         modelResult = finalResults$MMI[i],
         fixedCount = finalResults$fixedCount[i],
         modelApplicability = finalResults$ModelApplicability[i],
-        notes=finalResults$InvasiveInvertSpecies[i]
+        notes=finalResults$notes[i]
       )
     }else if (length(def_models$modelTypeAbbreviation[def_models$modelTypeAbbreviation == "WQ"]>=1)) {
       print('WQ')
