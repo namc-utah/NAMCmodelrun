@@ -44,8 +44,7 @@
 #2 - MMI
 #3 - CSCI
 #4- WQ
-basic_models = query(
-  api_endpoint = "models")
+basic_models = query(api_endpoint = "models")
 
 OEs<-basic_models$modelId[basic_models$modelTypeId==1 & basic_models$modelId !=12]
 MMIs<-basic_models$modelId[basic_models$modelTypeId==2]
@@ -58,7 +57,7 @@ PIBO <-9
 
 
 if (exists("boxId")){
-  def_samples=NAMCr::query("samples",sampleIds=c(178415,178675,212718,212719,178427))
+  def_samples=NAMCr::query("samples",boxId=boxId)
 }else {def_samples=NAMCr::query("samples",projectId=projectId)
 }
 
@@ -262,11 +261,14 @@ prednew = tidyr::pivot_wider(def_predictors,
 prednew=as.data.frame(prednew)
 rownames(prednew)<-prednew$sampleId
 prednew<-prednew[,-1]
-#remove this after!
-#prednew<-prednew[which(row.names(prednew) %in% c(211367,211550,210561,211211,211254)==F),]
-}
-prednew[rowSums(is.na(prednew)) > 0,]
 
+}
+
+NA_preds<-prednew[rowSums(is.na(prednew)) > 0,]
+if(nrow(NA_preds)>0){print(NA_preds)
+print('The above samples need predictors!')
+print('See what predictors need calculation\n and try again')
+}else print('All sites have predictors!')
 # ---------------------------------------------------------------
 # Run models
 # ---------------------------------------------------------------
@@ -382,11 +384,16 @@ NAMCr::save(
 #AND collect bug into simultaneously
 
 if(nrow(sampleNullOEs)>=1){
+  tryCatch({
   Nullbugnew = OR_NBR_bug(
     sampleIds = sampleNullOEs$sampleId,
     translationId = 14,
     fixedCount = 300
-  )
+  )},
+  error= function(e){
+    print('Missing either predictors or rarefactions.\n Has this set been closed long enough for rarefaction to happen?')
+  }
+)
   #run the model right here!
   #NBR PREDATOR doest not get model applicability.
   NullOR_modelResults <- OR_NBR_model(Nullbugnew)
@@ -438,9 +445,9 @@ NullOR_modelResults$modelId<-rep(12,nrow(NullOR_modelResults))
                       oResult = NullOR_modelResults_burn$O[n],
                       eResult = NullOR_modelResults_burn$E[n],
                       modelResult = NullOR_modelResults_burn$OoverE[n],
-                      fixedCount=agged_tax_counts$splitCount,
+                      fixedCount=agged_tax_counts$splitCount)
                       #notes='National')
-                      notes=NullOR_modelResults_burn$InvasiveInvertSpecies[n])
+                      #notes=NullOR_modelResults_burn$InvasiveInvertSpecies[n])
 
     NAMCr::save(
      api_endpoint = "setModelResult",
@@ -461,10 +468,17 @@ if(nrow(sampleOEs)>=1){
     uniq_mod<-unique(sampleOEs$modelId)[i]
     mod_val<-def_models[def_models$modelId==uniq_mod,]
     y<-sampleOEs[sampleOEs$modelId==unique(sampleOEs$modelId)[i],]
+    tryCatch(
+{
   bugnew = OE_bug_matrix(
     sampleIds =y$sampleId,
     translationId = mod_val$translationId,
     fixedCount = mod_val$fixedCount)
+    },
+  error=function(e){
+    writeLines('There are samples in this set that do not have predictors or rarefactions\nHas this box been closed long enough for rarefaction?')
+  }
+)
   OE_list[[i]]<-bugnew
   names(OE_list)[i]<-unique(sampleOEs$modelId)[i]
   }
@@ -589,8 +603,8 @@ if(nrow(sampleOEs)>=1){
                         modelResult = General_OE_results[[i]]$OoverE[j] ,
                         fixedCount = General_OE_results[[i]]$fixedCount[j],
                         modelApplicability = General_OE_results[[i]]$ModelApplicability[j],
-                        #notes=General_OE_results[[i]]$InvasiveInvertSpecies[j])
-                        notes='National')
+                        notes='')
+                        #notes='National')
 
       NAMCr::save(
         api_endpoint = "setModelResult",
