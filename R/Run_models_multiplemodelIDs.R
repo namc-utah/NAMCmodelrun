@@ -474,13 +474,14 @@ if(nrow(sampleOEs)>=1){
     sampleIds =y$sampleId,
     translationId = mod_val$translationId,
     fixedCount = mod_val$fixedCount)
-    },
-  error=function(e){
-    writeLines('There are samples in this set that do not have predictors or rarefactions\nHas this box been closed long enough for rarefaction?')
-  }
-)
+
   OE_list[[i]]<-bugnew
   names(OE_list)[i]<-unique(sampleOEs$modelId)[i]
+},  error=function(e){
+  print(uniq_mod)
+  writeLines('There are samples in this set that do not have predictors or rarefactions\nHas this box been closed long enough for rarefaction?\nAre there predictors?')
+}
+    )
   }
 }
 
