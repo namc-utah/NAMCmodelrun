@@ -266,9 +266,9 @@ prednew<-prednew[,-1]
 
 NA_preds<-prednew[rowSums(is.na(prednew)) > 0,]
 if(nrow(NA_preds)>0){print(NA_preds)
-print('The above samples need predictors!')
-print('See what predictors need calculation\n and try again')
-}else print('All sites have predictors!')
+warning('The above samples need predictors!')
+warning('See what predictors need calculation\n and try again')
+}else message('All sites have predictors!')
 # ---------------------------------------------------------------
 # Run models
 # ---------------------------------------------------------------

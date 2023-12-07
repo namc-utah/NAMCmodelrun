@@ -145,7 +145,12 @@ if (length(modelID[modelID%in%c(4,5,6,28)]==T)>=1){ #CO and TP models have predi
 rownames(prednew)<-prednew$sampleId
 prednew<-prednew[,-1]
 
-
+if(nrow(prednew[is.na(prednew),] ) >0){
+  warning("There are missing predictors!")
+  print(prednew[is.na(prednew),])
+} else{
+  message('All predictors have values!')
+}
 ## special handling of AREMP predictor names is needed here.
 #Tmax_WS is used for NV WQ and other models but for AREMP this same predictor is called TMAX_WS
 #database is not case sensitive so cant add as unique predictor in database so have to handle here.
@@ -172,11 +177,17 @@ if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1) {
   #need a way to distinguish this model from others.. call NULL OE?
 } else if (length(def_models$modelTypeAbbreviation[def_models$modelTypeAbbreviation=='OE'])>=1) {
     print('O/E')
+  tryCatch({
     bugnew = OE_bug_matrix(
       sampleIds = def_model_results$sampleId,
       translationId = def_models$translationId[1],
       fixedCount = def_models$fixedCount[1])
-
+  },
+  error=function(e){
+    message("There are either no rarefactions, predictors, or bugs entered for one or all of these sites.")
+    message("OTUs or predictors may need to be generated for these sites")
+    message("Has this box been closed long enough for rarefactions?")
+  })
   # CO model must be written out as an excel file using a separate bank of code and function
 } else if (length(def_models$modelId[def_models$modelId %in% c(4,5,6)]==T)>=1) {
   print('CO MMI')
