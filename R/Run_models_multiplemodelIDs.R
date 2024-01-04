@@ -251,7 +251,9 @@ if (nrow(sampleWQs)>=1){ #TP models have predictors that are categorical but all
   rownames(prednew)<-prednew$sampleId
   prednew<-prednew[,-1]
 
-}else {def_predictors$predictorValue=as.numeric(def_predictors$predictorValue)
+}else {#def_predictors$predictorValue=ifelse(def_predictors$abbreviation %in% c('ECO3','ECO4'),
+      #                                      def_predictors$predictorValue,
+      #                                      as.numeric(def_predictors$predictorValue))
 
 # get predictors into wide format needed for model functions
 prednew = tidyr::pivot_wider(def_predictors,
@@ -282,18 +284,17 @@ warning('See what predictors need calculation\n and try again')
  }else{
    if (nrow(sampleMMIs[sampleMMIs$modelId %in% c(4,5,6),])>=1) {
      print('CO MMI, this is run in Access. Only predictors and bugs needed')
+     prednew$sampleId<-row.names(prednew)
+     prednew<-plyr::join(prednew,def_samples[,c('sampleId','siteName')],by='sampleId')
      #write get bugs from database, write out as a csv and save as CObugs object
      CObugs=CO_bug_export(sampleIds=sampleIds)
+     COpreds=CO_pred_export(prednew = prednew)
      #write out predictors as a csv
-     write.csv(prednew,file = paste0("COpredictors","boxId_",CObugs$Project[1],"_",Sys.Date(),".csv"),row.names=FALSE)
-     cat(paste("csv with COpredictors has been written out to your current working directory.",
-               "Convert this csv to excel 2003 and import into CO EDAS access database to compute the CSCI score.",
-               "Follow instructions in this pdf Box\\NAMC\\OE_Modeling\\NAMC_Supported_OEmodels\\CO\\Documentation\\EDAS2017\\Tutorial Guide to EDAS_Version 1.7.pdf",
-               "to import bug and habitat data, harmonize taxa list, rarefy and compute MMI",
-               "then read resulting excel file back into R to save results in the database.", sep="\n"))
+
+
    }
  }
-
+CO_bug_export(sampleIds = sampleIds)
 #empty samples
 #samples with 0 bugs are a rare, but still
 #real occurence within NAMC.
@@ -839,7 +840,7 @@ for(j in 1:nrow(WY_OE_results[[i]])){
                                   eResult = WY_OE_results[[i]]$E[j],
                                   modelResult = WY_OE_results[[i]]$OoverE[j] ,
                                   fixedCount = WY_OE_results[[i]]$fixedCount[j],
-                                  notes=WY_OE_results[[i]]$InvasiveInvertSpecies[j],
+                                  notes="National",
                                   modelApplicability = WY_OE_results[[i]]$ModelApplicability[j])
 
               NAMCr::save(

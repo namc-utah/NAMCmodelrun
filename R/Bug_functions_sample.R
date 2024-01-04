@@ -229,8 +229,8 @@ CO_bug_export<-function(sampleIds){
   CObugs$CommentsRep=paste0("habitat: ",CObugs$habitatName)
   CObugs=CObugs[,c("Project","Station","Name","Location","CollDate","Organism","Individuals","Stage","CommentsTaxa","RepNum","Grids","CommentsSample","CommentsRep")]
   #write excel file to workspace
-  write.csv(CObugs,file = paste0("CObugs","boxId_",CObugs$Project[1],"_",Sys.Date(),".csv"),row.names=FALSE)
-  cat(paste("csv with CObugs has been written out to your current working directory.",
+  write.csv(CObugs,file = paste0(CO_path,"CObugs","boxId_",CObugs$Project[1],"_",Sys.Date(),".csv"),row.names=FALSE)
+  cat(paste("csv with CO bugs has been written out to the CO EDAS imports folder.",
             "Convert this csv to excel 2003 and import into CO EDAS access database to compute the CSCI score.",
             "Follow instructions in this pdf Box\\NAMC\\OE_Modeling\\NAMC_Supported_OEmodels\\CO\\Documentation\\EDAS2017\\Tutorial Guide to EDAS_Version 1.7.pdf",
             "to import bug and habitat data, harmonize taxa list, rarefy and compute MMI",
@@ -238,7 +238,33 @@ CO_bug_export<-function(sampleIds){
   return(CObugs)
 }
 
+CO_pred_export<-function(prednew){
+  #make empty df
+  prednews<-as.data.frame(matrix(ncol=15,nrow=nrow(prednew)))
+  #fill the df with predictors that are named how EDAS wants
+  prednews$StationID=row.names(prednew)
+  prednews$WaterbodyName=prednew$siteName
+  prednews$Location=rep('Location',nrow(prednew))
+  prednews$Lat_Dec=prednew$Lat_Dec
+  prednews$Long_Dec=prednew$Long_Dec
+  prednews$NHDSLOPE=prednew$NHDSLOPE
+  prednews$ELEV_SITE=prednew$ELEV_SITE
+  prednews$ECO3=prednew$ECO3
+  prednews$ECO4=prednew$ECO4
+  prednews$SUMMER=prednew$SUMMER
+  prednews$WINTER=rep('',nrow(prednew))
+  prednews$LOG_XP_PT=rep('',nrow(prednew))
+  prednews$SQRT_TOPO=rep('',nrow(prednew))
+  prednews$PRCPSHORTWS=rep('',nrow(prednew))
+  prednews$DOY=prednew$DOY
 
+  write.csv(prednews,file = paste0(CO_path,"COpreds","boxId_",CObugs$Project[1],"_",Sys.Date(),".csv"),row.names=FALSE)
+  cat(paste("csv with CO predictors has been written out to the CO EDAS imports folder.",
+            "Convert this csv to excel 2003 and import into CO EDAS access database to compute the CSCI score.",
+            "Follow instructions in this pdf Box\\NAMC\\OE_Modeling\\NAMC_Supported_OEmodels\\CO\\Documentation\\EDAS2017\\Tutorial Guide to EDAS_Version 1.7.pdf",
+            "to import bug and habitat data, harmonize taxa list, rarefy and compute MMI",
+            "then read resulting excel file back into R to save results in the database.", sep="\n"))
+}
 #Essentially a null O/E model (poor model; ref O/E SD is 0.29)
 
 #' OR NBR eastern
