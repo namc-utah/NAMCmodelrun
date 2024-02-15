@@ -351,7 +351,7 @@ ModelApplicability_obj = ModelApplicability(CalPredsModelApplicability,
                                             applicabilitypreds)
 Empty_OE<-merge(fake_OE,ModelApplicability_obj,by='row.names')
 
-dat_to_pass<-list(sampleId = 210561,
+dat_to_pass<-list(sampleId = placeholder,
                   modelId = 2,
                   oResult = Empty_OE$OE.scores.O,
                   eResult = Empty_OE$OE.scores.E,
@@ -478,6 +478,7 @@ if(nrow(sampleOEs)>=1){
 
 
 #non OR O/E indices (WW, PIBO, etc.)
+#includes AREMP O/E!
   if(nrow(sampleOEs[sampleOEs$modelId %in% c(2,7,9,25,26,29),])>=1){
     print('running O/Es using 4.2RF')
     print(unique(sampleOEs$modelId[which(sampleOEs$modelId %in% c(2,7,9,25,26,29))]))
@@ -616,7 +617,6 @@ if(nrow(sampleOEs)>=1){
     #if(length(General_OE_results)==1)
     #  General_OE_results<-General_OE_results[[1]]
 
-
 #this section if for non PREDATOR O/E indices
     if (nrow(sampleOEs[sampleOEs$modelId %in% 10:11,])>=1) {
       print('running O/E using 4.1RF')
@@ -634,6 +634,8 @@ if(nrow(sampleOEs)>=1){
         model_id_burn<-as.character(unique(bug_sub_list$modelId)[i])
         oe_bug_burn<-OE_list[[model_id_burn]]
         pred_burn<-prednew[row.names(prednew) %in% row.names(oe_bug_burn),]
+        pred_burn<-apply(pred_burn,2,as.numeric)
+        row.names(pred_burn)<-row.names(prednew)
         OE <-model.predict.v4.1(bugcal.pa,
                                 grps.final,
                                 preds.final,
@@ -703,7 +705,7 @@ if(nrow(sampleOEs)>=1){
 
 
       for(j in 1:nrow(model_sub)){
-        dat_to_pass<-list(sampleId = OR_OE_result[[i]]$sampleId[j],
+        dat_to_pass<-list(sampleId = OR_OE_result[[i]]$Row.names[j],
                           modelId = OR_OE_result[[i]]$modelId[j],
                           oResult = OR_OE_result[[i]]$O[j],
                           eResult = OR_OE_result[[i]]$E[j],
@@ -716,6 +718,7 @@ if(nrow(sampleOEs)>=1){
         NAMCr::save(
           api_endpoint = "setModelResult",
           args=dat_to_pass)
+        message('results saved!')
       }
     }
 
