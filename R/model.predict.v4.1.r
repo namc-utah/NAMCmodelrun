@@ -98,7 +98,8 @@ ngrps<-length(grpsiz);  #number of groups;
 #Uses mahalanobis function, where new vector is taken as the 'center', mu,;
 #and matrix of means is taken as the 'data matrix', x;
 
-dmat<-as.matrix(prednew[,preds.final]); #matrix of predictor data for new samples, include only the predictor variables;
+dmat<-as.matrix(prednew[,preds.final]);
+dmat<-apply(dmat,2,as.numeric);row.names(dmat)<-row.names(prednew)#matrix of predictor data for new samples, include only the predictor variables;
 
 #3.1 -- compute the critical chi-squared values for flagging outlier samples;
 # df = the MINIMUM of (a)(number of groups-1), and (b) number of predictor variables;
