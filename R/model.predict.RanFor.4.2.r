@@ -148,7 +148,7 @@ model.predict.RanFor.4.2<-function(bugcal.pa,grps.final,preds.final,ranfor.mod, 
   #thus apply cannot pull the needed data.
   Obsnull<-if (is.null(dim(bugnew.pa[,nulltax]))){
     sum(bugnew.pa[,nulltax])
-  }else{ apply(bugnew.pa[,nulltax],1,sum)}
+  }else{ rowSums(bugnew.pa[,nulltax])}
   #vector of Observed richness, new samples, under null model;
   #this addition will be the workaround for sites with only 1 sample
   #note the simple ifelse.
