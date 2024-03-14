@@ -182,9 +182,11 @@ Obsnull<-if (is.null(dim(bugnew.pa[,nulltax]))){
 #apply will not work because bugnew.pa
 #technically has no dimensions,
 #thus apply cannot pull the needed data.
-BC.null<-is.null(dim(bugnew.pa[,nulltax]))),
-                sum(abs(bugnew.pa[,nulltax]-pnull[nulltax]))/(Obsnull+Enull),
-                apply(bugnew.pa[,nulltax],1,function(x)sum(abs(x-pnull[nulltax])))/(Obsnull+Enull)); #vector of null-model BC;
+BC.null<-if(is.null(dim(bugnew.pa[,nulltax]))){
+  sum(abs(bugnew.pa[,nulltax]-pnull[nulltax]))/(Obsnull+Enull)
+}else{
+  apply(bugnew.pa[,nulltax],1,function(x)sum(abs(x-pnull[nulltax])))/(Obsnull+Enull)
+} #vector of null-model BC;
 
 
 #5.3 - Final data frame contains values of O, E, O/E, Onull, Enull, Onull/Enull, BC.prd and BC.null, for all samples;
