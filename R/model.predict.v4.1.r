@@ -173,16 +173,16 @@ Enull<-sum(pnull[nulltax]);
 #apply will not work because bugnew.pa
 #technically has no dimensions,
 #thus apply cannot pull the needed data.
-Obsnull<-ifelse(nrow(bugnew.pa)<2,
-                sum(bugnew.pa[,nulltax]),
-                apply(bugnew.pa[,nulltax],1,sum)); #vector of Observed richness, new samples, under null model;
+Obsnull<-if (is.null(dim(bugnew.pa[,nulltax]))){
+  sum(bugnew.pa[,nulltax])
+}else{ rowSums(bugnew.pa[,nulltax])} #vector of Observed richness, new samples, under null model;
 #this addition will be the workaround for sites with only 1 sample
 #note the simple ifelse.
 #if bugnew.pa is only 1 row of data,
 #apply will not work because bugnew.pa
 #technically has no dimensions,
 #thus apply cannot pull the needed data.
-BC.null<-ifelse(nrow(bugnew.pa)<2,
+BC.null<-is.null(dim(bugnew.pa[,nulltax]))),
                 sum(abs(bugnew.pa[,nulltax]-pnull[nulltax]))/(Obsnull+Enull),
                 apply(bugnew.pa[,nulltax],1,function(x)sum(abs(x-pnull[nulltax])))/(Obsnull+Enull)); #vector of null-model BC;
 
