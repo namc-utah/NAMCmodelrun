@@ -146,9 +146,15 @@ Enull<-sum(pnull[nulltax]);
 #apply will not work because bugnew.pa
 #technically has no dimensions,
 #thus apply cannot pull the needed data.
-Obsnull<-ifelse(nrow(bugnew.pa)<2,
-                sum(bugnew.pa[,nulltax]),
-                apply(bugnew.pa[,nulltax],1,sum)); #vector of Observed richness, new samples, under null model;
+Obsnull<-tryCatch({ifelse(nrow(bugnew.pa)<2,
+                          sum(bugnew.pa[,nulltax]),
+
+                          apply(bugnew.pa[,nulltax],1,sum))
+},
+error=function(cond){message('only one sampleId? no problem!')
+  sum(bugnew.pa[,nulltax])
+}
+); #vector of Observed richness, new samples, under null model;
 #this addition will be the workaround for sites with only 1 sample
 #note the simple ifelse.
 #if bugnew.pa is only 1 row of data,
