@@ -2,8 +2,8 @@
 # Read in csv with results from COEDAS access database
 # ---------------------------------------------------------------
 #modelResults=read.csv("/Users/namc/Library/CloudStorage/Box-Box/NAMC/OE_Modeling/NAMC_Supported_OEmodels/CO/InputAndResults_CO2017MMI/Results1311.csv")
-modelResults=read.csv("C://Users//andrew.caudillo//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//Colorado//InputAndResults_CO2017MMI//AIM CO 2013_proj3027//Proj3027_results_COEDAS_MMI.csv")
-modelResults = modelResults[,c("StationID","SiteClassification","MMI", "TotalInd")] # what about TotalInd_ why is this over 300 in some cases... should this be the fixedcount we use instead of down below?
+modelResults=read.csv("C://Users//andrew.caudillo//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//Colorado//Documentation//EDAS2017//working new version//exports//7754.csv")
+modelResults = modelResults[,c("StationID","SiteClassification","MMI", "TotalInd")]
 modelResults$BioType=ifelse(modelResults$SiteClassification=="1",4,
                             ifelse(modelResults$SiteClassification=="2",5,
                                    ifelse(modelResults$SiteClassification=="3",6,NA
@@ -39,6 +39,7 @@ ModelApplicability = ModelApplicability(CalPredsModelApplicability,
 
 finalResults=merge(modelResults,ModelApplicability,by="sampleId")
 
+if(0){
 # ---------------------------------------------------------------
 # Get additional bug metrics (fixed count and invasives)
 # ---------------------------------------------------------------
@@ -84,7 +85,7 @@ additionalbugmetrics=dplyr::left_join(sumrarefiedOTUTaxa,invasives, by="sampleId
 additionalbugmetrics[is.na(additionalbugmetrics)]<-"Absent"
 
 finalResults=dplyr::left_join(finalResults,additionalbugmetrics,by="sampleId")
-
+}
 for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to the notes field in some easy fashion???
   #has permission to save then spit out result to console
   # pass Nas for anything not used
@@ -94,10 +95,8 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
       sampleId = finalResults$sampleId[i],
       modelId = finalResults$modelId[i],
       modelResult = finalResults$MMI[i],
-      fixedCount = finalResults$fixedCount[i],
-      modelApplicability = finalResults$ModelApplicability[i],
-      notes=finalResults$InvasiveInvertSpecies[i]
-    )
+      fixedCount = finalResults$Count[i],
+      modelApplicability = finalResults$ModelApplicability[i])
 
   }, error =function(e){
     cat(paste0("\n\tSAMPLE ERROR: ",finalResults$sampleId[i],"\n"))

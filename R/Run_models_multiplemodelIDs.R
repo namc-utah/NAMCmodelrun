@@ -101,12 +101,9 @@ samplePIBO<-def_model_results[def_model_results$modelId %in% PIBO ,]
 
 # ---------------------------------------------------------------
 # get all predictor values needed for a box or project # note this either needs a loop written over it or a different API end point
-#applicability isn't working as of 11/10/23 with a vector??
-#quick and dirty list workaround
-applica_list<-list()
-for(i in 1:length(sampleIds)){
-#applicabilitypreds
-  z = NAMCr::query("samplePredictorValues",
+
+
+applicabilitypreds = NAMCr::query("samplePredictorValues",
                                   include = c(
                                     "sampleId",
                                     "predictorId",
@@ -114,10 +111,8 @@ for(i in 1:length(sampleIds)){
                                     "abbreviation",
                                     "predictorValue"
                                   ),
-                                  sampleIds = sampleIds[i])
-  applica_list[[i]]<- z
-}#need list of samples in database with values
-applicabilitypreds<-do.call(rbind,applica_list)
+                                  sampleIds = sampleIds)
+
 applicabilitypreds = subset(applicabilitypreds, abbreviation %in% c('ElevCat','Tmean8110Ws','WsAreaSqKm','Precip8110Ws'))
 applicabilitypreds$predictorValue=as.numeric(applicabilitypreds$predictorValue)
 applicabilitypreds = tidyr::pivot_wider(applicabilitypreds,
@@ -196,10 +191,8 @@ for(i in 1:nrow(def_models)){
 # ---------------------------------------------------------------
 
 # getting predictor values associated with those samples and models coming out of the def_models query above
-defpred_list<-list()
-for(i in 1:length(sampleIds)){
-#def_predictors
-  z = NAMCr::query(
+
+def_predictors = NAMCr::query(
   api_endpoint = "samplePredictorValues",
   include = c("sampleId",
               "predictorId",
@@ -207,11 +200,8 @@ for(i in 1:length(sampleIds)){
               "abbreviation",
               "predictorValue"
   ),
-  sampleIds = sampleIds[i])
-defpred_list[[i]]<- z
+  sampleIds = sampleIds)
 
-}
-def_predictors<-do.call(rbind,defpred_list)
 #def_predictors <- def_predictors[!duplicated(def_predictors), ]
 #loop the predictors and combine the preds into one datarframe
   if(length(modelID)>1){
@@ -251,7 +241,9 @@ if (nrow(sampleWQs)>=1){ #TP models have predictors that are categorical but all
   rownames(prednew)<-prednew$sampleId
   prednew<-prednew[,-1]
 
-}else {def_predictors$predictorValue=as.numeric(def_predictors$predictorValue)
+}else {#def_predictors$predictorValue=ifelse(def_predictors$abbreviation %in% c('ECO3','ECO4'),
+      #                                      def_predictors$predictorValue,
+      #                                      as.numeric(def_predictors$predictorValue))
 
 # get predictors into wide format needed for model functions
 prednew = tidyr::pivot_wider(def_predictors,
@@ -282,15 +274,14 @@ warning('See what predictors need calculation\n and try again')
  }else{
    if (nrow(sampleMMIs[sampleMMIs$modelId %in% c(4,5,6),])>=1) {
      print('CO MMI, this is run in Access. Only predictors and bugs needed')
+     prednew$sampleId<-row.names(prednew)
+     prednew<-plyr::join(prednew,def_samples[,c('sampleId','siteName')],by='sampleId')
      #write get bugs from database, write out as a csv and save as CObugs object
      CObugs=CO_bug_export(sampleIds=sampleIds)
+     COpreds=CO_pred_export(prednew = prednew)
      #write out predictors as a csv
-     write.csv(prednew,file = paste0("COpredictors","boxId_",CObugs$Project[1],"_",Sys.Date(),".csv"),row.names=FALSE)
-     cat(paste("csv with COpredictors has been written out to your current working directory.",
-               "Convert this csv to excel 2003 and import into CO EDAS access database to compute the CSCI score.",
-               "Follow instructions in this pdf Box\\NAMC\\OE_Modeling\\NAMC_Supported_OEmodels\\CO\\Documentation\\EDAS2017\\Tutorial Guide to EDAS_Version 1.7.pdf",
-               "to import bug and habitat data, harmonize taxa list, rarefy and compute MMI",
-               "then read resulting excel file back into R to save results in the database.", sep="\n"))
+
+
    }
  }
 
@@ -360,7 +351,7 @@ ModelApplicability_obj = ModelApplicability(CalPredsModelApplicability,
                                             applicabilitypreds)
 Empty_OE<-merge(fake_OE,ModelApplicability_obj,by='row.names')
 
-dat_to_pass<-list(sampleId = 210561,
+dat_to_pass<-list(sampleId = placeholder,
                   modelId = 2,
                   oResult = Empty_OE$OE.scores.O,
                   eResult = Empty_OE$OE.scores.E,
@@ -487,6 +478,7 @@ if(nrow(sampleOEs)>=1){
 
 
 #non OR O/E indices (WW, PIBO, etc.)
+#includes AREMP O/E!
   if(nrow(sampleOEs[sampleOEs$modelId %in% c(2,7,9,25,26,29),])>=1){
     print('running O/Es using 4.2RF')
     print(unique(sampleOEs$modelId[which(sampleOEs$modelId %in% c(2,7,9,25,26,29))]))
@@ -625,7 +617,6 @@ if(nrow(sampleOEs)>=1){
     #if(length(General_OE_results)==1)
     #  General_OE_results<-General_OE_results[[1]]
 
-
 #this section if for non PREDATOR O/E indices
     if (nrow(sampleOEs[sampleOEs$modelId %in% 10:11,])>=1) {
       print('running O/E using 4.1RF')
@@ -643,6 +634,8 @@ if(nrow(sampleOEs)>=1){
         model_id_burn<-as.character(unique(bug_sub_list$modelId)[i])
         oe_bug_burn<-OE_list[[model_id_burn]]
         pred_burn<-prednew[row.names(prednew) %in% row.names(oe_bug_burn),]
+        pred_burn<-apply(pred_burn,2,as.numeric)
+        row.names(pred_burn)<-row.names(prednew)
         OE <-model.predict.v4.1(bugcal.pa,
                                 grps.final,
                                 preds.final,
@@ -712,19 +705,20 @@ if(nrow(sampleOEs)>=1){
 
 
       for(j in 1:nrow(model_sub)){
-        dat_to_pass<-list(sampleId = OR_OE_result[[i]]$sampleId[j],
+        dat_to_pass<-list(sampleId = OR_OE_result[[i]]$Row.names[j],
                           modelId = OR_OE_result[[i]]$modelId[j],
                           oResult = OR_OE_result[[i]]$O[j],
                           eResult = OR_OE_result[[i]]$E[j],
                           modelResult = OR_OE_result[[i]]$OoverE[j] ,
                           fixedCount = OR_OE_result[[i]]$fixedCount[j],
-                          modelApplicability = OR_OE_result[[i]]$ModelApplicability[j],
-                          notes=OR_OE_result[[i]]$InvasiveInvertSpecies[j])
+                          modelApplicability = OR_OE_result[[i]]$ModelApplicability[j])
+                          #notes=OR_OE_result[[i]]$InvasiveInvertSpecies[j])
                           #notes='National')
 
         NAMCr::save(
           api_endpoint = "setModelResult",
           args=dat_to_pass)
+        message('results saved!')
       }
     }
 
@@ -839,7 +833,7 @@ for(j in 1:nrow(WY_OE_results[[i]])){
                                   eResult = WY_OE_results[[i]]$E[j],
                                   modelResult = WY_OE_results[[i]]$OoverE[j] ,
                                   fixedCount = WY_OE_results[[i]]$fixedCount[j],
-                                  notes=WY_OE_results[[i]]$InvasiveInvertSpecies[j],
+                                  notes="National",
                                   modelApplicability = WY_OE_results[[i]]$ModelApplicability[j])
 
               NAMCr::save(
@@ -851,7 +845,9 @@ for(j in 1:nrow(WY_OE_results[[i]])){
 
         } #for i
 
-}#if
+ } else if(nrow(sampleAREMP[sampleAREMP$modelId %in% 7,])>=1){
+  message('AREMP O/E?')
+}
 
 
 #throwing in CSCI and MIR here, just because they are small
@@ -950,6 +946,15 @@ for(j in 1:nrow(WY_OE_results[[i]])){
 #AREMP MMI is a little special because of metrics
 #create its results here
 if (nrow(sampleAREMP[sampleAREMP$modelId==8])>=1) {# AREMP MMI
+  #renaming columns to match database
+  if (nrow(sampleAREMP)>=1){
+    prednew$TMAX_WS=prednew$Tmax_WS
+  }
+  # same issue with RH_WS being included in TP model but different capitalization. However, revisit if we revise TP model
+  if (nrow(sampleAREMP[sampleAREMP$modeId==8])>=1){
+    prednew$rh_WS=prednew$RH_WS
+  }
+
   AREMP_bugnew<-MMI_list[["8"]]
   modelResults <-
     AREMP_MMI_model(
@@ -966,9 +971,44 @@ if (nrow(sampleAREMP[sampleAREMP$modelId==8])>=1) {# AREMP MMI
       ref_metrics_adj
     )
 
+  ModelApplicability_obj = ModelApplicability(CalPredsModelApplicability,
+                                              modelId = 3,
+                                              applicabilitypreds)
+
+  AREMPmodelResults<-merge(modelResults,
+                        ModelApplicability_obj,
+                        by='row.names')
+
+  AREMPmodelResults$sampleId<-as.integer(AREMPmodelResults$Row.names)
+
+
+  bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
+                         translationId = 23,
+                         fixedCount = 300,
+                         sampleIds=row.names(AREMP_bugnew)
+  )
+  littlebugsOTU<-aggregate(splitCount~sampleId,data=bugsOTU,FUN=sum)
+
+  NAREMPmodelResults<-plyr::join(AREMPmodelResults ,littlebugsOTU,by='sampleId')
+  for(n in 1:nrow(AREMPmodelResults)){
+    dat_to_pass<-list(sampleId = NV_MMI_results$sampleId[n],
+                      modelId = 3,
+                      modelResult = NV_MMI_results$MMI[n],
+                      fixedCount = NV_MMI_results$splitCount[n],
+                      notes="",
+                      modelApplicability = NV_MMI_results$ModelApplicability[n])
+    NAMCr::save(
+      api_endpoint = "setModelResult",
+      args=dat_to_pass)
+    message('results saved to db')
+
+  }
+
+
 }else if (nrow(sampleMMIs[sampleMMIs$modelId==3,])>=1) {
   # NV MMI
   # need to call conductivity model first before calling the NV model because predicted conductivity is a predictor for the NV model
+  #very fast section!
   NV_bugnew<-MMI_list[["3"]]
   load(file="sysdata.rda//EC12.Rdata")
   PrdCond = setNames(as.data.frame(
@@ -986,8 +1026,45 @@ if (nrow(sampleAREMP[sampleAREMP$modelId==8])>=1) {# AREMP MMI
       PER_EPHEA.rf,
       PER_PLECA.rf
     )
+  ModelApplicability_obj = ModelApplicability(CalPredsModelApplicability,
+                                              modelId = 3,
+                                              applicabilitypreds)
+
+  NV_MMI_results<-merge(NV_modelResults,
+                            ModelApplicability_obj,
+                            by='row.names')
+
+  NV_MMI_results$sampleId<-as.integer(NV_MMI_results$Row.names)
+
+
+  bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
+                         translationId = 13,
+                         fixedCount = 300,
+                         sampleIds=row.names(NV_bugnew)
+  )
+  littlebugsOTU<-aggregate(splitCount~sampleId,data=bugsOTU,FUN=sum)
+
+  NV_MMI_results<-plyr::join(NV_MMI_results ,littlebugsOTU,by='sampleId')
+  for(n in 1:nrow(NV_MMI_results)){
+  dat_to_pass<-list(sampleId = NV_MMI_results$sampleId[n],
+                    modelId = 3,
+                    modelResult = NV_MMI_results$MMI[n],
+                    fixedCount = NV_MMI_results$splitCount[n],
+                    notes="",
+                    modelApplicability = NV_MMI_results$ModelApplicability[n])
+  NAMCr::save(
+    api_endpoint = "setModelResult",
+    args=dat_to_pass)
+  message('results saved to db')
+
+  }
 
 }
+
+
+#ENDS MMI sectiom
+
+
 if (nrow(sampleWQs)>=1){ #TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
   def_predictors_categorical=subset(def_predictors,predictorId %in% c(111,75))
   prednew1 = tidyr::pivot_wider(def_predictors_categorical,
@@ -1036,14 +1113,6 @@ bugnew = bugnew[order(rownames(bugnew)),];
 prednew = prednew[order(rownames(prednew)),];
 }
 
-#renaming columns to match database
-if (nrow(sampleAREMP)>=1){
-  prednew$TMAX_WS=prednew$Tmax_WS
-}
-# same issue with RH_WS being included in TP model but different capitalization. However, revisit if we revise TP model
-if (nrow(sampleAREMP[sampleAREMP$modeId==8])>=1){
-  prednew$rh_WS=prednew$RH_WS
-}
 
   #prep data for CSCI, if needed
 if (nrow(sampleCSCIs)>=1) {
@@ -1066,7 +1135,7 @@ if (nrow(sampleCSCIs)>=1) {
 
 }
 
-
+if(0){
 
 # Get additional bug metrics (fixed count and invasives)
 # ---------------------------------------------------------------
@@ -1235,4 +1304,4 @@ bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
     }
     write_model<-paste(modelID,collapse='_')
     write.csv(Report,paste('Report_',write_model,"_",Sys.Date(),'.csv'))
-
+}

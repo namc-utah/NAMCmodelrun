@@ -59,7 +59,7 @@
 #' @export
 #'
 #' @examples
-model.predict.RanFor.4.2<-function(bugcal.pa,grps.final,preds.final,ranfor.mod, prednew,bugnew,Pc=0.5,Cal.OOB=FALSE) {;
+OE.RanFor.2<-function(bugcal.pa,grps.final,preds.final,ranfor.mod, prednew,bugnew,Pc=0.5,Cal.OOB=FALSE) {;
 
   #first convert bug matrix to P/A (1/0);
   temp.pa<-bugnew;

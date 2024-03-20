@@ -98,7 +98,8 @@ ngrps<-length(grpsiz);  #number of groups;
 #Uses mahalanobis function, where new vector is taken as the 'center', mu,;
 #and matrix of means is taken as the 'data matrix', x;
 
-dmat<-as.matrix(prednew[,preds.final]); #matrix of predictor data for new samples, include only the predictor variables;
+dmat<-as.matrix(prednew[,preds.final]);
+dmat<-apply(dmat,2,as.numeric);row.names(dmat)<-row.names(prednew)#matrix of predictor data for new samples, include only the predictor variables;
 
 #3.1 -- compute the critical chi-squared values for flagging outlier samples;
 # df = the MINIMUM of (a)(number of groups-1), and (b) number of predictor variables;
@@ -166,8 +167,27 @@ for(i in 1:nsit.new) {;
 pnull<-apply(bugcal.pa,2,sum)/dim(bugcal.pa)[[1]];  #null model predicted occurrnece probabilities, all taxa;
 nulltax<-names(pnull[pnull>=Pc]); #subset of taxa with Pnull >= Pc;
 Enull<-sum(pnull[nulltax]);
-Obsnull<-apply(bugnew.pa[,nulltax],1,sum); #vector of Observed richness, new samples, under null model;
-BC.null<-apply(bugnew.pa[,nulltax],1,function(x)sum(abs(x-pnull[nulltax])))/(Obsnull+Enull); #vector of null-model BC;
+#this addition will be the workaround for sites with only 1 sample
+#note the simple ifelse.
+#if bugnew.pa is only 1 row of data,
+#apply will not work because bugnew.pa
+#technically has no dimensions,
+#thus apply cannot pull the needed data.
+Obsnull<-if (is.null(dim(bugnew.pa[,nulltax]))){
+  sum(bugnew.pa[,nulltax])
+}else{ rowSums(bugnew.pa[,nulltax])} #vector of Observed richness, new samples, under null model;
+#this addition will be the workaround for sites with only 1 sample
+#note the simple ifelse.
+#if bugnew.pa is only 1 row of data,
+#apply will not work because bugnew.pa
+#technically has no dimensions,
+#thus apply cannot pull the needed data.
+BC.null<-if(is.null(dim(bugnew.pa[,nulltax]))){
+  sum(abs(bugnew.pa[,nulltax]-pnull[nulltax]))/(Obsnull+Enull)
+}else{
+  apply(bugnew.pa[,nulltax],1,function(x)sum(abs(x-pnull[nulltax])))/(Obsnull+Enull)
+} #vector of null-model BC;
+
 
 #5.3 - Final data frame contains values of O, E, O/E, Onull, Enull, Onull/Enull, BC.prd and BC.null, for all samples;
 #Also includes outlier flags;
