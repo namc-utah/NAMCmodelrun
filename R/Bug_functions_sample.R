@@ -124,6 +124,50 @@ MMI_metrics<-function(sampleIds,translationId,fixedCount,modelId){
     MMI_metrics$metricAbbreviation=gsub("-","_",MMI_metrics$metricAbbreviation)
     MMI_metrics$metricValue=ifelse(MMI_metrics$metricId %in% c(176,177,199,448),MMI_metrics$metricValue*100,MMI_metrics$metricValue)# converting relative abundance to %
       bugnew=MMI_metrics
+      #NRSA xeric MMI
+  }else if (def_models$modelId==367){
+   taxa=query("sampleTaxa",sampleIds=sampleIds)
+   count=taxa %>%
+     dplyr::group_by(sampleId) %>%
+   dplyr::summarize(count = sum(splitCount))
+
+   taxatop=taxa %>%
+     group_by(sampleId) %>%
+     top_n(5,splitCount)
+   taxatopcount=taxatop %>%
+     dplyr::summarize(topcount = sum(splitCount))
+
+
+   taxatopcountfinal=left_join(count,taxatopcount,by="sampleId")
+   taxatopcountfinal$pcttop5taxa=taxatopcountfinal$topcount/taxatopcountfinal$count
+
+     MMI_metrics = subset(bugsMetrics, metricId %in% c(448,351,448,360,380,384,390,628))
+                         MMI_metrics$metricValue=as.numeric(MMI_metrics$metricValue)
+                         MMI_metrics$metricAbbreviation=gsub("-","_",MMI_metrics$metricAbbreviation)
+                         bugnew = tidyr::pivot_wider(MMI_metrics,id_cols = "sampleId",names_from = "metricAbbreviation",values_from = "metricValue")
+                         bugnew=left_join(bugnew,taxatopcountfinal, by="sampleId")
+                         bugnew$pctTolerantTaxa=bugnew$UniqueRichness_TolerantTaxa/bugnew$UniqueRichness*100
+                         bugnew$pctclinger=bugnew$UniqueRichness_Habit_prim_Clinger/bugnew$UniqueRichness*100
+                         bugnew$noninsect_stand=ifelse(1-(bugnew$RelativeAbundance_NonInsects-0.0333)/(0.36-0.033)>1,1,
+                                                       ifelse(1-(bugnew$RelativeAbundance_NonInsects-0.0333)/(0.36-0.033)<0,0,
+                                                              1-(bugnew$RelativeAbundance_NonInsects-0.0333)/(0.36-0.033)))
+                         bugnew$top5_stand=ifelse(1-(bugnew$pcttop5taxa-0.406)/(0.823-0.406)>1,1,
+                                                  ifelse(1-(bugnew$pcttop5taxa-0.406)/(0.823-0.406)<0,0,
+                                                         1-(bugnew$pcttop5taxa-0.406)/(0.823-0.406)))
+                         bugnew$scraper_stand=ifelse(bugnew$UniqueRichness_Feed_prim_abbrev_SC/7>1,1,bugnew$UniqueRichness_Feed_prim_abbrev_SC/7)
+
+                         bugnew$clinger_stand=ifelse((bugnew$pctclinger-15.8)/(65.8-15.8)>1,1,
+                                                     ifelse((bugnew$pctclinger-15.8)/(65.8-15.8)<0,0,
+                                                            (bugnew$pctclinger-15.8)/(65.8-15.8)))
+                         bugnew$EPT_stand=ifelse((bugnew$pctclinger-1)/(18-1)>1,1,
+                                                 ifelse((bugnew$pctclinger-1)/(18-1)<0,0,
+                                                        (bugnew$pctclinger-1)/(18-1)))
+                         bugnew$tolerant_stand=ifelse(1-(bugnew$pctTolerantTaxa-3.57)/(36.4-3.57)>1,1,
+                                                      ifelse(1-(bugnew$pctTolerantTaxa-3.57)/(36.4-3.57)<0,0,
+                                                             1-(bugnew$pctTolerantTaxa-3.57)/(36.4-3.57)))
+
+                           t=mutate(bugnew,MMI = rowMeans(select(bugnew,c(noninsect_stand:tolerant_stand))))
+                           t$MMI=t$MMI*100
   }else{
 
   }
