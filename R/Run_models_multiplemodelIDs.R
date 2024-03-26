@@ -44,13 +44,14 @@
 #2 - MMI
 #3 - CSCI
 #4- WQ
+k<-list()
 basic_models = query(api_endpoint = "models")
 
 OEs<-basic_models$modelId[basic_models$modelTypeId==1 & basic_models$modelId !=12]
-MMIs<-basic_models$modelId[basic_models$modelTypeId==2]
+MMIs<-basic_models$modelId[basic_models$modelTypeId==2 & basic_models$modelId!=8]
 CSCIs<-basic_models$modelId[basic_models$modelTypeId==3]
 WQs<-basic_models$modelId[basic_models$modelTypeId==4]
-AREMP<-c(7,8)
+AREMP<-c(8)
 NullOE<-12
 MIR<-136
 PIBO <-9
@@ -61,10 +62,8 @@ if (exists("boxId")){
 }else {def_samples=NAMCr::query("samples",projectId=projectId)
 }
 
-sampleIds = def_samples$sampleId
-
-
-
+sampleIds<-def_samples$sampleId
+for(kk in 1:length(sampleIds)){
 #   # ---------------------------------------------------------------
 # get a list of samples if the needed model has already been run for the sample
 # ---------------------------------------------------------------
@@ -76,8 +75,7 @@ sampleIds = def_samples$sampleId
 
 def_model_results = NAMCr::query(
   api_endpoint = "modelResults",
-  sampleIds=sampleIds
-)
+  sampleIds=sampleIds)
 
 #def_model_results<-read.csv('C://Users//andrew.caudillo//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//WestWide//2023_09_21_model_results_project_1773.csv')
 def_model_results=subset(def_model_results,modelId %in% modelID)
@@ -96,6 +94,7 @@ sampleNullOEs<-def_model_results[def_model_results$modelId %in% NullOE ,]
 sampleAREMP<-def_model_results[def_model_results$modelId %in% AREMP,]
 sampleMIRs<-def_model_results[def_model_results$modelId %in% MIR,]
 samplePIBO<-def_model_results[def_model_results$modelId %in% PIBO ,]
+
 
 #get base model applicability info
 
@@ -261,6 +260,10 @@ if(nrow(NA_preds)>0){print(NA_preds)
 warning('The above samples need predictors!')
 warning('See what predictors need calculation\n and try again')
 }else message('All sites have predictors!')
+#rename preds for AREMP weirdness
+if (modelID %in% 7:8){
+  colnames(prednew)[which(names(prednew) %in% c('Tmax_WS','rh_WS'))]<-c('TMAX_WS','RH_WS')
+}
 # ---------------------------------------------------------------
 # Run models
 # ---------------------------------------------------------------
@@ -476,10 +479,10 @@ if(nrow(sampleOEs)>=1){
   }
 }
 
-
 #non OR O/E indices (WW, PIBO, etc.)
 #includes AREMP O/E!
   if(nrow(sampleOEs[sampleOEs$modelId %in% c(2,7,9,25,26,29),])>=1){
+
     print('running O/Es using 4.2RF')
     print(unique(sampleOEs$modelId[which(sampleOEs$modelId %in% c(2,7,9,25,26,29))]))
     bug_sub_list<-sampleOEs[which(sampleOEs$modelId %in% c(2,7,9,25,26,29)),]
@@ -495,7 +498,7 @@ if(nrow(sampleOEs)>=1){
       oe_bug_burn<-OE_list[[model_id_burn]]
       #oe_bug_burn<-oe_bug_burn[row.names(oe_bug_burn) %in% c(211367,211550,211211,210561,211254)==F,]
       #colnames(oe_bug_burn)<-sub(c('X2.','X7.','X9.','X25.','X26.','X29.'),colnames(oe_bug_burn))
-      OE <-model.predict.RanFor.4.2(
+      OE <-OE.RanFor.2(
         bugcal.pa,
         grps.final,
         preds.final,
@@ -598,18 +601,17 @@ if(nrow(sampleOEs)>=1){
                         modelApplicability = General_OE_results[[i]]$ModelApplicability[j],
                         notes='')
                         #notes='National')
-
-      NAMCr::save(
-        api_endpoint = "setModelResult",
-        args=dat_to_pass)
-      print(paste(j, ' results saved!'))
+k[[j]]<-dat_to_pass
+      #NAMCr::save(
+      #  api_endpoint = "setModelResult",
+      #  args=dat_to_pass,
+      #  )
+      #print(paste(j, ' results saved!'))
       }
 
     }
-    }
-
-
-
+  }
+} #kk
 #if only one model met that condition above
 #force the list to a df. maybe keeping it a list is better... for looping
 #the output would work with the latter option.
@@ -845,9 +847,8 @@ for(j in 1:nrow(WY_OE_results[[i]])){
 
         } #for i
 
- } else if(nrow(sampleAREMP[sampleAREMP$modelId %in% 7,])>=1){
-  message('AREMP O/E?')
-}
+ }
+
 
 
 #throwing in CSCI and MIR here, just because they are small
@@ -929,8 +930,10 @@ for(j in 1:nrow(WY_OE_results[[i]])){
 #Now the MMI section starts.
 #Make MMI list, like OE list
 #and fill with modelIDs
+#AREMP fails here because a certain object is not found, but works in the OG code?
 
   MMI_list<-list()
+  #not AREMP
   for(i in 1:length(unique(sampleMMIs$modelId))){
   m<-sampleMMIs[sampleMMIs$modelId==unique(sampleMMIs$modelId)[i],]
   uniq_mod<-unique(sampleMMIs$modelId)[i]
@@ -941,21 +944,27 @@ for(j in 1:nrow(WY_OE_results[[i]])){
                        modelId=m$modelId[1])
   MMI_list[[i]]<-bugnew
   names(MMI_list)<-as.character(m$modelId[1])
+  message(m$modelId[1])
   }
 }
 #AREMP MMI is a little special because of metrics
 #create its results here
-if (nrow(sampleAREMP[sampleAREMP$modelId==8])>=1) {# AREMP MMI
+if (nrow(sampleAREMP[sampleAREMP$modelId==8,])>=1) {# AREMP MMI
   #renaming columns to match database
   if (nrow(sampleAREMP)>=1){
-    prednew$TMAX_WS=prednew$Tmax_WS
+    colnames(prednew)[which(names(prednew=='tMax_WS'))]<-'TMAX_WS'
   }
   # same issue with RH_WS being included in TP model but different capitalization. However, revisit if we revise TP model
-  if (nrow(sampleAREMP[sampleAREMP$modeId==8])>=1){
+  if (nrow(sampleAREMP[sampleAREMP$modeId==8,])>=1){
     prednew$rh_WS=prednew$RH_WS
   }
 
-  AREMP_bugnew<-MMI_list[["8"]]
+  AREMP_bugs<-NAMCr::query("sampleTaxaTranslationRarefied",
+                           translationId = 23,
+                           fixedCount = 300,
+                           sampleIds=sampleIds)
+  AREMP_bug_sub<-AREMP_bugs[,c('sampleId','scientificName','splitCount')]
+  AREMP_bugnew<-labdsv::matrify(AREMP_bug_sub)
   modelResults <-
     AREMP_MMI_model(
       AREMP_bugnew,
@@ -972,7 +981,7 @@ if (nrow(sampleAREMP[sampleAREMP$modelId==8])>=1) {# AREMP MMI
     )
 
   ModelApplicability_obj = ModelApplicability(CalPredsModelApplicability,
-                                              modelId = 3,
+                                              modelId = 8,
                                               applicabilitypreds)
 
   AREMPmodelResults<-merge(modelResults,
@@ -995,7 +1004,7 @@ if (nrow(sampleAREMP[sampleAREMP$modelId==8])>=1) {# AREMP MMI
                       modelId = 3,
                       modelResult = NV_MMI_results$MMI[n],
                       fixedCount = NV_MMI_results$splitCount[n],
-                      notes="",
+                      notes="National",
                       modelApplicability = NV_MMI_results$ModelApplicability[n])
     NAMCr::save(
       api_endpoint = "setModelResult",
@@ -1050,7 +1059,7 @@ if (nrow(sampleAREMP[sampleAREMP$modelId==8])>=1) {# AREMP MMI
                     modelId = 3,
                     modelResult = NV_MMI_results$MMI[n],
                     fixedCount = NV_MMI_results$splitCount[n],
-                    notes="",
+                    notes="National",
                     modelApplicability = NV_MMI_results$ModelApplicability[n])
   NAMCr::save(
     api_endpoint = "setModelResult",
