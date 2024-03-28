@@ -1,12 +1,14 @@
 #get Pc for a client
-#1. Source the appropriate code, in this case, RF 4.2
-
-shmoo<-list()
+#1. Source the appropriate code, in this case, RF 4.2, to get important objects
+#2. Run the Run_models.R code to ensure that you have the appropriate bugnew
+#and to get the model results saved to the database.
+#4. Ctrl+A and run this code.
+Eprd<-list()
 
   #first convert bug matrix to P/A (1/0);
   temp.pa<-bugnew;
   temp.pa[temp.pa>0]<-1;
-  rm(bugnew);
+  #rm(bugnew);
 
   #1. - initial definitions;
   names(grps.final)<-row.names(bugcal.pa);
@@ -60,48 +62,15 @@ shmoo<-list()
   for(i in 1:nsit.new) {;
     #i<-1;
     cur.prd<-site.pred.dfa[i,]; #vector of predicted probs for current sample;
-    spdyn<-names(cur.prd)[cur.prd>=Pc];  #subset of taxa with Pi>=Pcutoff;
-    cur.prd<-cur.prd[spdyn]; #vector of Pi for subset of included taxa;
-    cur.obs<-bugnew.pa[i,spdyn]; #vector of observed P/A for those taxa;
-    OE.stats$OBS[i]<-sum(cur.obs); #observed richness (O);
-    OE.stats$E.prd[i]<-sum(cur.prd); #Expected richness (E);
-    OE.stats$BC.prd[i]<-sum(abs(cur.obs-cur.prd))/ (OE.stats$OBS[i]+OE.stats$E.prd[i]); #BC value;
+    #spdyn<-names(cur.prd)[cur.prd>=Pc];  #subset of taxa with Pi>=Pcutoff;
+    #cur.prd<-cur.prd[spdyn]; #vector of Pi for subset of included taxa;
+    #cur.obs<-bugnew.pa[i,spdyn]; #vector of observed P/A for those taxa;
+    #OE.stats$OBS[i]<-sum(cur.obs); #observed richness (O);
+    #OE.stats$E.prd[i]<-sum(cur.prd); #Expected richness (E);
+    #OE.stats$BC.prd[i]<-sum(abs(cur.obs-cur.prd))/ (OE.stats$OBS[i]+OE.stats$E.prd[i]); #BC value;
   Eprd[[i]]<-cur.prd
     }; #finish sample loop;
 
-  #5.2 - Compute Expected richness (E) and BC for null model using taxa >= Pc.
-  # Note that the set of taxa included in the null model is fixed for all samples;
-  pnull<-apply(bugcal.pa,2,sum)/dim(bugcal.pa)[[1]];  #null model predicted occurrnece probabilities, all taxa;
-  nulltax<-names(pnull[pnull>=Pc]); #subset of taxa with Pnull >= Pc;
-  Enull<-sum(pnull[nulltax]);
-  Obsnull<-apply(bugnew.pa[,nulltax],1,sum); #vector of Observed richness, new samples, under null model;
-  BC.null<-apply(bugnew.pa[,nulltax],1,function(x)sum(abs(x-pnull[nulltax])))/(Obsnull+Enull); #vector of null-model BC;
-
-  #5.3 - Final data frame contains values of O, E, O/E, Onull, Enull, Onull/Enull, BC.prd and BC.null, for all samples;
-  #Also includes outlier flags;
-
-  OE.final<-data.frame(O=OE.stats$OBS,E=OE.stats$E.prd,
-                       OoverE=OE.stats$OBS/OE.stats$E.prd,
-                       Onull=Obsnull,Enull=rep(Enull,length(Obsnull)),OoverE.null=Obsnull/Enull,
-                       BC= OE.stats$BC.prd,BC.null=BC.null,
-                       row.names=row.names(bugnew.pa));
-  ###########;
-  #print some summary statistics of O/E to wrap up;
-  print(' ',quote=F)
-  print('Statistics of O/E for new samples',quote=F);
-  print(' ',quote=F)
-  c1<-mean(OE.final$OoverE); c2<-mean(OE.final$OoverE.null);
-  s1<-sqrt(var(OE.final$OoverE)); s2<-sqrt(var(OE.final$OoverE.null));
-  print(' Mean(O/E) and SD(O/E), from predictive model: ',quote=F)
-  print( c(c1,s1),digits=3);
-  print(' ',quote=F)
-  print(' Mean(O/E) and SD(O/E), from null model: ',quote=F)
-  print( c(c2,s2),digits=3);
-  #print outlier count;
-  print(' ',quote=F)
-  print('RanFor predictions complete', quote=F);
-  #function output is a list containing OE.final, matrix of predicted capture probs, and predicted group membership probs;
-  list(OE.scores=OE.final,Capture.Probs=site.pred.dfa,Group.Occurrence.Probs=grpprobs);
 
 
 
