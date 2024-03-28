@@ -62,8 +62,8 @@ if (exists("boxId")){
 }else {def_samples=NAMCr::query("samples",projectId=projectId)
 }
 
-sampleIds<-def_samples$sampleId
-for(kk in 1:length(sampleIds)){
+sampleIds<-def_samples$sampleId[1:10]
+
 #   # ---------------------------------------------------------------
 # get a list of samples if the needed model has already been run for the sample
 # ---------------------------------------------------------------
@@ -79,7 +79,7 @@ def_model_results = NAMCr::query(
 
 #def_model_results<-read.csv('C://Users//andrew.caudillo//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//WestWide//2023_09_21_model_results_project_1773.csv')
 def_model_results=subset(def_model_results,modelId %in% modelID)
-def_model_results<-def_model_results[def_model_results$sampleId %in% def_samples$sampleId,]
+def_model_results<-def_model_results[def_model_results$sampleId %in% sampleIds,]
 #subset only necessary modelIDs. for example,
 #box 2162 has 4 models assigned to it, but only 3 were needed
 #based on geography
@@ -498,7 +498,7 @@ if(nrow(sampleOEs)>=1){
       oe_bug_burn<-OE_list[[model_id_burn]]
       #oe_bug_burn<-oe_bug_burn[row.names(oe_bug_burn) %in% c(211367,211550,211211,210561,211254)==F,]
       #colnames(oe_bug_burn)<-sub(c('X2.','X7.','X9.','X25.','X26.','X29.'),colnames(oe_bug_burn))
-      OE <-OE.RanFor.2(
+      OE <-model.predict.RanFor.4.2(
         bugcal.pa,
         grps.final,
         preds.final,
@@ -601,7 +601,7 @@ if(nrow(sampleOEs)>=1){
                         modelApplicability = General_OE_results[[i]]$ModelApplicability[j],
                         notes='')
                         #notes='National')
-k[[j]]<-dat_to_pass
+
       #NAMCr::save(
       #  api_endpoint = "setModelResult",
       #  args=dat_to_pass,
@@ -611,7 +611,7 @@ k[[j]]<-dat_to_pass
 
     }
   }
-} #kk
+
 #if only one model met that condition above
 #force the list to a df. maybe keeping it a list is better... for looping
 #the output would work with the latter option.
