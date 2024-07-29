@@ -218,7 +218,7 @@ print(' ',quote=F)
 print('Predictions complete', quote=F);
 #return a list with OE.final and the matrix of predicted probs as elements;
 list(OE.scores=OE.final,Capture.Probs=site.pred.dfa,Group.Occurrence.Probs=grpprobs); #return data frame as final object;
-OE.final<-OE.final[row.names(OE.final)==row.names(oe_bug_burn),]
+OE.final<-OE.final[row.names(OE.final)==row.names(temp.pa),]
 }; #end of function;
 
 
