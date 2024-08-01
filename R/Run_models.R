@@ -41,6 +41,8 @@ if(modelID %in% 10:12){
   filtered_list <- OR_list[sapply(OR_list, function(x) !is.null(x) && length(x) > 0)]
   message('The models that are present for OR are:')
   message(paste(names(filtered_list),collapse = ', '))
+}else{
+  message('this set is not Oregon.')
 }
 if(modelID==10){
   sampleIds= filtered_list[["Model 10"]]
