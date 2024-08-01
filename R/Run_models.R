@@ -18,12 +18,31 @@
 # get a list of samples in a box or project
 # ---------------------------------------------------------------
 
-if (exists("boxId")){
-  def_samples=NAMCr::query("samples",boxId=boxId)
-}else {def_samples=NAMCr::query("samples",projectId=projectId)
+if (exists("boxId")) {
+  def_samples = NAMCr::query("samples", boxId = boxId)
+} else {
+  def_samples = NAMCr::query("samples", projectId = projectId)
 }
 
+if(modelID %in% 10:12){
+  OR_geo<-sf::st_read(paste0(ecoregion_base_path ,'GIS//GIS_Stats//Oregon//ecoregion//OR_Model_Boundaries.shp'))
+
+  OR_coords<-sf::st_as_sf(def_samples,coords=c('siteLongitude','siteLatitude'),crs=4269)
+  OR_coords<-sf::st_transform(OR_coords,sf::st_crs(OR_geo))
+
+  extraction<-sf::st_intersection(OR_coords,OR_geo)
+  mod10<-extraction$sampleId[extraction$US_L3NAME=='OR_WesternCordillera_ColumbiaPlateau']
+  mod12<-extraction$sampleId[extraction$US_L3NAME=='OR_NorthernBasinRange']
+  mod11<-extraction$sampleId[extraction$US_L3NAME=='OR_MarineWesternCoastalForest']
+  OR_list<-list(mod10,mod11,mod12)
+  names(OR_list)<-c('Model 10','Model 12','Model 11')
+  filtered_list <- OR_list[sapply(OR_list, function(x) !is.null(x) && length(x) > 0)]
+  message('The models that are present for OR are:')
+  message(paste(names(filtered_list),collapse = ', '))
+}
+#def_samples<-def_samples[def_samples$usState %in% c('Nevada','California','Oregon')==F,]
 sampleIds = def_samples$sampleId
+#sampleIds<-sampleIds[sampleIds!=213928]
 #   # ---------------------------------------------------------------
 # get a list of samples if the needed model has already been run for the sample
 # ---------------------------------------------------------------
@@ -151,6 +170,7 @@ if(nrow(prednew[is.na(prednew),] ) >0){
 } else{
   message('All predictors have values!')
 }
+#prednew<-prednew[row.names(prednew) %in% 214051 ==F,]
 ## special handling of AREMP predictor names is needed here.
 #Tmax_WS is used for NV WQ and other models but for AREMP this same predictor is called TMAX_WS
 #database is not case sensitive so cant add as unique predictor in database so have to handle here.
@@ -216,7 +236,7 @@ if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1) {
 # make sure predictors and bug data are in same sample order and all samples match up
 # ---------------------------------------------------------------
 if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1){#no predictors are needed for OR null model
-
+message('PREDATOR does not need predictors')
 } else if (length(def_models$modelId[def_models$modelId %in% c(1,4:6)]==T)>=1){#CSCI bug file doesnt have row names and has multiple rows for a given sampleID, so does CO but CO is written out to disk
   bugnew<-subset(bugnew,bugnew$SampleID %in% rownames(prednew))
   prednew<-subset(prednew,rownames(prednew) %in% bugnew$SampleID)
@@ -290,7 +310,7 @@ if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29)]==T)>=1)
                           prednew,
                           bugnew,
                           Pc = 0.5)# add elpsis...
-  modelResults<-OE$OE.scores
+  modelResults<-OE
 
   # WY also uses John vansickles discriminant function code but requires alkalinity model as a dependency
 } else if (length(def_models$modelId[def_models$modelId %in% 13:23]==T)>=1) {
@@ -397,6 +417,12 @@ applicabilitypreds = tidyr::pivot_wider(applicabilitypreds,
                                         values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
 applicabilitypreds=as.data.frame(applicabilitypreds)
 # run model applicability function
+#only for PREDATOR SECTION
+#some sites are NA, which breaks the code because "duplicate row names"
+#so just give them burner names...
+if(modelID==12){
+CalPredsModelApplicability$SiteID[CalPredsModelApplicability$modelID==12 & CalPredsModelApplicability$SiteID=='']<-LETTERS[1:9]
+}
 if(length(modelID)>1){
   for(i in 1:length(modelID)){
     ModelApplicability_obj = ModelApplicability(CalPredsModelApplicability,
@@ -411,7 +437,8 @@ if(length(modelID)>1){
   ModelApplicability_obj = ModelApplicability(CalPredsModelApplicability,
                                               modelId = modelID,
                                               applicabilitypreds) # add to config file or add an R object with calpreds
-
+modelResults<-as.data.frame(modelResults);rownames(modelResults)<-modelResults$sampleId
+modelResults<-modelResults[,-1]
   finalResults=merge(modelResults,ModelApplicability_obj,by="row.names")
 }
 # ---------------------------------------------------------------
@@ -432,7 +459,7 @@ sumrarefiedOTUTaxa = bugsOTU  %>%
 
 finalResults=dplyr::left_join(finalResults,sumrarefiedOTUTaxa,by="sampleId")
 #IF NATIONAL UNCOMMENT OUT THE LINE BELOW
-# finalResults$notes='National'
+finalResults$notes='National'
 
 
 # ---------------------------------------------------------------
@@ -489,7 +516,7 @@ if (overwrite=='N'){
   finalResults$sampleId<-as.integer(finalResults$sampleId) #making it a good class, not "AsIs"
 } #else{}
 
-
+#finalResults$modelId<-3
 for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to the notes field in some easy fashion???
   #has permission to save then spit out result to console
   # pass Nas for anything not used
@@ -497,13 +524,13 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
     if (length(def_models$modelTypeAbbreviation[def_models$modelTypeAbbreviation == "OE"]>=1)) {
       print('O/E')
       dat_to_pass<-list(sampleId = finalResults$sampleId[i],
-                        modelId = finalResults$modelId[i],
+                        modelId = modelID,
                         oResult = finalResults$O[i],
                         eResult = finalResults$E[i],
                         modelResult = finalResults$OoverE[i] ,
                         fixedCount = finalResults$fixedCount[i],
                         modelApplicability = finalResults$ModelApplicability[i],
-                        notes=finalResults$notes[i])
+                        notes='')
       NAMCr::save(
         api_endpoint = "setModelResult",
         args=dat_to_pass)
@@ -512,7 +539,7 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
       NAMCr::save(
         api_endpoint = "setModelResult",
         sampleId = finalResults$sampleId[i],
-        modelId = finalResults$modelId[i],
+        modelId = modelID,
         modelResult = finalResults$CSCI[i],
         fixedCount = finalResults$fixedCount[i],
         modelApplicability = finalResults$ModelApplicability[i],
@@ -549,7 +576,7 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
 
 #  }
 #}
-
+finalResults
 
 
 
