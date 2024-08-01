@@ -24,6 +24,8 @@ if (exists("boxId")) {
   def_samples = NAMCr::query("samples", projectId = projectId)
 }
 
+#this section will subset out the modelID that is appropriate for the OR
+#models.
 if(modelID %in% 10:12){
   OR_geo<-sf::st_read(paste0(ecoregion_base_path ,'GIS//GIS_Stats//Oregon//ecoregion//OR_Model_Boundaries.shp'))
 
@@ -40,8 +42,20 @@ if(modelID %in% 10:12){
   message('The models that are present for OR are:')
   message(paste(names(filtered_list),collapse = ', '))
 }
-#def_samples<-def_samples[def_samples$usState %in% c('Nevada','California','Oregon')==F,]
-sampleIds = def_samples$sampleId
+if(modelID==10){
+  sampleIds= filtered_list[["Model 10"]]
+} else{
+  if(modelID==11){
+    sampleIds= filtered_list[["Model 11"]]
+  } else{
+    if(modelID==12){
+    sampleIds= filtered_list[["Model 12"]]
+    } else{
+      sampleIds = def_samples$sampleId
+    }
+  }
+}
+
 #sampleIds<-sampleIds[sampleIds!=213928]
 #   # ---------------------------------------------------------------
 # get a list of samples if the needed model has already been run for the sample
