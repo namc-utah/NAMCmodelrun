@@ -297,7 +297,7 @@ CO_pred_export<-function(prednew){
                      'SQRT_TOPO','PRCPSHORTWS','DOY')
   #fill the df with predictors that are named how EDAS wants
   prednews$StationID=prednew$sampleId
-  prednews$WaterbodyName=prednew$siteName
+  prednews$WaterbodyName=def_samples$siteName
   prednews$Location=rep('Location',nrow(prednew))
   prednews$Lat_Dec=prednew$Lat_Dec
   prednews$Long_Dec=prednew$Long_Dec
