@@ -1,6 +1,6 @@
 
 ADEQ_bug_export<-function(sampleIds){
-  library(elevatr)
+  #library(elevatr)
   bugRaw = NAMCr::query(
     "sampleTaxaUnambiguous",
     sampleIds=sampleIds
@@ -28,36 +28,32 @@ ADEQ_bug_export<-function(sampleIds){
   AZbugs=dplyr::left_join(AZsubsamp,bugsTranslation[,c('otuName','taxonomyId','sampleId')], by=c("taxonomyId", "sampleId"))
 
   #getting invertReg
-  spatdf<-st_as_sf(samples,coords=c("siteLongitude",'siteLatitude'))
-
-  #assing lat/long projection
-  spatdf<-st_set_crs(spatdf$geometry,"+proj=longlat")
-  #get the elevation (returns a df)
+  #spatdf<-st_as_sf(samples,coords=c("siteLongitude",'siteLatitude'),crs=4326)
 
   #get elevation, returns a DF
-  invertreg_values<-get_elev_point(spatdf)
+  #invertreg_values<-get_elev_point(spatdf)
   #convert meters to feet (we could keep meters and just make a new
   #conditional statement, but this is fine.)
-  invertreg_values$elevation<-invertreg_values$elevation*3.28084; invertreg_values$elev_units<-"feet"
+  #invertreg_values$elevation<-invertreg_values$elevation*3.28084; invertreg_values$elev_units<-"feet"
 
   #assign the cold or warm
-  invertreg_values$Type=ifelse(invertreg_values$elevation>5000,"cold","warm")
+  #invertreg_values$Type=ifelse(invertreg_values$elevation>5000,"cold","warm")
   #append sampleId (helps to find cold vs warm sites
   #on INSTAR, since we need to add the values individually on EDAS)
-  invertreg_values$sampleId<-samples$sampleId
-  plain_invertreg<-as.data.frame(invertreg_values[,c('sampleId','Type')])
-  plain_invertreg<-plain_invertreg[,1:2]
+  #invertreg_values$sampleId<-samples$sampleId
+  #plain_invertreg<-as.data.frame(invertreg_values[,c('sampleId','Type')])
+  #plain_invertreg<-plain_invertreg[,1:2]
   #get site name, too. This is what we will use when
   #assigning InvertReg on EDAS, since the ActivityID is less intuitive there.
   #(i.e., filter by the site names below and then add "warm" or "cold" accordingly)
-  samples<-plyr::join(samples,plain_invertreg, by='sampleId')
+  #samples<-plyr::join(samples,plain_invertreg, by='sampleId')
   AZbugs=dplyr::left_join(AZbugs,samples, by='sampleId')
 
   sampletax = NAMCr::query(
     "sampleTaxa",
     sampleIds=sampleIds
   )
-  sampletax<-sampletax[!duplicated(sampletax$scientificName),]
+  #sampletax<-sampletax[!duplicated(sampletax$scientificName),]
 
 
   AZbugs<-merge(AZbugs,sampletax[,c('scientificName','lifeStageAbbreviation')],'scientificName')
@@ -80,9 +76,10 @@ ADEQ_bug_export<-function(sampleIds){
   AZbugs2$LabID=NA
   AZbugs2$Latitude=AZbugs$siteLatitude
   AZbugs2$Longitude=AZbugs$siteLongitude
-  AZbugs2$InvertReg=AZbugs$Type
   AZbugs2<-AZbugs2[which(is.na(AZbugs2$FinalID)==F),]
-
+  AZbugs2$burner<-paste(AZbugs2$ActivityID,AZbugs2$FinalID,AZbugs2$Individuals)
+  AZbugs2<-AZbugs2[!duplicated(AZbugs2$burner),]
+  AZbugs2<-AZbugs2[,-c(ncol(AZbugs2))]
   #write excel file to workspace
 
   write.csv(AZbugs2,file = paste0("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//Arizona//InputFiles//AZbugs","boxId_",boxId,"_",Sys.Date(),".csv"),row.names=FALSE)
