@@ -85,7 +85,7 @@ ADEQ_bug_export<-function(sampleIds){
 
   #write excel file to workspace
 
-  write.csv(AZbugs2,file = paste0("C://Users//andrew.caudillo//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//Arizona//InputFiles//AZbugs","boxId_",boxId,"_",Sys.Date(),".csv"),row.names=FALSE)
+  write.csv(AZbugs2,file = paste0("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//Arizona//InputFiles//AZbugs","boxId_",boxId,"_",Sys.Date(),".csv"),row.names=FALSE)
   cat(paste("csv with AZbugs has been written out to your current working directory.",
             "convert this csv to excel 2003 and import into AZ EDAS access database to compute the IBI score.",
             "/OE_Modeling/NAMC_Supported_OEmodels/AZ/Benthic Data Bulk Upload_SOP.doc",
@@ -95,6 +95,6 @@ ADEQ_bug_export<-function(sampleIds){
 
 }
 
-ADEQ_bug_export(sampleIds = sampleIds)
+#ADEQ_bug_export(sampleIds = sampleIds)
 
 
