@@ -242,7 +242,7 @@ CO_bug_export<-function(sampleIds){
     NAMCr::query(
     "sampleTaxaTranslationRarefied",
     sampleIds=sampleIds,
-    translationId=8,
+    translationId=92,#previously 8. 2025+ MMI has translation ID 92
     fixedCount=300
   )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
 
