@@ -20,10 +20,17 @@
 
 if (exists("boxId")) {
   def_samples = NAMCr::query("samples", boxId = boxId)
-} else {
+}else
+  {
   def_samples = NAMCr::query("samples", projectId = projectId)
 }
-
+def_samples<-def_samples[def_samples$sampleId <= 219683,]
+if(exists('CritHab')){
+#for PIBO model (only Idaho)
+def_samples=def_samples[def_samples$siteId %in% CritHab$siteId,]
+}
+#def_samples=def_samples[def_samples$sampleId !=219740,]
+#def_samples<-def_samples[def_samples$sampleId %in% c(213908,213907),]
 #this section will subset out the modelID that is appropriate for the OR
 #models.
 if(modelID %in% 10:12){
@@ -37,7 +44,7 @@ if(modelID %in% 10:12){
   mod12<-extraction$sampleId[extraction$US_L3NAME=='OR_NorthernBasinRange']
   mod11<-extraction$sampleId[extraction$US_L3NAME=='OR_MarineWesternCoastalForest']
   OR_list<-list(mod10,mod11,mod12)
-  names(OR_list)<-c('Model 10','Model 12','Model 11')
+  names(OR_list)<-c('Model 10','Model 11','Model 12')
   filtered_list <- OR_list[sapply(OR_list, function(x) !is.null(x) && length(x) > 0)]
   message('The models that are present for OR are:')
   message(paste(names(filtered_list),collapse = ', '))
@@ -57,7 +64,7 @@ if(modelID==10){
     }
   }
 }
-
+#sampleIds<-sampleIds[sampleIds %in% c(216039,216040,216047)==F]
 #sampleIds<-sampleIds[sampleIds!=213928]
 #   # ---------------------------------------------------------------
 # get a list of samples if the needed model has already been run for the sample
@@ -68,16 +75,33 @@ if(modelID==10){
 # not ready status if predictors are not there
 def_model_results = NAMCr::query(
   api_endpoint = "modelResults",
-  sampleIds=def_samples$sampleId
+  args=list
+    (
+  sampleIds=def_samples$sampleId,
+  modelIds=modelID
+  )
 )
-
-def_model_results=subset(def_model_results,modelId %in% modelID)
+def_samples$sampleId[def_samples$sampleId %in% sampleIds==F]
+#def_model_results=subset(def_model_results,modelId %in% modelID)
 
 
 # ---------------------------------------------------------------
 # get model metadata needed to run the model - philip said he would change apis so that model id would just be provided and translation id and fixed count wouldnt be needed
 # ---------------------------------------------------------------
 arbitrary_list<-list()
+
+if (modelID %in% 301:303){
+  def_models = NAMCr::query(
+    api_endpoint = "modelInfo",
+    include = c("modelId",
+                "modelTypeAbbreviation",
+                "abbreviation",
+                "translationId",
+                "fixedCount"),
+    modelId =modelID
+  )
+  def_models=as.data.frame(t(as.data.frame(do.call('rbind',def_models))))
+}
 
 if(length(unique(def_model_results$modelId))>1){
   print("There are multiple modelIDs in this set")
@@ -89,7 +113,7 @@ if(length(unique(def_model_results$modelId))>1){
                   "abbreviation",
                   "translationId",
                   "fixedCount"),
-      modelId = unique(def_model_results$modelId)[i]
+      modelId = modelID
     )
     arbitrary_list[[i]]<-x
   }
@@ -103,7 +127,7 @@ if(length(unique(def_model_results$modelId))>1){
                 "abbreviation",
                 "translationId",
                 "fixedCount"),
-    modelId =def_model_results$modelId[1]
+    modelId =modelID
   )
   def_models=as.data.frame(t(as.data.frame(do.call('rbind',def_models))))
   def_models[,c(1,4,5)]<-as.integer(def_models[,c(1,4,5)])
@@ -117,6 +141,9 @@ if(length(unique(def_model_results$modelId))>1){
 # getting predictor values associated with those samples and models coming out of the def_models query above
 
 ##get all predictors associated with the samples
+if(modelID %in% 10:12 ==F){
+sampleIds=def_samples$sampleId
+}
 def_predictors = NAMCr::query(
   api_endpoint = "samplePredictorValues",
   include = c("sampleId",
@@ -125,9 +152,23 @@ def_predictors = NAMCr::query(
               "abbreviation",
               "predictorValue"
   ),
-  sampleIds = def_model_results$sampleId)
+  sampleIds = sampleIds,
+  modelIds=modelID)
+
 def_predictors <- def_predictors[!duplicated(def_predictors), ]
 
+#workaround for DOY not saving? Hopefully only need this once!
+if(1){
+  sample_info<-data.frame(sampleId=def_samples$sampleId,
+                          predictorId=73,
+                          sampleDate=def_samples$sampleDate)
+  oops<-anytime::anydate(sample_info$sampleDate)
+
+
+  sample_info$DOY<-lubridate::yday(sample_info$sampleDate)
+
+  def_predictors$predictorValue[is.na(def_predictors$predictorValue)]<- sample_info$DOY[match(def_predictors$sampleId[is.na(def_predictors$predictorValue)],sample_info$sampleId)]
+}
 
 ##get a list of predictors needed for the models that you are running
 modelpredlist = list()
@@ -176,16 +217,23 @@ if (length(modelID[modelID%in%c(4,5,6,28)]==T)>=1){ #CO and TP models have predi
                                        names_from = "abbreviation",
                                        values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
           prednew=as.data.frame(prednew)
-        }
+  }
+
 rownames(prednew)<-prednew$sampleId
 prednew<-prednew[,-1]
 
-if(nrow(prednew[is.na(prednew),] ) >0){
+
+def_samples<-def_samples[def_samples$sampleId %in% sampleIds,]
+
+if(nrow(prednew[which(is.na(prednew)),] ) >0){
   warning("There are missing predictors!")
-  print(prednew[is.na(prednew),])
+  print(prednew[which(is.na(prednew)),])
 } else{
   message('All predictors have values!')
 }
+all_na_rows <- apply(prednew, 1, function(x) all(is.na(x)))
+prednew=prednew[!all_na_rows,]
+#prednew=prednew[which(!is.na(prednew)),]
 #prednew<-prednew[row.names(prednew) %in% 214051 ==F,]
 ## special handling of AREMP predictor names is needed here.
 #Tmax_WS is used for NV WQ and other models but for AREMP this same predictor is called TMAX_WS
@@ -206,7 +254,7 @@ if (length(def_models$modelId[def_models$modelId %in% 8]==T)>=1){
 # if modelType= bug OE get OTU taxa matrix
 if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1) {
   bugnew = OR_NBR_bug(
-    sampleIds = def_model_results$sampleId,
+    sampleIds = sampleIds,
     translationId = def_models$translationId[1],
     fixedCount = def_models$fixedCount[1]
   )
@@ -215,7 +263,7 @@ if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1) {
     print('O/E')
   tryCatch({
     bugnew = OE_bug_matrix(
-      sampleIds = def_model_results$sampleId,
+      sampleIds = sampleIds,
       translationId = def_models$translationId[1],
       fixedCount = def_models$fixedCount[1])
   },
@@ -225,25 +273,29 @@ if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1) {
     message("Has this box been closed long enough for rarefactions?")
   })
   # CO model must be written out as an excel file using a separate bank of code and function
-} else if (length(def_models$modelId[def_models$modelId %in% c(4,5,6)]==T)>=1) {
+} else if (length(def_models$modelId[def_models$modelId %in% c(4,5,6,565,566,567)]==T)>=1) {
   print('CO MMI')
   #write get bugs from database, write out as a csv and save as CObugs object
-  CObugs=CO_bug_export(sampleIds=def_model_results$sampleId)
+  if(def_models$modelId %in% c(565,566,567)){
+  CObugs=CO_v5_bug_export(sampleIds=unique(def_predictors$sampleId))
+  }else{
+    CObugs=CO_bug_export(sampleIds=unique(def_predictors$sampleId))
+  }
   #write out predictors as a csv
-  write.csv(prednew,file = paste0("COpredictors","boxId_",CObugs$Project[1],"_",Sys.Date(),".csv"),row.names=FALSE)
+  COpreds<-CO_pred_export(prednew)
   cat(paste("csv with COpredictors has been written out to your current working directory.",
-            "Convert this csv to excel 2003 and import into CO EDAS access database to compute the CSCI score.",
+            "Convert this csv to excel 2003 and import into CO EDAS access database to compute the MMI score.",
             "Follow instructions in this pdf Box\\NAMC\\OE_Modeling\\NAMC_Supported_OEmodels\\CO\\Documentation\\EDAS2017\\Tutorial Guide to EDAS_Version 1.7.pdf",
             "to import bug and habitat data, harmonize taxa list, rarefy and compute MMI",
             "then read resulting excel file back into R to save results in the database.", sep="\n"))
 
   # CSCI requires just the raw taxa list translated for misspelling
 } else if (length(def_models$modelId[def_models$modelId %in% 1]==T)>=1) {
-  bugnew = CSCI_bug(sampleIds = def_model_results$sampleId)
+  bugnew = CSCI_bug(sampleIds = def_samples$sampleId)
 } else if (length(def_models$modelId[def_models$modelId %in% 169]==T)>=1){
-  bugnew=AZ_bug_export(sampleIds = def_model_results$sampleId)
+  bugnew=AZ_bug_export(sampleIds = def_samples$sampleId)
 }else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
-  bugnew = MMI_metrics(sampleIds = def_model_results$sampleId, translationId=def_models$translationId, fixedCount = def_models$fixedCount,modelId=def_models$modelId)
+  bugnew = MMI_metrics(sampleIds = def_samples$sampleId, translationId=def_models$translationId, fixedCount = def_models$fixedCount,modelId=def_models$modelId)
 }else {
 
 }
@@ -296,6 +348,16 @@ if (length(def_models$modelId[def_models$modelId %in% c(1,4,5,6,12,169)]==T)>=1)
 # ------------------------------
 # models using john vansickles RIVPACS random forest code : AREMP, UTDEQ15, Westwide, PIBO
 # ##Code breaks here on 5/16/2023, in model.predict.v4.2.r## #
+
+bugnew2=bugnew[row.names(bugnew) %in% c(157074,
+                                        171701,
+                                        171729,
+                                        171852,
+                                        184966,
+                                        184970,
+                                        184973,
+                                        211550
+)==F,]
 if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29)]==T)>=1) {
   OE_list<-list()
   for(i in 1:length(unique(def_models$modelId))){
@@ -304,7 +366,16 @@ if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29)]==T)>=1)
       grps.final,
       preds.final,
       ranfor.mod,
-      prednew,
+      prednew[row.names(prednew) %in% c(157074,
+                                        171701,
+                                        171729,
+                                        171852,
+                                        184966,
+                                        184970,
+                                        184973,
+                                        211550,
+                                        211367,
+                                        213089)==F,],
       bugnew=bugnew,
       Pc = 0.5,
       Cal.OOB = FALSE
@@ -342,7 +413,7 @@ if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29)]==T)>=1)
                           prednew,
                           bugnew,
                           Pc = 0.5)
-  modelResults<-OE$OE.scores
+  modelResults<-OE
 
   # OR eastern region is a null model and no predictors are used
 } else if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1) {
@@ -410,7 +481,7 @@ if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29)]==T)>=1)
 }else{
 
 }
-
+modelResults=modelResults[!is.na(modelResults),]
 # ---------------------------------------------------------------
 # Always run model applicability test
 # ---------------------------------------------------------------
@@ -423,7 +494,8 @@ applicabilitypreds = NAMCr::query("samplePredictorValues",
                                     "abbreviation",
                                     "predictorValue"
                                   ),
-                                  sampleIds = def_model_results$sampleId
+                                  sampleIds = sampleIds,
+                                  modelIds=modelID
 ) #need list of samples in database with values
 applicabilitypreds = subset(applicabilitypreds, abbreviation %in% c('ElevCat','Tmean8110Ws','WsAreaSqKm','Precip8110Ws'))
 applicabilitypreds$predictorValue=as.numeric(applicabilitypreds$predictorValue)
@@ -448,15 +520,23 @@ if(length(modelID)>1){
     arbitrary_list[[i]]<-ModelApplicability_obj
   }
   ModelApplicability_obj<-do.call('rbind',arbitrary_list)
+  row.names(modelResults)<-sampleIds
   finalResults=merge(modelResults,ModelApplicability_obj,by="row.names")
 }else{
   ModelApplicability_obj = ModelApplicability(CalPredsModelApplicability,
                                               modelId = modelID,
                                               applicabilitypreds) # add to config file or add an R object with calpreds
-modelResults<-as.data.frame(modelResults);rownames(modelResults)<-modelResults$sampleId
-modelResults<-modelResults[,-1]
-  finalResults=merge(modelResults,ModelApplicability_obj,by="row.names")
+modelResults<-as.data.frame(modelResults)
+if(modelID ==1){
+#rownames(modelResults)<-modelResults$sampleId
+#modelResults<-modelResults[,-1]
+names(modelResults)[1]<-'sampleId'
+modelResults$sampleId<-as.integer(modelResults$sampleId)
 }
+modelResults$sampleId=as.integer(row.names(modelResults))
+finalResults=merge(modelResults,ModelApplicability_obj,by="sampleId")
+}
+finalResults
 # ---------------------------------------------------------------
 # Get additional bug metrics (fixed count)
 # ---------------------------------------------------------------
@@ -464,7 +544,7 @@ modelResults<-modelResults[,-1]
 bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
                        translationId = def_models$translationId[1],
                        fixedCount = def_models$fixedCount[1],
-                       sampleIds=def_model_results$sampleId
+                       sampleIds=sampleIds
 )
 sumrarefiedOTUTaxa = bugsOTU  %>%
   dplyr::group_by(sampleId) %>%
@@ -523,7 +603,8 @@ write.csv(finalResults,paste0('finalresults_',paste(modelID,collapse='_'),"_",Sy
 if (overwrite=='N'){
   def_model_results2 = NAMCr::query(
     api_endpoint = "modelResults",
-    sampleIds=def_samples$sampleId
+    sampleIds=sampleIds,
+    modelIds=modelID
   )
   def_model_results2=subset(def_model_results2,modelId%in%modelID & is.na(modelResult)==TRUE)
   #def_model_results2=subset(def_model_results2,modelId==modelID & is.na(modelResult)==TRUE)
@@ -531,8 +612,24 @@ if (overwrite=='N'){
   names(finalResults)[1]<-'sampleId' #changing the name from row.names to sampleId
   finalResults$sampleId<-as.integer(finalResults$sampleId) #making it a good class, not "AsIs"
 } #else{}
+##for Wyoming##
+if(modelID %in% 13:23){
+  WY_regs<-sf::st_read("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC WATS Department Files//GIS//GIS_Stats//Wyoming//ecoregion//BIOREGIONS_2011_modifiedCP.shp")
+  WY_pts<-sf::st_as_sf(data.frame(x=def_samples$siteLongitude,y=def_samples$siteLatitude,sampleId=def_samples$sampleId),coords=c('x','y'),crs=4269)
+  WY_pts<-sf::st_transform(WY_pts,sf::st_crs(WY_regs))
 
-#finalResults$modelId<-3
+  region_join<-sf::st_intersection(WY_pts,WY_regs)
+  region_join_out<-sf::st_drop_geometry(region_join[,c('sampleId','modelId')])
+
+  finalResults$sampleId<-as.integer(finalResults$sampleId)
+  finalResults<-plyr::join(finalResults,region_join_out)
+}
+
+
+finalResults$modelId<-modelID
+#names(finalResults)[1]<-'sampleId'
+finalResults$fixedCount<-ifelse(is.na(finalResults$fixedCount),0,finalResults$fixedCount)
+finalResults$notes=''
 for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to the notes field in some easy fashion???
   #has permission to save then spit out result to console
   # pass Nas for anything not used
@@ -540,13 +637,13 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
     if (length(def_models$modelTypeAbbreviation[def_models$modelTypeAbbreviation == "OE"]>=1)) {
       print('O/E')
       dat_to_pass<-list(sampleId = finalResults$sampleId[i],
-                        modelId = modelID,
+                        modelId = finalResults$modelId[i],
                         oResult = finalResults$O[i],
                         eResult = finalResults$E[i],
                         modelResult = finalResults$OoverE[i] ,
                         fixedCount = finalResults$fixedCount[i],
                         modelApplicability = finalResults$ModelApplicability[i],
-                        notes='')
+                        notes=finalResults$notes[i])
       NAMCr::save(
         api_endpoint = "setModelResult",
         args=dat_to_pass)
@@ -570,7 +667,7 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
         modelResult = finalResults$MMI[i],
         fixedCount = finalResults$fixedCount[i],
         modelApplicability = finalResults$ModelApplicability[i],
-        notes=finalResults$notes[i]
+        notes=''#finalResults$notes[i]
       )
     }else if (length(def_models$modelTypeAbbreviation[def_models$modelTypeAbbreviation == "WQ"]>=1)) {
       print('WQ')
@@ -613,3 +710,15 @@ if(length(modelID)>1){
 write_model<-paste(modelID,collapse='_')
 write.csv(Report,paste('Report_',write_model,"_",Sys.Date(),'.csv'))
 
+
+df<-data.frame(sampleId=def_samples$sampleId,
+                  predictorId=73,
+                  value=okay)
+for(i in 1:nrow(df)){
+NAMCr::save(
+  api_endpoint = "setSamplePredictorValue",
+  sampleId = df$sampleId[i],
+  predictorId = df$predictorId[i],
+  value = df$value[i]
+)}
+#write.csv(modelResults,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//WQ data//WQ_Bug_Model_GIS_stats_and_results//2024 predictions//TP2024_predictions.csv')
