@@ -628,258 +628,248 @@ t.test(MRF_ref_OEs$OtoE, MRF_test_OEs$OtoE)
 
 
 
-# #k-folds
- library(caret)
-
- k <- 5  # choose 5- or 10-fold depending on sample size
- folds <- createFolds(1:nrow(train), k = k, list = TRUE, returnTrain = TRUE)
- perform_metrics=numeric(length(folds))
-#
- cv_results <- data.frame(fold =foldscv_results <- data.frame(fold = integer(), R2 = numeric(), RMSE = numeric()))
-#
- for (i in seq_along(folds)) {
-   cat("Running fold", i, "of", k, "\n")
-   train_data<-train[-folds[[i]],]
-   val_dat<-train[folds[[i]],]
-   train_idx <- folds[[i]]
-   train_fold <- train[train_idx, ]
-   test_fold  <- train[-train_idx, ]
-message('fitting model')
-#   # fit model
-   fit_fold <- rfsrc(
-     rf_formula,
-     data = train_data,
-     ntree = 1000,
-     nodesize = 5,
-    mtry = 4,
-     nsplit = 10,
-    nodedepth = 5
-   )
-#
-#   # predict on hold-out
-   pred_fold <- predict(fit_fold, newdata = val_dat)
-   pred_fold_preds=as.data.frame(sapply(pred_fold$regrOutput, function(x) x$predicted))
-  row.names(pred_fold_preds)=row.names(val_dat)
-   num_cols <- sapply(val_dat[, 1:(pred_index-2)], is.numeric)
-   val_numeric <- val_dat[, 1:(pred_index-2)][, num_cols]
-
-
-
-   obs_numeric  <- val_numeric[, sapply(val_numeric, is.numeric)]
-   pred_numeric <- pred_fold_preds[, sapply(pred_fold_preds, is.numeric)]
-
-   # Step 2: Check dimensions match
-   if(!all(dim(obs_numeric) == dim(pred_numeric))) {
-     stop("Observed and predicted data frames have different dimensions")
-   }
-
-   # Step 3: Compute RMSE
-   rmse <-  sqrt(mean((as.matrix(obs_numeric) - as.matrix(pred_numeric))^2, na.rm = TRUE))
-#
-#   # compute observed and expected richness
-
-   E <- rowSums(pred_fold_preds)
-
-   O <- rowSums(val_dat[,1:(pred_index-2)])
-   #E_test=rowSums(pred_fold_preds)
-
-
-
-
-#
-   R2 <- 1 - sum((O - E)^2) / sum((O - mean(O))^2)
-   RMSE <- sqrt(mean((O - E)^2))
-#
-   cv_results <- rbind(cv_results,
-                       data.frame(fold = i,
-                                  taxa_RMSE = rmse,
-                                  richness_RMSE = RMSE,
-                                  R2 = R2))
- }
-#
-# # summarize
- cv_summary <- cv_results %>%
-   summarise(mean_R2 = mean(R2, na.rm=TRUE),
-             sd_R2   = sd(R2, na.rm=TRUE),
-             mean_RMSE = mean(richness_RMSE, na.rm=TRUE),
-             sd_RMSE   = sd(richness_RMSE, na.rm=TRUE))
- print(cv_summary)
-
- cv_results
- mean(perform_metrics)
-
-#individual RF to tell overall variable importance
-#across responses.
-response_vars=names(train)[1:(pred_index-2)]
-#pred_vars=names(train)[pred_index:ncol(train)]
-pred_vars=names(train[,topvars])
-vimplist<-list()
-
-for (resp in response_vars) {
-  form <- as.formula(paste(resp, "~", paste(pred_vars, collapse = "+")))
-  m <- rfsrc(form, data = train, importance = TRUE, ntree = 500)
-  vimplist[[resp]] <- m$importance
-  print(resp)
-}
-
-vimp_df <- do.call(cbind, vimplist)
-vimp_mean <- rowMeans(vimp_df, na.rm = TRUE)
-sort(vimp_mean, decreasing = TRUE)[1:10]
-vimp_sorted <- sort(vimp_mean, decreasing = TRUE)
-plot(vimp_sorted, type = "b", main = "Variable Importance (Aggregated)")
-abline(h = quantile(vimp_sorted, 0.25), col = "red", lty = 2)
-top_vars <- names(vimp_sorted)[vimp_sorted > quantile(vimp_sorted, 0.5)]
-
-
-vimp_summary <- data.frame(
-  Predictor = row.names(vimp_df),
-  Mean = apply(vimp_df, 1, mean, na.rm = TRUE),
-  Median = apply(vimp_df, 1, median, na.rm = TRUE),
-  Max = apply(vimp_df, 1, max, na.rm = TRUE),
-  Consistency = apply(vimp_df, 1, function(x) mean(x > quantile(x, 0.9), na.rm = TRUE))
-)
-
-library(ggplot2)
-ggplot(vimp_summary, aes(x = reorder(Predictor, Mean), y = Mean)) +
-  geom_col(fill = "forestgreen", alpha = 0.7) +
-  coord_flip() +
-  labs(x = "Predictor", y = "Mean Variable Importance",
-       title = "Mean Variable Importance Across Taxa") +
-  theme_minimal(base_size = 13)
-
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Varimp_MRF_251023.png')
-
-ggplot(vimp_summary, aes(x = Mean, y = Max, label = Predictor)) +
-  geom_point(color = "dodgerblue3", size = 3) +
-  ggrepel::geom_text_repel(size=3.25) +
-  labs(x = "Mean Importance (Consistency Across Taxa)",
-       y = "Max Importance (Peak Effect for a Taxon)",
-       title = "Predictor Roles in Multivariate RF Model") +
-  theme_minimal(base_size = 13)
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Predictor_roles_MRF_251023.png')
-
-
-
-
-#fxn to get overal OOB error for a MRF.
-#inherently hard to do from the rfsrc function
-#because of so many response variables, so rfsrc does not compute oob.
-summarize_mrf_oob <- function(rf_model, threshold = 0.5, weight_by = c("none", "prevalence", "variance")) {
-  weight_by <- match.arg(weight_by)
-
-  # --- Extract observed and predicted OOB ---
-  obs_mat <- rf_model$yvar
-  pred_oob <- data.frame(sapply(rf_model$regrOutput, function(x) x$predicted.oob))
-
-  if (is.null(pred_oob)) stop("rf_model$predicted.oob is NULL — make sure you fit with OOB predictions enabled.")
-  if (!all(dim(obs_mat) == dim(pred_oob))) stop("Dimensions of observed and OOB-predicted data do not match.")
-
-  n_taxa <- ncol(obs_mat)
-  taxa_names <- colnames(obs_mat)
-
-  # --- Detect binary responses ---
-  is_binary <- apply(obs_mat, 2, function(x) {
-    ux <- unique(na.omit(x))
-    length(ux) == 2 && all(sort(ux) == c(0, 1))
-  })
-
-  # --- Initialize containers ---
-  taxon_misclass <- rep(NA_real_, n_taxa)
-  taxon_rmse <- rep(NA_real_, n_taxa)
-  taxon_r2 <- rep(NA_real_, n_taxa)
-
-  for (j in seq_len(n_taxa)) {
-    y <- obs_mat[, j]
-    yhat <- pred_oob[, j]
-
-    if (var(y, na.rm = TRUE) == 0 || all(is.na(y))) next
-
-    if (is_binary[j]) {
-      preds_class <- ifelse(yhat > threshold, 1, 0)
-      taxon_misclass[j] <- mean(preds_class != y, na.rm = TRUE)
-      taxon_rmse[j] <- sqrt(mean((y - yhat)^2, na.rm = TRUE))
-    } else {
-      taxon_rmse[j] <- sqrt(mean((y - yhat)^2, na.rm = TRUE))
-    }
-
-    ss_res <- sum((y - yhat)^2, na.rm = TRUE)
-    ss_tot <- sum((y - mean(y, na.rm = TRUE))^2, na.rm = TRUE)
-    taxon_r2[j] <- 1 - (ss_res / ss_tot)
-  }
-
-  per_taxon <- data.frame(
-    Taxon = taxa_names,
-    is_binary = is_binary,
-    Misclass = taxon_misclass,
-    RMSE = taxon_rmse,
-    R2 = taxon_r2,
-    stringsAsFactors = FALSE
-  )
-
-  # --- Define weights if requested ---
-  weights <- rep(1, n_taxa)
-  if (weight_by == "prevalence") {
-    weights <- colMeans(obs_mat == 1, na.rm = TRUE)
-  } else if (weight_by == "variance") {
-    weights <- apply(obs_mat, 2, var, na.rm = TRUE)
-  }
-  weights[is.na(weights)] <- 0
-  weights <- weights / sum(weights, na.rm = TRUE)
-
-  # --- Aggregate per-taxon metrics ---
-  overall_mean_R2 <- mean(per_taxon$R2, na.rm = TRUE)
-  overall_median_R2 <- median(per_taxon$R2, na.rm = TRUE)
-  weighted_mean_R2 <- sum(per_taxon$R2 * weights, na.rm = TRUE)
-  overall_mean_RMSE <- mean(per_taxon$RMSE, na.rm = TRUE)
-
-  # --- Community-level metrics (richness) ---
-  Fe_oob <- rowSums(pred_oob, na.rm = TRUE)          # expected richness (probability sum)
-  Fo_obs <- rowSums(obs_mat, na.rm = TRUE)           # observed richness
-
-  comm_rmse <- sqrt(mean((Fo_obs - Fe_oob)^2, na.rm = TRUE))
-  ss_res_comm <- sum((Fo_obs - Fe_oob)^2, na.rm = TRUE)
-  ss_tot_comm <- sum((Fo_obs - mean(Fo_obs, na.rm = TRUE))^2, na.rm = TRUE)
-  comm_r2 <- 1 - (ss_res_comm / ss_tot_comm)
-
-  # --- Return summary list ---
-  return(list(
-    per_taxon = per_taxon,
-    summary = data.frame(
-      Metric = c("Mean_R2", "Median_R2", "Weighted_R2", "Mean_RMSE", "Community_R2", "Community_RMSE"),
-      Value = c(overall_mean_R2, overall_median_R2, weighted_mean_R2, overall_mean_RMSE, comm_r2, comm_rmse)
-    )
-  ))
-}
-oob=summarize_mrf_oob(rf_model = rf_model,threshold = 0.5,weight_by = 'none')
-oob$summary
-#savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Predictor_roles_MRF.png')
-
-#This is variable selection for the
-trees=max.subtree.rfsrc(rf_model,conservative = F)
-
-cor(predic)
-
-
 #pois binomial distrib
 
-taxon_ci <- function(p) {
-  n_sites=nrow(p)
-  ci_S <- poibin::qpoibin(c(0.95), pp=OthEco)
-  ci_Fe <- ci_S / n_sites
-  return(ci_Fe)
-}
 
-Fe_CIs <- apply(OthEco, 2, function(p_vec) {
-  ci_S <- poibin::qpoibin(qq = c(0.025, 0.975),pp=OthEco)
-  ci_Fe <- ci_S / n_sites
-  c(mean = mean(p_vec), lower = ci_Fe[1], upper = ci_Fe[2])
-})
 
 CI_dat=data.frame(X=rep(NA,ncol(OthEco)))#UL=rep(NA,ncol(OthEco)),LL=rep(NA,ncol(OthEco)),
 row.names(CI_dat)=names(OthEco)
-for( i in 1:ncol(OthEco)){
+for(i in 1:ncol(OthEco)){
   x=poibin::qpoibin(qq=c(0.025, 0.975),pp=OthEco[,i])/nrow(OthEco)
   #CI_dat$LL[i]=x[1]
   #CI_dat$UL[i]=x[2]
   CI_dat$X[i]=x*100
+}
+
+
+if(0){
+  # #k-folds
+  library(caret)
+
+  k <- 5  # choose 5- or 10-fold depending on sample size
+  folds <- createFolds(1:nrow(train), k = k, list = TRUE, returnTrain = TRUE)
+  perform_metrics=numeric(length(folds))
+  #
+  cv_results <- data.frame(fold =foldscv_results <- data.frame(fold = integer(), R2 = numeric(), RMSE = numeric()))
+  #
+  for (i in seq_along(folds)) {
+    cat("Running fold", i, "of", k, "\n")
+    train_data<-train[-folds[[i]],]
+    val_dat<-train[folds[[i]],]
+    train_idx <- folds[[i]]
+    train_fold <- train[train_idx, ]
+    test_fold  <- train[-train_idx, ]
+    message('fitting model')
+    #   # fit model
+    fit_fold <- rfsrc(
+      rf_formula,
+      data = train_data,
+      ntree = 1000,
+      nodesize = 5,
+      mtry = 4,
+      nsplit = 10,
+      nodedepth = 5
+    )
+    #
+    #   # predict on hold-out
+    pred_fold <- predict(fit_fold, newdata = val_dat)
+    pred_fold_preds=as.data.frame(sapply(pred_fold$regrOutput, function(x) x$predicted))
+    row.names(pred_fold_preds)=row.names(val_dat)
+    num_cols <- sapply(val_dat[, 1:(pred_index-2)], is.numeric)
+    val_numeric <- val_dat[, 1:(pred_index-2)][, num_cols]
+
+
+
+    obs_numeric  <- val_numeric[, sapply(val_numeric, is.numeric)]
+    pred_numeric <- pred_fold_preds[, sapply(pred_fold_preds, is.numeric)]
+
+    # Step 2: Check dimensions match
+    if(!all(dim(obs_numeric) == dim(pred_numeric))) {
+      stop("Observed and predicted data frames have different dimensions")
+    }
+
+    # Step 3: Compute RMSE
+    rmse <-  sqrt(mean((as.matrix(obs_numeric) - as.matrix(pred_numeric))^2, na.rm = TRUE))
+    #
+    #   # compute observed and expected richness
+
+    E <- rowSums(pred_fold_preds)
+
+    O <- rowSums(val_dat[,1:(pred_index-2)])
+    #E_test=rowSums(pred_fold_preds)
+
+
+
+
+    #
+    R2 <- 1 - sum((O - E)^2) / sum((O - mean(O))^2)
+    RMSE <- sqrt(mean((O - E)^2))
+    #
+    cv_results <- rbind(cv_results,
+                        data.frame(fold = i,
+                                   taxa_RMSE = rmse,
+                                   richness_RMSE = RMSE,
+                                   R2 = R2))
+  }
+  #
+  # # summarize
+  cv_summary <- cv_results %>%
+    summarise(mean_R2 = mean(R2, na.rm=TRUE),
+              sd_R2   = sd(R2, na.rm=TRUE),
+              mean_RMSE = mean(richness_RMSE, na.rm=TRUE),
+              sd_RMSE   = sd(richness_RMSE, na.rm=TRUE))
+  print(cv_summary)
+
+  cv_results
+  mean(perform_metrics)
+
+  #individual RF to tell overall variable importance
+  #across responses.
+  response_vars=names(train)[1:(pred_index-2)]
+  #pred_vars=names(train)[pred_index:ncol(train)]
+  pred_vars=names(train[,topvars])
+  vimplist<-list()
+
+  for (resp in response_vars) {
+    form <- as.formula(paste(resp, "~", paste(pred_vars, collapse = "+")))
+    m <- rfsrc(form, data = train, importance = TRUE, ntree = 500)
+    vimplist[[resp]] <- m$importance
+    print(resp)
+  }
+
+  vimp_df <- do.call(cbind, vimplist)
+  vimp_mean <- rowMeans(vimp_df, na.rm = TRUE)
+  sort(vimp_mean, decreasing = TRUE)[1:10]
+  vimp_sorted <- sort(vimp_mean, decreasing = TRUE)
+  plot(vimp_sorted, type = "b", main = "Variable Importance (Aggregated)")
+  abline(h = quantile(vimp_sorted, 0.25), col = "red", lty = 2)
+  top_vars <- names(vimp_sorted)[vimp_sorted > quantile(vimp_sorted, 0.5)]
+
+
+  vimp_summary <- data.frame(
+    Predictor = row.names(vimp_df),
+    Mean = apply(vimp_df, 1, mean, na.rm = TRUE),
+    Median = apply(vimp_df, 1, median, na.rm = TRUE),
+    Max = apply(vimp_df, 1, max, na.rm = TRUE),
+    Consistency = apply(vimp_df, 1, function(x) mean(x > quantile(x, 0.9), na.rm = TRUE))
+  )
+
+  library(ggplot2)
+  ggplot(vimp_summary, aes(x = reorder(Predictor, Mean), y = Mean)) +
+    geom_col(fill = "forestgreen", alpha = 0.7) +
+    coord_flip() +
+    labs(x = "Predictor", y = "Mean Variable Importance",
+         title = "Mean Variable Importance Across Taxa") +
+    theme_minimal(base_size = 13)
+
+  savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Varimp_MRF_251023.png')
+
+  ggplot(vimp_summary, aes(x = Mean, y = Max, label = Predictor)) +
+    geom_point(color = "dodgerblue3", size = 3) +
+    ggrepel::geom_text_repel(size=3.25) +
+    labs(x = "Mean Importance (Consistency Across Taxa)",
+         y = "Max Importance (Peak Effect for a Taxon)",
+         title = "Predictor Roles in Multivariate RF Model") +
+    theme_minimal(base_size = 13)
+  savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Predictor_roles_MRF_251023.png')
+
+}
+
+if(0){
+  #fxn to get overal OOB error for a MRF.
+  #inherently hard to do from the rfsrc function
+  #because of so many response variables, so rfsrc does not compute oob.
+  summarize_mrf_oob <- function(rf_model, threshold = 0.5, weight_by = c("none", "prevalence", "variance")) {
+    weight_by <- match.arg(weight_by)
+
+    # --- Extract observed and predicted OOB ---
+    obs_mat <- rf_model$yvar
+    pred_oob <- data.frame(sapply(rf_model$regrOutput, function(x) x$predicted.oob))
+
+    if (is.null(pred_oob)) stop("rf_model$predicted.oob is NULL — make sure you fit with OOB predictions enabled.")
+    if (!all(dim(obs_mat) == dim(pred_oob))) stop("Dimensions of observed and OOB-predicted data do not match.")
+
+    n_taxa <- ncol(obs_mat)
+    taxa_names <- colnames(obs_mat)
+
+    # --- Detect binary responses ---
+    is_binary <- apply(obs_mat, 2, function(x) {
+      ux <- unique(na.omit(x))
+      length(ux) == 2 && all(sort(ux) == c(0, 1))
+    })
+
+    # --- Initialize containers ---
+    taxon_misclass <- rep(NA_real_, n_taxa)
+    taxon_rmse <- rep(NA_real_, n_taxa)
+    taxon_r2 <- rep(NA_real_, n_taxa)
+
+    for (j in seq_len(n_taxa)) {
+      y <- obs_mat[, j]
+      yhat <- pred_oob[, j]
+
+      if (var(y, na.rm = TRUE) == 0 || all(is.na(y))) next
+
+      if (is_binary[j]) {
+        preds_class <- ifelse(yhat > threshold, 1, 0)
+        taxon_misclass[j] <- mean(preds_class != y, na.rm = TRUE)
+        taxon_rmse[j] <- sqrt(mean((y - yhat)^2, na.rm = TRUE))
+      } else {
+        taxon_rmse[j] <- sqrt(mean((y - yhat)^2, na.rm = TRUE))
+      }
+
+      ss_res <- sum((y - yhat)^2, na.rm = TRUE)
+      ss_tot <- sum((y - mean(y, na.rm = TRUE))^2, na.rm = TRUE)
+      taxon_r2[j] <- 1 - (ss_res / ss_tot)
+    }
+
+    per_taxon <- data.frame(
+      Taxon = taxa_names,
+      is_binary = is_binary,
+      Misclass = taxon_misclass,
+      RMSE = taxon_rmse,
+      R2 = taxon_r2,
+      stringsAsFactors = FALSE
+    )
+
+    # --- Define weights if requested ---
+    weights <- rep(1, n_taxa)
+    if (weight_by == "prevalence") {
+      weights <- colMeans(obs_mat == 1, na.rm = TRUE)
+    } else if (weight_by == "variance") {
+      weights <- apply(obs_mat, 2, var, na.rm = TRUE)
+    }
+    weights[is.na(weights)] <- 0
+    weights <- weights / sum(weights, na.rm = TRUE)
+
+    # --- Aggregate per-taxon metrics ---
+    overall_mean_R2 <- mean(per_taxon$R2, na.rm = TRUE)
+    overall_median_R2 <- median(per_taxon$R2, na.rm = TRUE)
+    weighted_mean_R2 <- sum(per_taxon$R2 * weights, na.rm = TRUE)
+    overall_mean_RMSE <- mean(per_taxon$RMSE, na.rm = TRUE)
+
+    # --- Community-level metrics (richness) ---
+    Fe_oob <- rowSums(pred_oob, na.rm = TRUE)          # expected richness (probability sum)
+    Fo_obs <- rowSums(obs_mat, na.rm = TRUE)           # observed richness
+
+    comm_rmse <- sqrt(mean((Fo_obs - Fe_oob)^2, na.rm = TRUE))
+    ss_res_comm <- sum((Fo_obs - Fe_oob)^2, na.rm = TRUE)
+    ss_tot_comm <- sum((Fo_obs - mean(Fo_obs, na.rm = TRUE))^2, na.rm = TRUE)
+    comm_r2 <- 1 - (ss_res_comm / ss_tot_comm)
+
+    # --- Return summary list ---
+    return(list(
+      per_taxon = per_taxon,
+      summary = data.frame(
+        Metric = c("Mean_R2", "Median_R2", "Weighted_R2", "Mean_RMSE", "Community_R2", "Community_RMSE"),
+        Value = c(overall_mean_R2, overall_median_R2, weighted_mean_R2, overall_mean_RMSE, comm_r2, comm_rmse)
+      )
+    ))
+  }
+  oob=summarize_mrf_oob(rf_model = rf_model,threshold = 0.5,weight_by = 'none')
+  oob$summary
+  #savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Predictor_roles_MRF.png')
+
+  #This is variable selection for the
+  trees=max.subtree.rfsrc(rf_model,conservative = F)
+
 }
