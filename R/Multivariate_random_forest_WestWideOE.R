@@ -62,7 +62,7 @@ and mp.model_id = 25;")
     select(-Tanypodinae.1)
   refs<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//WestWide_development_samples.csv')
   #remove 3 sites for which predictors cannot be calculated
-  ben_dat<-ben_dat[ben_dat$X %in% c(116830,132243,132807, 185022)==F,]
+  ben_dat<-ben_dat[ben_dat$X %in% c(116830,132243,132807, 185022,116435,116436,117875,116849)==F,] #last 3 are new
   names(ben_dat)[1]<-'sampleId'
 
 
@@ -96,61 +96,94 @@ and mp.model_id = 25;")
   row.names(train)<-train$sampleId;train=train[,-1]
   #the names of the taxa (responses)
    taxa_names<-names(train[,1:(pred_index-2)])
-   just_tax=train[,taxa_names]
-   tax_filter=just_tax[, apply(just_tax, 2, function(x) length(unique(x)) > 1)]
+   #just_tax=train[,taxa_names]
+   #tax_filter=just_tax[, apply(just_tax, 2, function(x) length(unique(x)) < 2)]
 
-train_sub<-train[,names(train) %in% c(names(tax_filter),names(train[,pred_index:ncol(train)]))==T ]
-  # Fit Multivariate Random Forest
-  # 'regr.multivariate' formula, response = multiple taxa columns
-  #writ ehte formula
+#variables that the model finds as the top variables via the
+#"trees" function.
+topvars=c("CaOWs","NCat","PctSalLake","Precip8110","MAST_mean08091314")
   formula_string <- paste0(
-    "cbind(", paste(names(tax_filter), collapse = ", "), ") ~ ",
-   paste(names(train_sub[,(ncol(train_sub)-13):ncol(train_sub)])))
-
+    "cbind(", paste(names(train[,1:(pred_index-2)]), collapse = ", "), ") ~ ",
+    paste(names(train[,topvars]),collapse = '+'))
+    #paste(names(train[,(ncol(train)-13):ncol(train)]),collapse = '+'))
   # Convert string to formula using parse + eval
   #Else MRF will not read it correctly
   rf_formula <- eval(parse(text = formula_string))
+  cases=1 / (rowSums(train[, taxa_names]) + 1)
+  case_wts=cases / sum(cases)
 
+  #case weights
+  if(0){compute_hybrid_weights <- function(train, resp_cols, power = 0.5, max_scale = 5) {
+
+    # Step 1: count presences per site
+    presences <- rowSums(train[, resp_cols])
+
+    # Step 2: invert to favor low-presence sites
+    raw_w <- 1 / (presences + 1)
+
+    # Step 3: apply a smoothing power to reduce extreme weights
+    smooth_w <- raw_w^power
+
+    # Step 4: optionally cap extreme values
+    smooth_w[smooth_w > max_scale] <- max_scale
+
+    # Step 5: normalize mean = 1
+    smooth_w <- smooth_w / mean(smooth_w)
+
+    return(smooth_w)
+  }}
+
+
+  #case_weights <- compute_hybrid_weights(train, taxa_names, power = 0.5, max_scale = 3)
 
 
   #this model has already been fit with the best hyperparameters
   #as found by the tune() function
   rf_model <- rfsrc(
     formula=rf_formula,
-    data=train_sub,
+    data=train,
     ntree = 500,
     mtry=4, #changed from 4 on Oct 13
     importance = 'permute',
     nodedepth = 5, #changed from 5
-    nodesize=5,
-    nsplit=10#changed from 10
+    nodesize=20,
+    nsplit=1,
+    case.wt = case_wts#changed from 10
     ) #added on 13 Oct
 #view OOB errors for each response
 OOB_pred_each=get.mv.error(rf_model)
 mean(OOB_pred_each)
+#pseuod RMSE
 mean(1- colSums((rf_model$yvar - OOB_pred_each)^2, na.rm = TRUE) /
   colSums((rf_model$yvar - colMeans(rf_model$yvar, na.rm = TRUE))^2, na.rm = TRUE))
   #get the predicted Pcs for each taxon here
-  results<-data.frame(sapply(rf_model$regrOutput, function(x) x$predicted))
+  results<-data.frame(sapply(rf_model$regrOutput, function(x) x$predicted.oob))
+  results_inbag=data.frame(sapply(rf_model$regrOutput, function(x) x$predicted))
   #set row names
-  row.names(results)=row.names(train_sub)
+  row.names(results)=row.names(train)
   #adjust hyperparamters for best model
   #if set to if(0), it has already been run!
   if(0){
   tune(rf_formula,
-             train_sub,
+             train,
              doBest = T,
              improve=1e-1, #define what improvement means for OOB error
        sampsize = 500, #number of samples for the subsamples
        mtryStart =round(length(pred_index:ncol(train))/3), #default from rfsrc doc
        trace=T, #show the progress in console
-       nodesizeTry = c(10,20,30,40,50),
+       nodesizeTry = c(5, 10,20,30),
        ntreeTry = 500,
        nsplit=5) #a small number of trees for memory usage
   }
+
+
+quick_results=cbind.data.frame(Pred=t(round(results[1,],2)),
+             Obs=t(train[1,names(train) %in% names(results)]))
+names(quick_results)=c('Pred','Obs')
+
   #calculating Fo and Fe, then subsetting out those which are uncommon
   #and/or do not have traits
-  Fos=colSums(train_sub[,1:(ncol(train_sub)-14)])
+  Fos=colSums(train[,1:(pred_index-2)])
   Fes=colSums(results)
   Fos_small=Fos[names(Fos) %in% taxa_notraits_rare$taxon==F]
   Fes_small=Fes[names(Fes) %in% taxa_notraits_rare$taxon==F]
@@ -158,10 +191,10 @@ mean(1- colSums((rf_model$yvar - OOB_pred_each)^2, na.rm = TRUE) /
   ratio_dat=data.frame(Fo=Fos_small,Fe=Fes_small)
   ratio_small=ratio[names(ratio) %in% taxa_notraits_rare$taxon==F]
   boxplot(ratio_small,ylab='Fo/Fe ratio')
-  savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Fo_Fe_boxplot.png')
-  plot(Fes_small,Fos_small,ylab='Fo',xlab='Fe',main='Reference Fo vs Fe')
+  savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Fo_Fe_boxplot_251023.png')
+  plot(Fes,Fos,ylab='Fo',xlab='Fe',main='Reference Fo vs Fe')
   abline(0,1,col='red')
-  savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Ref_FovsFe_251015.png')
+  savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Ref_FovsFe_251023.png')
 
 
   # Predict on prob. sites
@@ -242,8 +275,9 @@ and mp.model_id = 25")
 
   new_sites <- test_dat[,(pred_test_index-1):ncol(test_dat)]
   row.names(new_sites)=row.names(test_dat)
-
+  test_site_names<-row.names(new_sites)
   new_sites<-as.data.frame(lapply(new_sites,as.numeric))
+  row.names(new_sites)<-test_site_names
 #predict the model onto the prob. sites
   pred <- predict(rf_model, newdata = new_sites)
 
@@ -251,23 +285,42 @@ and mp.model_id = 25")
   # Extract predicted probabilities for each taxon at prob sites
   pred_probs <- as.data.frame(sapply(pred$regrOutput, function(x) x$predicted))
   row.names(pred_probs)<-row.names(new_sites)
-
+  #write.csv(pred_probs,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_Prob_Pcs.csv')
 #calculating Fo and Fe
   Pr_PA=test_dat[,names(test_dat) %in% names(pred_probs)]
   Pr_PA=as.data.frame(ifelse(Pr_PA >0,1,0))
+  #write.csv(Pr_PA, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_Prob_Os.csv')
   PFos=colSums(Pr_PA)
   PFes=colSums(pred_probs)
+
+  Pr_PA_oth=Pr_PA[row.names(Pr_PA) %in% row.names(Pesgrp2)==F,]
+  pred_probs_oth=pred_probs[row.names(pred_probs) %in% row.names(Pesgrp2)==F,]
+
+  Pr_PA_x=Pr_PA[row.names(Pr_PA) %in% row.names(Pesgrp2),]
+  pred_probs_x=pred_probs[row.names(pred_probs) %in% row.names(Pesgrp2),]
 
   Pratio=PFos/PFes
   Pratio_small=Pratio[names(Pratio) %in% taxa_notraits_rare$taxon==F]
   PFos_small=PFos[names(PFos) %in% taxa_notraits_rare$taxon==F]
   PFes_small=PFes[names(PFes) %in% taxa_notraits_rare$taxon==F]
+  Poth_Fo=colSums(Pr_PA_oth);Poth_Fe=colSums(pred_probs_oth)
+  Poth_Fosmall=Poth_Fo[names(Poth_Fo) %in% taxa_notraits_rare$taxon==F]
+  Poth_Fesmall=Poth_Fe[names(Poth_Fe) %in% taxa_notraits_rare$taxon==F]
+  Px_Fo=colSums(Pr_PA_x);Px_Fe=colSums(pred_probs_x)
+  Px_Fosmall=Px_Fo[names(Px_Fo) %in% taxa_notraits_rare$taxon==F]
+  Px_Fesmall=Px_Fe[names(Px_Fe) %in% taxa_notraits_rare$taxon==F]
+  #Poth_ratio=Poth_Fo/Poth_Fe
+  #Px_ratio=Px_Fo/Px_Fe
+  Poth_ratio_small=Poth_Fosmall/Poth_Fesmall
+  Px_ratio_small=Px_Fosmall/Poth_Fesmall
   plot(PFes_small,PFos_small,ylab='Fo',xlab='Fe',main='Prob. Fo vs Fe')
   abline(0,1,col='red')
 
+  Poth_plotdat=data.frame(Fo=Poth_Fosmall,Fe=Poth_Fesmall)
+  Px_plotdat=data.frame(Fo=Px_Fosmall,Fe=Px_Fesmall)
   boxplot(Pratio_small,ylab='Fo/Fe ratio')
-  savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Prob_FoFe_ratio.png')
-  savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Prob_FovsFe_251015.png')
+  savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Prob_FoFe_ratio_251023.png')
+  savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Prob_FovsFe_box_251023.png')
 
 
   boxplot(Pratio_small,at=2,xlim=c(1,4),ylab='Fo/Fe')
@@ -276,14 +329,38 @@ and mp.model_id = 25")
   axis(side=1,at=c(2,3),labels = c('Prob','Train'))
 
 
-  savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Box_compare_FoFes_251015.png')
+  savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Box_compare_FoFes_251023.png')
 
+boxplot(ratio_small,at=1,xlim=c(0,3),ylim=c(0,max(na.omit(Pratio_small))),col='purple3',ylab='Fo/Fe ratio')
+boxplot(Pratio_small,at=2,add=T,col='yellow3')
+legend('topright',
+       leg=c('Reference',
+             'Probabilistic'),
+       pch=rep(22,2),
+       pt.bg=c('purple4',
+               'yellow3'),
+       bty='n',
+       cex=0.8)
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//regional_boxplot_compare.png')
 
-
-  # ---------------------------
+boxplot(Oth_ratio_small,at=1,xlim=c(0,5),ylim=c(0,max(na.omit(Poth_ratio_small))),col='purple3',ylab='Fo/Fe ratio')
+boxplot(Poth_ratio_small,at=2,add=T,col='yellow3')
+boxplot(Xer_ratio_small,at=3,add=T,col='purple3')
+boxplot(Px_ratio_small,at=4,add=T,col='yellow3')
+mtext(text = c("Other", "Xeric"), side = 1, line = 1, at = c(1.5, 3.5), cex = 1)
+legend('topright',
+       leg=c('Reference',
+             'Probabilistic'),
+       pch=rep(22,2),
+       pt.bg=c('purple4',
+               'yellow3'),
+       bty='n',
+       cex=0.8)
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//ecoregion_boxplot_compare.png')
+# ---------------------------
 #creating O/E scores, quasi-RIVPACS style
 #set the Pc threshold, in this case, 0.5
-threshold <- 0
+threshold <- 0.5
   #define fxn that will calculate the O/E scores
 OE_calc=function(results_data, PA,threshold){
   Os=list()
@@ -308,14 +385,101 @@ OE_calc=function(results_data, PA,threshold){
   return(OE.dat)
 }
 #run it on ref and prob. sites
+EastXer=results[row.names(results) %in% groups$`Eastern Xeric Plateaus`$sampleId,]
+OthEco=results[row.names(results) %in% groups$`Eastern Xeric Plateaus`$sampleId==F,]
+XerTrain=train[row.names(train) %in% groups$`Eastern Xeric Plateaus`$sampleId,]
+XerTrain=XerTrain[,1:(ncol(XerTrain)-15)]
+OthTrain=train[row.names(train) %in% groups$`Eastern Xeric Plateaus`$sampleId==F,]
+OthTrain=OthTrain[,1:(ncol(OthTrain)-15)]
+XerFo=colSums(XerTrain)
+XerFe=colSums(EastXer)
+Xer_ratio=XerFo/XerFe
+
+OthFo=colSums(OthTrain)
+OthFe=colSums(OthEco)
+Oth_ratio=OthFo/OthFe
+Oth_ratio_small=Oth_ratio[names(Oth_ratio) %in% names(taxa_notraits_rare)==F]
+Xer_ratio_small=Xer_ratio[names(Xer_ratio) %in% names(taxa_notraits_rare)==F]
+
+
+par(mfrow=c(1,2))
+plot(OthFe,OthFo)
+abline(0,1,col='red')
+plot(XerFe,XerFo)
+abline(0,1,col='red')
+
+OthEco_plotdat=data.frame(Fo=OthFo,Fe=OthFe)
+EastXer_plotdat=data.frame(Fo=XerFo,Fe=XerFe)
+
+# WW_Xer=Os[Os$X %in% groups$`Eastern Xeric Plateaus`$sampleId==T,]
+# WW_E_Xer=Es[Es$X %in% groups$`Eastern Xeric Plateaus`$sampleId==T,]
+# WW_XerFo=colSums(WW_Xer[,2:ncol(WW_Xer)])
+# WW_XerFe=colSums(WW_E_Xer[,2:ncol(WW_E_Xer)])
+# WW_XerFe_ratio=WW_XerFo/WW_XerFe
+# WW_XerFe_plotdat=data.frame(Fo=WW_XerFo,Fe=WW_XerFe)
+#
+# WW=Os[Os$X %in% groups$`Eastern Xeric Plateaus`$sampleId==F,]
+# WW_E=Es[Es$X %in% groups$`Eastern Xeric Plateaus`$sampleId==F,]
+# WW_Fo=colSums(WW[,2:ncol(WW)])
+# WW_Fe=colSums(WW_E[,2:ncol(WW_E)])
+# WW_Fe_ratio=WW_Fo/WW_Fe
+# WW_plotdat=data.frame(Fo=WW_Fo,Fe=WW_Fe)
+
+combined_dat=data.frame(Fo=Fos_small,Fe=Fes_small)
+A<-ggplot(data=OthEco_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+ggtitle('Other Ecoregions')
+B<-ggplot(data=EastXer_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+ggtitle('Eastern Xeric')
+ggplot(data=combined_dat,aes(x=Fe,y=Fo))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//MRF_allsites_FoFe.png')
+C<-ggplot(data=Poth_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')
+D<-ggplot(data=Px_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')
+
+gridExtra::grid.arrange(A,B,C,D,ncol=2)
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//MRF_ecoregions_FoFe_sitecompare.png')
 MRF_ref_OEs=OE_calc(results_data = results,
-                    PA=train_sub,
+                    PA=train,
                     threshold=threshold)
 row.names(MRF_ref_OEs)=row.names(results)
 MRF_test_OEs=OE_calc(results_data=pred_probs,
                      PA=Pr_PA,
                      threshold=threshold)
+XerOE=OE_calc(results_data = EastXer,
+              PA=XerTrain,
+              threshold=threshold)
+OthEco_OE=OE_calc(results_data = OthEco,
+              PA=OthTrain,
+              threshold=threshold)
 
+POthOE=OE_calc(results_data = pred_probs_oth,
+               PA=Pr_PA_oth,
+               threshold = threshold)
+PXOE=OE_calc(results_data = pred_probs_x,
+             PA=Pr_PA_x,
+             threshold = threshold)
+# WW_calc=OE_calc(results_data = WW_E[,-1],
+#                 PA=WW[,-1],
+#                 threshold = threshold)
+# WW_X_calc=OE_calc(results_data = WW_E_Xer[,-1],
+#                 PA=WW_Xer[,-1],
+#                 threshold = threshold)
+sd(OthEco_OE$OtoE)
+boxplot(OthEco_OE$OtoE,at=1,xlim=c(0,5),ylab='O/E score',col='purple4',ylim=c(0,1.4),
+        names=c('A'))
+boxplot(POthOE$OtoE,at=2,add=T,col='yellow3')
+boxplot(XerOE$OtoE,at=3,add=T,col='purple4')
+boxplot(PXOE$OtoE,at=4,add=T,col='yellow3')
+#axis(1,at=c(1:4),labels = c('WW','MRF WW','WW EXP','MRF EXP'),cex.axis=0.8 )
+mtext(text = c("Other", "Xeric"), side = 1, line = 1, at = c(1.5, 3.5), cex = 1)
+legend('topright',
+       leg=c('Reference',
+             'Probabilistic'),
+       pch=rep(22,2),
+       pt.bg=c('purple4',
+               'yellow3'),
+       bty='n',
+       cex=0.8)
+#
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//OtoE_boxes_ecoregions_251107.png')
+#savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//OtoE_boxes_Pc05_251106.png')
 ### This is just looking at O/E performance and metrics surrounding it
 hist(MRF_ref_OEs$OtoE)
 hist(MRF_test_OEs$OtoE)
@@ -324,19 +488,29 @@ sd(MRF_ref_OEs$OtoE)
 sd(MRF_test_OEs$OtoE)
 
 rmse_train <- sqrt(mean((MRF_ref_OEs$OtoE - 1)^2)); rmse_test <- sqrt(mean((MRF_test_OEs$OtoE - 1)^2))
-
+rmse_xer=sqrt(mean((XerOE$OtoE - 1)^2))
+rmse_oth=sqrt(mean((OthEco_OE$OtoE - 1)^2))
 rmse_train
 rmse_test
 
 quantile(MRF_ref_OEs$OtoE, probs = c(0.01,0.05,0.1,0.25,0.5,0.75,0.9,0.95,0.99))
 
-boxplot(MRF_ref_OEs$OtoE,at=1,xlim=c(0,3),ylab='O/E',ylim=c(min(MRF_test_OEs$OtoE),max(MRF_ref_OEs$OtoE)))
-boxplot(MRF_test_OEs$OtoE,at=2,add=T)
-axis(side=1,at=c(1,2),labels=c('Train','Prob.'))
+boxplot(MRF_ref_OEs$OtoE,at=1,xlim=c(0,3),ylab='O/E',ylim=c(min(MRF_test_OEs$OtoE),max(MRF_ref_OEs$OtoE)),col='purple4')
+boxplot(MRF_test_OEs$OtoE,at=2,add=T,col='yellow3')
+legend('topright',
+       leg=c('Reference',
+             'Probabilistic'),
+       pch=rep(22,2),
+       pt.bg=c('purple4',
+               'yellow3'),
+       bty='n',
+       cex=0.8)
+
+#axis(side=1,at=c(1,2),labels=c('Ref','Prob.'))
 abline(h=median(MRF_ref_OEs$OtoE),lty=2)
 abline(h=median(MRF_test_OEs$OtoE),lty=2)
 
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//OtoE_boxes_Pc0_251015.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//OtoE_boxes_Pc05_251107.png')
 
 
 
@@ -348,10 +522,19 @@ MRF_WW_ratios=data.frame(Median_ratio=median(na.omit(ratio_small)),
 MRF_WW_ratios
 
 graphics.off()
-plot(MRF_ref_OEs$E,MRF_ref_OEs$O,ylab='O',xlab='E',main='Ref. O vs E')
+plot(MRF_ref_OEs$E,MRF_ref_OEs$O,ylab='O',xlab='E',main='Ref. O vs E',ylim=c(5,max(MRF_ref_OEs$O)),
+     xlim=c(5,max(MRF_ref_OEs$O)))
 abline(0,1,col='red')
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//OvsE_Pc_251015.png')
 OE_lm<-lm(MRF_ref_OEs$O~MRF_ref_OEs$E)
+abline(OE_lm,col='blue')
+legend('topleft',
+       leg=c('1:1',
+             'Regression'),
+       lty=rep(1,2),
+       col=c('red','blue'),
+       bty='n')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//OvsE_Pc0_251023.png')
+
 coeffs=coef(OE_lm)
 coeffs
 MRF_WW_OEs=data.frame(Median_OE=median(na.omit(MRF_ref_OEs$OtoE)),
@@ -364,6 +547,7 @@ MRF_WW_OEs=data.frame(Median_OE=median(na.omit(MRF_ref_OEs$OtoE)),
                       R2=summary(OE_lm)$adj.r.squared)
 MRF_WW_OEs
 summary(OE_lm)$adj.r.squared
+
 
 
 #clipr::write_clip(MRF_WW_OEs)
@@ -413,9 +597,9 @@ abline(h=median(deg_OEs$OtoE),lty=2)
 axis(side=1,at=1:3,labels=c('Reference','Probabilistic',"'Impaired'"))
 
 
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//OE_types_boxes_Pc0_251015.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//OE_types_boxes_Pc0_251023.png')
 
-plot(density(MRF_ref_OEs$OtoE),ty='l',main='O/E densities',xlim=c(0,1.6),xlab='O/E score')
+plot(density(MRF_ref_OEs$OtoE),ty='l',main='O/E densities',xlim=c(0,1.6),xlab='O/E score',ylim=c(0,2.2))
 lines(density(MRF_test_OEs$OtoE),col='red')
 lines(density(deg_OEs$OtoE),col='blue')
 legend('topleft',
@@ -425,7 +609,7 @@ legend('topleft',
        lty=rep(1,3),
        col=c('black','red','blue'),
        bty='n')
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//OE_types_densities_Pc05_251015.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//OE_types_densities_Pc0_251023.png')
 
 #ANOVA
 OE_dat_comp=data.frame(Group=as.factor(c(rep('Ref.',nrow(MRF_ref_OEs)),
@@ -439,7 +623,7 @@ median(MRF_test_OEs$OtoE)
 median(deg_OEs$OtoE)
 median(MRF_ref_OEs$OtoE)
 
-t.test(MRF_ref_OEs$OtoE, deg_OEs$OtoE)
+t.test(MRF_ref_OEs$OtoE, MRF_test_OEs$OtoE)
 
 
 
@@ -448,19 +632,19 @@ t.test(MRF_ref_OEs$OtoE, deg_OEs$OtoE)
  library(caret)
 
  k <- 5  # choose 5- or 10-fold depending on sample size
- folds <- createFolds(1:nrow(train_sub), k = k, list = TRUE, returnTrain = TRUE)
+ folds <- createFolds(1:nrow(train), k = k, list = TRUE, returnTrain = TRUE)
  perform_metrics=numeric(length(folds))
 #
  cv_results <- data.frame(fold =foldscv_results <- data.frame(fold = integer(), R2 = numeric(), RMSE = numeric()))
 #
  for (i in seq_along(folds)) {
    cat("Running fold", i, "of", k, "\n")
-   train_data<-train_sub[-folds[[i]],]
-   val_dat<-train_sub[folds[[i]],]
+   train_data<-train[-folds[[i]],]
+   val_dat<-train[folds[[i]],]
    train_idx <- folds[[i]]
-   train_fold <- train_sub[train_idx, ]
-   test_fold  <- train_sub[-train_idx, ]
-
+   train_fold <- train[train_idx, ]
+   test_fold  <- train[-train_idx, ]
+message('fitting model')
 #   # fit model
    fit_fold <- rfsrc(
      rf_formula,
@@ -476,8 +660,8 @@ t.test(MRF_ref_OEs$OtoE, deg_OEs$OtoE)
    pred_fold <- predict(fit_fold, newdata = val_dat)
    pred_fold_preds=as.data.frame(sapply(pred_fold$regrOutput, function(x) x$predicted))
   row.names(pred_fold_preds)=row.names(val_dat)
-   num_cols <- sapply(val_dat[, 1:(ncol(val_dat)-14)], is.numeric)
-   val_numeric <- val_dat[, 1:(ncol(val_dat)-14)][, num_cols]
+   num_cols <- sapply(val_dat[, 1:(pred_index-2)], is.numeric)
+   val_numeric <- val_dat[, 1:(pred_index-2)][, num_cols]
 
 
 
@@ -496,7 +680,7 @@ t.test(MRF_ref_OEs$OtoE, deg_OEs$OtoE)
 
    E <- rowSums(pred_fold_preds)
 
-   O <- rowSums(val_dat[,1:(ncol(val_dat)-14)])
+   O <- rowSums(val_dat[,1:(pred_index-2)])
    #E_test=rowSums(pred_fold_preds)
 
 
@@ -525,14 +709,15 @@ t.test(MRF_ref_OEs$OtoE, deg_OEs$OtoE)
  mean(perform_metrics)
 
 #individual RF to tell overall variable importance
-response_vars=names(train_sub)[1:(ncol(train_sub)-14)]
-pred_vars=names(train_sub)[(ncol(train_sub)-13):ncol(train_sub)]
-
+#across responses.
+response_vars=names(train)[1:(pred_index-2)]
+#pred_vars=names(train)[pred_index:ncol(train)]
+pred_vars=names(train[,topvars])
 vimplist<-list()
 
 for (resp in response_vars) {
   form <- as.formula(paste(resp, "~", paste(pred_vars, collapse = "+")))
-  m <- rfsrc(form, data = train_sub, importance = TRUE, ntree = 500)
+  m <- rfsrc(form, data = train, importance = TRUE, ntree = 500)
   vimplist[[resp]] <- m$importance
   print(resp)
 }
@@ -562,6 +747,8 @@ ggplot(vimp_summary, aes(x = reorder(Predictor, Mean), y = Mean)) +
        title = "Mean Variable Importance Across Taxa") +
   theme_minimal(base_size = 13)
 
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Varimp_MRF_251023.png')
+
 ggplot(vimp_summary, aes(x = Mean, y = Max, label = Predictor)) +
   geom_point(color = "dodgerblue3", size = 3) +
   ggrepel::geom_text_repel(size=3.25) +
@@ -569,19 +756,20 @@ ggplot(vimp_summary, aes(x = Mean, y = Max, label = Predictor)) +
        y = "Max Importance (Peak Effect for a Taxon)",
        title = "Predictor Roles in Multivariate RF Model") +
   theme_minimal(base_size = 13)
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Predictor_roles_MRF_251023.png')
 
 
 
 
 #fxn to get overal OOB error for a MRF.
 #inherently hard to do from the rfsrc function
-#because of so many response variables.
+#because of so many response variables, so rfsrc does not compute oob.
 summarize_mrf_oob <- function(rf_model, threshold = 0.5, weight_by = c("none", "prevalence", "variance")) {
   weight_by <- match.arg(weight_by)
 
   # --- Extract observed and predicted OOB ---
   obs_mat <- rf_model$yvar
-  pred_oob <- data.frame(sapply(rf_model$regrOutput, function(x) x$predicted))
+  pred_oob <- data.frame(sapply(rf_model$regrOutput, function(x) x$predicted.oob))
 
   if (is.null(pred_oob)) stop("rf_model$predicted.oob is NULL — make sure you fit with OOB predictions enabled.")
   if (!all(dim(obs_mat) == dim(pred_oob))) stop("Dimensions of observed and OOB-predicted data do not match.")
@@ -662,8 +850,36 @@ summarize_mrf_oob <- function(rf_model, threshold = 0.5, weight_by = c("none", "
     )
   ))
 }
-oob=summarize_mrf_oob(rf_model = rf_model,threshold = 0.5,weight_by = 'prevalence')
+oob=summarize_mrf_oob(rf_model = rf_model,threshold = 0.5,weight_by = 'none')
 oob$summary
+#savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Predictor_roles_MRF.png')
+
+#This is variable selection for the
+trees=max.subtree.rfsrc(rf_model,conservative = F)
+
+cor(predic)
 
 
+#pois binomial distrib
 
+taxon_ci <- function(p) {
+  n_sites=nrow(p)
+  ci_S <- poibin::qpoibin(c(0.95), pp=OthEco)
+  ci_Fe <- ci_S / n_sites
+  return(ci_Fe)
+}
+
+Fe_CIs <- apply(OthEco, 2, function(p_vec) {
+  ci_S <- poibin::qpoibin(qq = c(0.025, 0.975),pp=OthEco)
+  ci_Fe <- ci_S / n_sites
+  c(mean = mean(p_vec), lower = ci_Fe[1], upper = ci_Fe[2])
+})
+
+CI_dat=data.frame(X=rep(NA,ncol(OthEco)))#UL=rep(NA,ncol(OthEco)),LL=rep(NA,ncol(OthEco)),
+row.names(CI_dat)=names(OthEco)
+for( i in 1:ncol(OthEco)){
+  x=poibin::qpoibin(qq=c(0.025, 0.975),pp=OthEco[,i])/nrow(OthEco)
+  #CI_dat$LL[i]=x[1]
+  #CI_dat$UL[i]=x[2]
+  CI_dat$X[i]=x*100
+}
