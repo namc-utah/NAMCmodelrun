@@ -21,6 +21,7 @@ traits<-traits[,-1]
 #drop the OTU column from the trait table
 #trait_table<-trait_table[,-2]
 #make the trait table wide format (since the O/E table is wide)
+if(0){
 wide_traits<-as.data.frame(traits |>
                              pivot_wider(names_from = attribute_name, values_from = attribute_value,
                                          values_fn = list) |>
@@ -127,7 +128,7 @@ savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//
 vegan::adonis2(sit_gow~status,data=BC_scores)
 bd<-vegan::betadisper(sit_gow,BC_scores$status)
 anova(bd)
-
+}
 bug_dat=rbind(ref_a,prob_a)
 bug_dat=bug_dat[bug_dat$OTU %in% taxa_notraits_rare$taxon==F,]
 bug_agg=aggregate(split_count ~ sample_id + Status + OTU, data = bug_dat, sum)
