@@ -311,7 +311,7 @@ CO_v5_bug_export<-function(sampleIds){
   #CObugs=dplyr::left_join(bugRaw,bugsTranslation, by=c("taxonomyId", "sampleId"))
   CObugs=dplyr::left_join(bugRaw,samples, by='sampleId')
   CObugs2<-as.data.frame(matrix(nrow=nrow(CObugs),ncol=13))
-  names(CObugs2)<-c("Project","Station","Name","Location","CollDate","Organism","Individuals","Stage","CommentsTaxa","RepNum","Grids","CommentsSample","CommentsRep")#13 is number for bug import
+  #names(CObugs2)<-c("Project","Station","Name","Location","CollDate","Organism","Individuals","Stage","CommentsTaxa","RepNum","Grids","CommentsSample","CommentsRep")#13 is number for bug import
   CObugs2$Project=CObugs$boxId
   CObugs2$Station=CObugs$sampleId
   CObugs2$Name=CObugs$siteId
