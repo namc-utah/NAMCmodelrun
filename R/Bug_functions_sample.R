@@ -286,7 +286,55 @@ bugRaw<-bugRaw[!duplicated(bugRaw$burner),]
             "then read resulting excel file back into R to save results in the database.", sep="\n"))
   return(CObugs)
 }
+CO_v5_bug_export<-function(sampleIds){
+  bugRaw =
+    NAMCr::query(
+      "sampleTaxaTranslationRarefied",
+      sampleIds=sampleIds,
+      translationId=92,
+      fixedCount=300
+    )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
 
+  bugLives = NAMCr::query(
+    "sampleTaxa",
+    sampleIds=sampleIds
+  )
+  samples = NAMCr::query(
+    "samples",
+    include = c("boxId","sampleId",'siteId','sampleDate',"siteName", "sampleMethod","habitatName","area"),# possibly add waterbody name to the samples NAMCr::query
+    sampleIds=sampleIds
+  )
+  bugRaw<-plyr::join(bugRaw,bugLives[,c('taxonomyId','lifeStageAbbreviation')],by='taxonomyId')
+  bugRaw$burner<-paste(bugRaw$sampleId,bugRaw$otuName,bugRaw$splitCount)
+  bugRaw<-bugRaw[!duplicated(bugRaw$burner),]
+  # join that data together into a single dataframe
+  #CObugs=dplyr::left_join(bugRaw,bugsTranslation, by=c("taxonomyId", "sampleId"))
+  CObugs=dplyr::left_join(bugRaw,samples, by='sampleId')
+  CObugs2<-as.data.frame(matrix(nrow=nrow(CObugs),ncol=13))
+  #names(CObugs2)<-c("Project","Station","Name","Location","CollDate","Organism","Individuals","Stage","CommentsTaxa","RepNum","Grids","CommentsSample","CommentsRep")#13 is number for bug import
+  CObugs2$Project=CObugs$boxId
+  CObugs2$Station=CObugs$sampleId
+  CObugs2$Name=CObugs$siteId
+  CObugs2$Location=CObugs$siteName # previously used waterbody name.. use that if we export this data for use by CO state
+  CObugs2$CollDate=CObugs$sampleDate
+  CObugs2$Organism=CObugs$otuName
+  CObugs2$Individuals=CObugs$splitCount
+  CObugs2$Stage=CObugs$lifeStageAbbreviation
+  CObugs2$CommentsTaxa=paste0("taxonomyId: ",CObugs$taxonomyId)
+  CObugs2$RepNum=1
+  CObugs2$Grids=NA
+  CObugs2$CommentsSample=paste0("sampleMethod: ",CObugs$sampleMethod, "area: ",CObugs$area)
+  CObugs2$CommentsRep=paste0("habitat: ",CObugs$habitatName)
+  #CObugs=CObugs[,c("Project","Station","Name","Location","CollDate","Organism","Individuals","Stage","CommentsTaxa","RepNum","Grids","CommentsSample","CommentsRep")]
+  #write excel file to workspace
+  write.csv(CObugs2,file = paste0(CO_path,"CObugs","boxId_",CObugs2$Project[1],"_",Sys.Date(),".csv"),row.names=FALSE)
+  cat(paste("csv with CO bugs has been written out to the CO EDAS imports folder.",
+            "Convert this csv to excel 2003 and import into CO EDAS access database to compute the CSCI score.",
+            "Follow instructions in this pdf Box\\NAMC\\OE_Modeling\\NAMC_Supported_OEmodels\\CO\\Documentation\\EDAS2017\\Tutorial Guide to EDAS_Version 1.7.pdf",
+            "to import bug and habitat data, harmonize taxa list, rarefy and compute MMI",
+            "then read resulting excel file back into R to save results in the database.", sep="\n"))
+  return(CObugs)
+}
 CO_pred_export<-function(prednew){
   #make empty df
   prednews<-as.data.frame(matrix(ncol=15,nrow=nrow(prednew)))
@@ -296,7 +344,7 @@ CO_pred_export<-function(prednew){
                      'SUMMER','WINTER','LOG_XP_PT',
                      'SQRT_TOPO','PRCPSHORTWS','DOY')
   #fill the df with predictors that are named how EDAS wants
-  prednews$StationID=prednew$sampleId
+  prednews$StationID=row.names(prednew)
   prednews$WaterbodyName=def_samples$siteName
   prednews$Location=rep('Location',nrow(prednew))
   prednews$Lat_Dec=prednew$Lat_Dec

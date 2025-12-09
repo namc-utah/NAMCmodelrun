@@ -3,6 +3,7 @@
 #2. Run the Run_models.R code to ensure that you have the appropriate bugnew
 #and to get the model results saved to the database.
 #4. Ctrl+A and run this code.
+Cal.OOB=F
 Eprd<-list()
 
   #first convert bug matrix to P/A (1/0);
@@ -84,4 +85,14 @@ for(z in 1:length(Eprd)){
   pc_list[[z]]<-pp
   message(paste(z, ' of ',length(Eprd)))
 }
-write.csv(do.call(rbind,pc_list),'C://Users//andrew.caudillo//Box//NAMC//OutgoingData//Data exports//AREMP//AREMPOEs_Pcs.csv')
+#
+library(dplyr)
+dt_list<-lapply(pc_list,data.table::as.data.table)
+ long_dt<-data.table::rbindlist(dt_list)
+ Pcs<-as.data.frame(data.table::dcast(long_dt,sampleId~Taxon,value.var = 'Pc'))
+ row.names(Pcs)<-Pcs$sampleId;Pcs<-Pcs[,-1]
+ Os<-bugnew.pa[,order(colnames(bugnew.pa))]
+ #write.csv(do.call(rbind,pc_list),'C://Users//andrew.caudillo//Box//NAMC//OutgoingData//Data exports//AREMP//AREMPOEs_Pcs.csv')
+ #write.csv(Os,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Observed_PA.csv')
+ #write.csv(Pcs,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Ref_Expected.csv')
+  write.csv(Os,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Prob_O.csv')
