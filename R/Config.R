@@ -16,10 +16,10 @@ source("R/Model_functions.R")
 source("R/model.predict.RanFor.4.2.r")
 source("R/model.predict.v4.1.r")
 source("R/ModelApplicabilityAll.R")
-source("R/ADEQBugDataFormatter.R")
+#source("R/ADEQBugDataFormatter.R")
 
-#ecoregion_base_path="C:/Users/jenni/Box/NAMC (Trip Armstrong)/"
-ecoregion_base_path="C://Users//andrew.caudillo//Box//NAMC//"
+ecoregion_base_path="C:/Users/jenni/Box/NAMC (Trip Armstrong)/"
+#ecoregion_base_path="C://Users//andrew.caudillo//Box//NAMC//"
 # to run the scripts choose a boxId or projectId
 boxId=8051
 # test boxes
@@ -27,14 +27,14 @@ boxId=8051
 
 
 #projects=NAMCr::query("projects")
-#projectId=2466
+#projectId=4182
 
 
 
 # then input a modelID
 models=NAMCr::query("models")
 
-modelID=2
+modelID=25
 
 menu(c("Yes","No"),
      title=paste("Is this correct? Box number = ",boxId," Model(s) is/are ",modelID))
