@@ -5,7 +5,7 @@
 #https://namc-usu.org/    then to SampleProcessing/Online Sample Submission (INSTAR) to create an account.
 # Contact Trip or Jennifer to get your role set to customer and external collaborator
 
-
+library(dplyr)
 # Step 2 install package to connect to NAMC database - only need to do once
 remotes::install_github("namc-utah/NAMCr", force=TRUE)
 
@@ -34,12 +34,12 @@ Report=subset(Report, is.na(modelResult)==FALSE)
 # subset and order result columns
 Report2=Report[,c("sampleId",'visitId','customerSiteCode','modelId','modelAbbr','fixedCount','oResult','eResult','modelApplicability','modelResult','condition','notes')]
 # rename columns for the AIM database
-Report2=setNames(Report2,c('SampleID','EvaluationID','PointID','modelId','OE_MMI_ModelUsed','MacroinvertebrateCount','ObservedInvertRichness','ExpectedInvertRichness','OE_MMI_ModelApplicability','modelResult','condition','InvasiveInvertSpecies'))
+Report2=setNames(Report2,c('SampleID','EvaluationID','PointID','modelId','OE_MMI_ModelUsed','MacroinvertebrateCount','ObservedInvertRichness','ExpectedInvertRichness','OE_MMI_ModelApplicability','modelResult','condition','notes'))
 Report2$OE_MMI_ModelApplicability=ifelse(Report2$OE_MMI_ModelApplicability=='TRUE','Pass',ifelse(Report2$OE_MMI_ModelApplicability=='FALSE','Fail',Report2$OE_MMI_ModelApplicability))
 Report2$MMI_Macroinvertebrate=ifelse(Report2$modelId %in% c(3,4,5,6,8,24),Report2$modelResult,NA)
 Report2$OE_Macroinvertebrate=ifelse(Report2$modelId %in% c(1,2,7,9,10,11,12,13:23,25:26),Report2$modelResult, NA)
 # get standard field office level results for AIM database
-Report3=subset(Report2, modelId %in% c(1:7,9:26) & InvasiveInvertSpecies!='National')
+Report3=subset(Report2, modelId %in% c(1:7,9:26) & notes!='National')
 ###If you want results for a national report get westwide OE scores comment out above line and uncomment this line... invasive species should be gotten only from field office level query above
 ##Report3=subset(Report2, modelId %in% c(25,26))
 
@@ -48,7 +48,7 @@ Report3=subset(Report2, modelId %in% c(1:7,9:26) & InvasiveInvertSpecies!='Natio
 # get raw bug data
 bugRaw = NAMCr::query(
   "sampleTaxa",
-  sampleIds=def_model_results$sampleId
+  sampleIds=samples$sampleId
 )
 #subset taxa in samples to only invasives
 bugraw = subset(bugRaw,taxonomyId %in% c(1330,1331,2633, 2671,4933,4934,4935,4936,4937,4938,4939,4940,4941,4942,1019,1994,5096,1515,1518,1604,2000,4074,1369,2013,1579))
@@ -60,11 +60,11 @@ invasives$InvasiveInvertSpecies=gsub("\"","",invasives$InvasiveInvertSpecies)
 invasives$InvasiveInvertSpecies=gsub("\\(","",invasives$InvasiveInvertSpecies)
 invasives$InvasiveInvertSpecies=gsub("\\)","",invasives$InvasiveInvertSpecies)
 # join to list of all samples with fixed counts
-additionalbugmetrics=dplyr::left_join(sumrarefiedOTUTaxa,invasives, by="sampleId")
 # if no invasives were present set to absent
-additionalbugmetrics[is.na(additionalbugmetrics)]<-"Absent"
+invasives$SampleID=invasives$sampleId
 #################################################
-Report3<-left_join(Report3,additionalbugmetrics, by='sampleId')
+Report3<-left_join(Report3,invasives, by='SampleID')
+Report3$InvasiveInvertSpecies[is.na(Report3$InvasiveInvertSpecies)]<-"Absent"
 
 # WQ data (predicted WQ values only) raw WQ data back from the Baker lab is not stored by NAMC and rather just excel spreadsheet is forwarded on
 WQ=subset(Report2,modelId %in% c(301,302,303), select=c('SampleID','EvaluationID','PointID','OE_MMI_ModelUsed','oResult','eResult','modelResult'))
