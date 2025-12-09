@@ -24,7 +24,7 @@ if (exists("boxId")) {
   {
   def_samples = NAMCr::query("samples", projectId = projectId)
 }
-def_samples<-def_samples[def_samples$sampleId <= 219683,]
+#def_samples<-def_samples[def_samples$sampleId <= 219683,]
 if(exists('CritHab')){
 #for PIBO model (only Idaho)
 def_samples=def_samples[def_samples$siteId %in% CritHab$siteId,]
@@ -158,7 +158,7 @@ def_predictors = NAMCr::query(
 def_predictors <- def_predictors[!duplicated(def_predictors), ]
 
 #workaround for DOY not saving? Hopefully only need this once!
-if(1){
+if(0){
   sample_info<-data.frame(sampleId=def_samples$sampleId,
                           predictorId=73,
                           sampleDate=def_samples$sampleDate)
@@ -233,6 +233,7 @@ if(nrow(prednew[which(is.na(prednew)),] ) >0){
 }
 all_na_rows <- apply(prednew, 1, function(x) all(is.na(x)))
 prednew=prednew[!all_na_rows,]
+#prednew$ECO4<-'21c'
 #prednew=prednew[which(!is.na(prednew)),]
 #prednew<-prednew[row.names(prednew) %in% 214051 ==F,]
 ## special handling of AREMP predictor names is needed here.
@@ -349,15 +350,7 @@ if (length(def_models$modelId[def_models$modelId %in% c(1,4,5,6,12,169)]==T)>=1)
 # models using john vansickles RIVPACS random forest code : AREMP, UTDEQ15, Westwide, PIBO
 # ##Code breaks here on 5/16/2023, in model.predict.v4.2.r## #
 
-bugnew2=bugnew[row.names(bugnew) %in% c(157074,
-                                        171701,
-                                        171729,
-                                        171852,
-                                        184966,
-                                        184970,
-                                        184973,
-                                        211550
-)==F,]
+
 if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29)]==T)>=1) {
   OE_list<-list()
   for(i in 1:length(unique(def_models$modelId))){
@@ -366,16 +359,7 @@ if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29)]==T)>=1)
       grps.final,
       preds.final,
       ranfor.mod,
-      prednew[row.names(prednew) %in% c(157074,
-                                        171701,
-                                        171729,
-                                        171852,
-                                        184966,
-                                        184970,
-                                        184973,
-                                        211550,
-                                        211367,
-                                        213089)==F,],
+      prednew = prednew,
       bugnew=bugnew,
       Pc = 0.5,
       Cal.OOB = FALSE
