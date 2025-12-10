@@ -42,3 +42,17 @@ vignettes/*.pdf
 
 .csv
 .xls
+
+#Config
+Config.R
+
+#png
+*.png
+
+#csv
+
+*.csv
+
+
+#
+C://GitRepos//NAMCmodelrun//R//Config.R
