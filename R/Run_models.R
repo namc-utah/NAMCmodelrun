@@ -158,7 +158,20 @@ def_predictors = NAMCr::query(
 def_predictors <- def_predictors[!duplicated(def_predictors), ]
 
 #workaround for DOY not saving? Hopefully only need this once!
-if(0){
+if(modelID %in% c(4,
+                  5,
+                  6,
+                  27,
+                  31,
+                  32,
+                  33,
+                  136,
+                  302,
+                  334,
+                  335,
+                  565,
+                  566,
+                  567)){
   sample_info<-data.frame(sampleId=def_samples$sampleId,
                           predictorId=73,
                           sampleDate=def_samples$sampleDate)
