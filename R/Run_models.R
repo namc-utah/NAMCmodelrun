@@ -563,13 +563,13 @@ finalResults=dplyr::left_join(finalResults,def_samples[,c('sampleId','siteLongit
 finalResults_sf=sf::st_as_sf(finalResults,coords=c('siteLongitude','siteLatitude'),crs=4269)
 # create modelId column specific to geography
 if (length(modelID[modelID %in% 25:26]==T)>=1){
-  ecoregion=sf::st_read(paste0(ecoregion_base_path,"GIS//GIS_Stats//CONUS//ecoregion//hybrid_level_III_ecoregions.shp"))
+  ecoregion=sf::st_read(paste0(user_path,"//Box//NAMC WATS Department Files//GIS//GIS_Stats//CONUS//ecoregion//hybrid_level_III_ecoregions.shp"))
   ecoregion=sf::st_make_valid(ecoregion)
   finalResults_sf=sf::st_transform(finalResults_sf,5070)
   finalResults_sf=sf::st_intersection(finalResults_sf,ecoregion)
   finalResults=dplyr::left_join(finalResults,sf::st_drop_geometry(finalResults_sf[,c('sampleId','modelId')]),by='sampleId')
 } else if (length(modelID[modelID %in% 13:23]==T)>=1){
-  ecoregion=sf::st_read(paste0(ecoregion_base_path,"GIS//GIS_Stats//Wyoming//ecoregion//BIOREGIONS_2011_modifiedCP.shp"))
+  ecoregion=sf::st_read(paste0(ecoregion_base_path,"//Box//NAMC WATS Department Files////GIS_Stats//Wyoming//ecoregion//BIOREGIONS_2011_modifiedCP.shp"))
   ecoregion=sf::st_make_valid(ecoregion)
   finalResults_sf=sf::st_transform(finalResults_sf,5070)
   finalResults_sf=sf::st_intersection(finalResults_sf,ecoregion)
