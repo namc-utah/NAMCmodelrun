@@ -1,18 +1,27 @@
 #PcoA for sites using traits as variables
 #this chunk is readind in the data,
 #subseting, etc
+if(0){
 abun<-read.csv("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//abundances.csv")
 abun$sample_id<-as.character(abun$sample_id)
 abun<-abun[,-1]
-PA<-ifelse(abun>0,1,0)
+}
+refs=Os
+Probs=ProbOs
+refs$status='Reference'
+Probs$status='Probabilistic'
+PA=rbind(refs,Probs)#PA<-ifelse(abun>0,1,0)
 failed_sites<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//failed_sites.csv')
-ref_a<-abun[abun$Status=='Reference',]
-ref_a<-ref_a[ref_a$sample_id %in% c(116830,132243,132807, 185022)==F,]
-prob_a<-abun[abun$Status=='Probabilistic',]
-prob_a<-prob_a[prob_a$sample_id %in% failed_sites$sampleId==F,]
-traits<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//All_bench_taxa_atrributes2.csv')
+PA=PA[row.names(PA) %in% failed_sites$sampleId==F,]
+#ref_a<-abun[abun$Status=='Reference',]
+#ref_a<-ref_a[ref_a$sample_id %in% c(116830,132243,132807, 185022)==F,]
+#prob_a<-abun[abun$Status=='Probabilistic',]
+#prob_a<-prob_a[prob_a$sample_id %in% failed_sites$sampleId==F,]
+traits<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//OTU_21_traits.csv')
 OTU21<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//OTU21.csv')
 traits<-traits[traits$OTU %in% OTU21$taxonOTU,]
+PA=PA[,names(PA) %in% c('status',traits$OTU)]
+
 ref_a<-ref_a[ref_a$OTU %in% OTU21$taxonOTU,]
 ref_PA<-ref_a
 ref_PA[,3]<-ifelse(ref_a[,3]>0,1,0)
@@ -33,8 +42,8 @@ wide_traits=wide_traits[!duplicated(wide_traits$OTU),]
 #add the OTU names to the dataset
 
 #set the top5 traits identified from the Gower matrix
-top5<- c("Swim_strong",           "Develop_slow_season",   "Habit_prim_Clinger",    "Rheophily_abbrev_eros",
-         "Lifespan_short"    )
+top5s<- c("Develop_slow_season",    "Adult_exit_absent",      "Survive_desiccation_no", "Occurance_drift_rare" ,
+"Shape_not_streamline")
 #subset out traits we won't be using,
 #such as affinities, secondary feeding, etc.
 wide_traits<- wide_traits %>%
@@ -50,17 +59,21 @@ taxa_traits_num$OTU=wide_traits$OTU
 
 #optional#
 #get just the top 5 traits
-taxa_traits_num<-taxa_traits_num[,names(taxa_traits_num) %in% c('OTU', top5)]
+taxa_traits_num<-taxa_traits_num[,names(taxa_traits_num) %in% c('OTU', top5s)]
 #look at just the taxa who appear at > 10 sites and have traits.
-taxa_traits_num<-taxa_traits_num[taxa_traits_num$OTU %in% taxa_notraits_rare$taxon==F,]
+#taxa_traits_num<-taxa_traits_num[taxa_traits_num$OTU %in% taxa_notraits_rare$taxon==F,]
 #subset sampleId for later, if needed
-ref_a_samps<-ref_a$sample_id
+#ref_a_samps<-ref_a$sample_id
 #ref_a<-ref_a[,-2]
 #join the traits to the respsective community data
-joined<-plyr::join(ref_a,taxa_traits_num,type='left')
-ref_P_joined<-plyr::join(ref_PA,taxa_traits_num,type='left')
-p_joined<-plyr::join(prob_a,taxa_traits_num,type='left')
-p_P_joined<-plyr::join(prob_PA,taxa_traits_num,type='left')
+PA_long=PA %>%
+  tibble::rownames_to_column(var='sample_id') %>%
+  pivot_longer(cols=-c(sample_id,status),
+                    names_to = 'OTU',values_to = 'PA')
+joined<-plyr::join(PA_long,taxa_traits_num,type='left')
+# ref_P_joined<-plyr::join(ref_PA,taxa_traits_num,type='left')
+# p_joined<-plyr::join(prob_a,taxa_traits_num,type='left')
+# p_P_joined<-plyr::join(prob_PA,taxa_traits_num,type='left')
 
 #set the trait columns
 #for dplyr to calculate the weighted traits
@@ -91,14 +104,14 @@ site_traits_weighted <- joined %>%
 #   mutate(across(where(is.numeric), ~.x*split_count))
 
 
-trait_cols=5:ncol(ref_P_joined)
-trait_cols=names(ref_P_joined)[trait_cols]
- site_PA_traits_weighted<-ref_P_joined %>%
+# trait_cols=5:ncol(ref_P_joined)
+# trait_cols=names(ref_P_joined)[trait_cols]
+ site_PA_traits_weighted<-joined %>%
   #mutate(across(all_of(trait_cols), ~ .x * (split_count))) %>%  # presence = 1/0
-  group_by(sample_id) %>%
+  group_by(sample_id,status) %>%
    dplyr::summarise(
      # PA-weighted trait per site
-     across(all_of(trait_cols), ~ sum(.x * split_count, na.rm = TRUE) / sum(split_count, na.rm = TRUE), .names = "PA_{.col}"),
+     across(all_of(trait_cols), ~ sum(.x * PA, na.rm = TRUE) / sum(PA, na.rm = TRUE), .names = "PA_{.col}"),
      .groups = "drop"
    )
  #   dplyr::summarise(across(all_of(trait_cols),
@@ -186,13 +199,14 @@ All_site_trait_small<-All_site_traits_weighted[,-c(1,ncol(All_site_traits_weight
 All_PA_site_trait_small<-All_PA_site_traits_weighted[,-c(1,ncol(All_PA_site_traits_weighted))]
 #run the gower dissimilarity matrix on the trait datasets
 sit_gow<-cluster::daisy(All_site_trait_small,metric='gower')
-sit_PA_gow<-cluster::daisy(All_PA_site_trait_small,metric='gower')
+sit_PA_gow<-cluster::daisy(site_PA_traits_weighted[,3:ncol(site_PA_traits_weighted)],metric='gower')
 
 #compute PCOA scores
 bc<-ape::pcoa(sit_gow)
 BC_scores<-as.data.frame(bc$vectors[,1:2])
 Pbc<-ape::pcoa(sit_PA_gow)
 pBC_scores<-as.data.frame(Pbc$vectors[,1:2])
+pBC_scores$status=site_PA_traits_weighted$status
 BC_scores$status=All_site_traits_weighted$status
 pBC_scores$status=All_PA_site_traits_weighted$status
 row.names(BC_scores)=All_site_traits_weighted$sample_id
@@ -216,7 +230,7 @@ ggplot(pBC_scores,aes(x=Axis.1,y=Axis.2,fill=status))+geom_point(pch=21)+
   stat_ellipse(level=0.8,data = subset(pBC_scores, status == "Reference"), color = "purple4", size = 1,type='t') +
   stat_ellipse(level=0.8,data = subset(pBC_scores, status == "Probabilistic"), color = "yellow", size = 1,type='t')
 
-savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//sites_PA_top5_traitspace.png')
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_PA_top5_traitspace.png')
 
 
 
