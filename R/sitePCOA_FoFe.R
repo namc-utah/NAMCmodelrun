@@ -52,8 +52,10 @@ wide_traits<- wide_traits %>%
 taxa_traits_num<- lapply(wide_traits[,2:ncol(wide_traits)], function(x) {
   ifelse(x == "TRUE", 1, ifelse(x == "FALSE", 0, NA))
 })
+
 #now just combine the lapplied object into one data frame
 taxa_traits_num<-as.data.frame(do.call(cbind,taxa_traits_num))
+taxa_traits_num[is.na(taxa_traits_num)]<-0
 #set OTU so we can join
 taxa_traits_num$OTU=wide_traits$OTU
 
@@ -200,7 +202,7 @@ All_PA_site_trait_small<-All_PA_site_traits_weighted[,-c(1,ncol(All_PA_site_trai
 #run the gower dissimilarity matrix on the trait datasets
 sit_gow<-cluster::daisy(All_site_trait_small,metric='gower')
 sit_PA_gow<-cluster::daisy(site_PA_traits_weighted[,3:ncol(site_PA_traits_weighted)],metric='gower')
-
+row.names(sit_PA_gow)=site_PA_traits_weighted$sample_id
 #compute PCOA scores
 bc<-ape::pcoa(sit_gow)
 BC_scores<-as.data.frame(bc$vectors[,1:2])
@@ -313,3 +315,64 @@ stat_ellipse(level=0.8,data = subset(PA_scores, Status == "Reference"), color = 
   stat_ellipse(level=0.8,data = subset(PA_scores, Status == "Probabilistic"), color = "yellow", size = 1)#+stat_ellipse(level=0.8,type='t')
 savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//sites_OTUspace_PA_ellipse.png')
 
+row.names(Pbc$vectors)=joined$sample_id
+
+Pgower_scores=data.frame(Pbc$vectors)
+#gower_scores=data.frame(Pco1=gower_cmd[,1],Pco2=gower_cmd[,2])
+Pgower_scores$taxon=site_PA_traits_weighted$sample_id
+
+Pbc_cmd=cmdscale(sit_PA_gow,k=3)
+env_fut=envfit(ord=Pgower_scores[,c(2,3)],env=site_PA_traits_weighted,eig=T)
+ptrait_vect<-as.data.frame(env_fut$vectors$arrows)
+ptrait_vec=as.data.frame(scores(env_fut,display='vectors'))
+ptrait_vect$trait <- rownames(ptrait_vect)
+colnames(ptrait_vect)[1:2] <- c("PCo2", "PCo3")
+ptrait_vect=ptrait_vect[ptrait_vect$trait %in% paste0('PA_',top5s),]
+ptrait_vect$trait=c('Slow develop',
+                   'Adults exit',
+                   'No drift',
+                   'No Dessic. Resist.',
+                   'Not streamlined')
+pPCOA_Scores<-as.data.frame(Pbc$vectors)
+#assign taxa names
+ptop_trait_arrows=ptrait_vect$trait
+pPCOA_Scores$sample_id<-site_PA_traits_weighted$sample_id
+
+p_sites_and_coords=plyr::join(site_PA_traits_weighted,pPCOA_Scores)
+
+
+
+point_max <- max(abs(Pgower_scores[,1:2]))
+arrow_max <- max(abs(ptrait_vect[,1:2]))
+arrow_multiplier <- (point_max / arrow_max) * 0.4  # 0.8 keeps them inside the points
+
+# Apply scaling
+ptrait_vect$PCo2 <- ptrait_vect$PCo2 * arrow_multiplier
+ptrait_vect$PCo3 <- ptrait_vect$PCo3 * arrow_multiplier
+
+# --- 2. Plotting with corrected scales ---
+ggplot(p_sites_and_coords, aes(x=Axis.2, y=Axis.3, fill=status)) +
+  geom_point(pch=21) +
+  stat_ellipse(level=0.8,data = subset(p_sites_and_coords, status == "Reference"), color = "purple4", size = 1,type='t') +
+  stat_ellipse(level=0.8,data = subset(p_sites_and_coords, status == "Probabilistic"), color = "yellow", size = 1,type='t')+# Added alpha for fill
+  # FIX: Change fill to color to match aes(color=status)
+  scale_fill_manual(name='status',
+                     values=c('Reference' = 'purple4',
+                              'Probabilistic' = 'yellow')) +
+  geom_segment(data=ptrait_vect,
+               aes(x=0, y=0, xend=PCo2, yend=PCo3),
+               arrow=arrow(length=unit(0.25, 'cm')),
+               linewidth=1,
+               inherit.aes = FALSE,
+               color="black") + # Set a fixed color so it doesn't look for 'status'
+  geom_label(
+    data = ptrait_vect,
+    aes(x = PCo2, y = PCo3, label = trait),
+    size = 3,
+    fill = "white",
+    color = "red",
+    hjust=.35,
+    label.size = 0.2,
+    inherit.aes = FALSE
+  ) # CRITICAL for PCoA: ensures 1 unit on X = 1 unit on Y
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_OTUspace_PA_ellipse_traits_axes2_3.png')

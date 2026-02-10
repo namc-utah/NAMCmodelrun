@@ -1,6 +1,6 @@
 #"pivot table"
 
-piv_dat=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//all_ratios_251121.csv')
+piv_dat=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//all_ratios_260210.csv')
 piv_dat$Inc=ifelse(piv_dat$Presponse=='Increaser',1,0)
 piv_dat$Dec=ifelse(piv_dat$Presponse=='Decreaser',1,0)
 

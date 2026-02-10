@@ -30,33 +30,43 @@ savp = function(W,H,fn) {
 #taxa_notraits_rare=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//taxa_to_drop.csv')
 #nonrare=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//nonrare_taxa.csv')
 
-Os<-read.csv("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//WestWide_Ref_PA.csv")
-
-Es<-read.csv("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE////Updated_w_modelObj//Westwide_Ref_Pcs.csv")
-
+Os<-read.csv("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//WestWide_Ref_PA_260209.csv")
+row.names(Os)<-Os$X;Os=Os[,-1]
+Os=Os[,names(Os) %in% c('Carabidae','Curculionidae')==F]
+Os=Os%>%
+  mutate(Tanypodinae = ifelse(Tanypodinae+Tanypodinae.1>1,1,Tanypodinae+Tanypodinae.1)) %>%
+  select(-Tanypodinae.1)
+Es<-read.csv("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Ref_Pcs_orig_WW_Tany_summed.csv")
+row.names(Es)<-Es$sampleId;Es=Es[,-c(1,2)]
+Es=Es[,names(Es) %in% c('Carabidae','Curculionidae')==F]
 #ensure that the column order matches across the tables
 #i.e., the taxa names
-setcolorder(Os,neworder = names(Es))
+Os=Os[,names(Es)]
+Os=Os[row.names(Os) %in% row.names(Es),]
 #probabilistic predictions
-Pes<-read.csv("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE////Updated_w_modelObj//MRF_Prob_Pcs.csv")
-FailedO=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//WestWide_failed_PA.csv')
-FailedPes=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//WestWide_failed_Pcs.csv')
-#failed_sites<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//failed_sites.csv')
+Pes<-read.csv("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Prob_Pcs_orig_WW_droppedTany.csv")
+row.names(Pes)=Pes$sampleId;Pes=Pes[,-c(1,2)]
 
-ProbOs<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE////Updated_w_modelObj//MRF_Prob_Os.csv')
-
+#FailedPes=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//WestWide_failed_Pcs.csv')
+failed_sites<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//failed_sites.csv')
+FailedO=ProbOs[row.names(ProbOs) %in% failed_sites$sampleId,]
+FailedPes=Pes[row.names(Pes) %in% failed_sites$sampleId,]
+ProbOs<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_Prob_Os.csv')
+row.names(ProbOs)<-ProbOs$X;ProbOs=ProbOs[,-c(1,2)]
+ProbOs=ProbOs[row.names(ProbOs) %in% failed_sites$sampleId==F,]
+Pes=Pes[row.names(Pes) %in% failed_sites$sampleId==F,]
 ProbOs=ProbOs[,names(ProbOs) %in% c('Carabidae','Curculionidae')==F]
+Pes=Pes[,names(Pes) %in% c('Carabidae','Curculionidae')==F]
 Pes=Pes[match(names(ProbOs), names(Pes))]
 #write.csv(ProbOs,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_Prob_Os.csv')
 
-row.names(FailedO)=FailedO$X; FailedO=FailedO[,-1]
-row.names(FailedPes)=FailedPes$X;FailedPes=FailedPes[,-1]
+
 
 #dropping sampleId and assigning that to the row names
-row.names(Os)<-Os$X;Os<-Os[,-1]
-row.names(Es)<-Es$X;Es<-Es[,-1]
-row.names(Pes)<-Pes$X;Pes<-Pes[,-1]
-row.names(ProbOs)<-ProbOs$X;ProbOs<-ProbOs[,-1]
+
+
+
+
 N_Tax=ncol(Es)
 refE<-colSums(Es)
 ProbE<-colSums(Pes)
@@ -131,7 +141,7 @@ P=ggplot(data=Ref_Results,aes(y=Fo,x=Fe))+geom_point()+
            hjust = 0, vjust = 1, # Justify text relative to corner
            size = 5, color = "black")+
   lims(x=c(0,350),y=c(0,max(P_Results$Fo)))
-Fa=ggplot(data=F_Results,aes(y=Fo,x=Fe,label=taxon))+geom_point()+
+Fa=ggplot(data=P_Results,aes(y=Fo,x=Fe,label=taxon))+geom_point()+
   #geom_point(data=P_Results[P_Results$Regional_Response=='Neutral',],color='grey50')+
   #geom_text_repel(box.padding = 0.5, max.overlaps = Inf) +
   #geom_point(data = P_Results[P_Results$Regional_Response=='Decreaser',],color='dodgerblue')+
@@ -154,7 +164,7 @@ gridExtra::grid.arrange(P,Fa,ncol=1)
 
 savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_vs_Fe_Failed_colored_260206.png')
 
-write.csv(All_Results,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_MRF_260206.csv')
+write.csv(All_Results,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_WW_260210.csv')
 
 #assigning sites to EcoRegions
 #using the shapefile on NAMC's GIS folder,
@@ -304,28 +314,37 @@ if(0){
   #reference site for each ecoregion.
   #It also assigns land use to sites within each ecoregion
 }
+Xeric_P=c(171583, 171664, 171668, 171669, 171777, 173398, 173404,
+          173407, 173408, 173409, 178667, 178671, 178676, 184764,
+          184768, 185060, 185063, 185699, 185702, 187162, 187182,
+          187607,187662, 187779, 187780, 187849, 190728, 190762,
+          190916, 191507,
+          #these are the reference sites used in the westwide model
+          "87087", "HAWK-216", "HAWK-225", "HAWK-226", "HAWK-227", "HAWK-228", "HAWK-241",
+          "HAWK-86",  "HAWK-89", "HAWK-92",  "WE-1036",  "WE-1047",  "WE-1055",  "WE-1079",
+          "WE-1085",  "WE-21",    "WE-47",    "WE-866",  "WE-889",   "WE-905")
 if(1){
   #add another section for Prob Os
-  Pesgrp2<-Pes[row.names(Pes) %in% groups$sampleId[groups$EPA_hybird=='Eastern Xeric Plateaus'],]
+  Pesgrp2<-Pes[row.names(Pes) %in%Xeric_P,]
   Pesgrp2$Ecoregion='Eastern Xeric Plateaus'
-  Pesgrp3<-Pes[row.names(Pes) %in% groups$sampleId[groups$EPA_hybird!='Eastern Xeric Plateaus'],]
+  Pesgrp3<-Pes[row.names(Pes) %in% Xeric_P==F,]
   Pesgrp3$Ecoregion='Other'
 
 
-  ProbOsgrp2<-ProbOs[row.names(ProbOs) %in% groups$sampleId[groups$EPA_hybird=='Eastern Xeric Plateaus'],]
+  ProbOsgrp2<-ProbOs[row.names(ProbOs) %in% Xeric_P,]
   ProbOsgrp2$Ecoregion='Eastern Xeric Plateaus'
-  ProbOsgrp3<-ProbOs[row.names(ProbOs) %in% groups$sampleId[groups$EPA_hybird!='Eastern Xeric Plateaus'],]
+  ProbOsgrp3<-ProbOs[row.names(ProbOs) %in% Xeric_P==F,]
   ProbOsgrp3$Ecoregion='Other'
 
 
-  Osgrp2<-Os[row.names(Os) %in% groups$sampleId[groups$EPA_hybird=='Eastern Xeric Plateaus'],]
+  Osgrp2<-Os[row.names(Os) %in% Xeric_P,]
   Osgrp2$Ecoregion='Eastern Xeric Plateaus'
-  Osgrp3<-Os[row.names(Os) %in% groups$sampleId[groups$EPA_hybird!='Eastern Xeric Plateaus'],]
+  Osgrp3<-Os[row.names(Os) %in% Xeric_P==F,]
   Osgrp3$Ecoregion='Other'
 
-  Esgrp2<-Es[row.names(Es) %in% groups$sampleId[groups$EPA_hybird=='Eastern Xeric Plateaus'],]
+  Esgrp2<-Es[row.names(Es) %in% Xeric_P,]
 
-  Esgrp3<-Es[row.names(Es) %in% groups$sampleId[groups$EPA_hybird!='Eastern Xeric Plateaus'],]
+  Esgrp3<-Es[row.names(Es) %in% Xeric_P==F,]
 
 
 
@@ -485,7 +504,7 @@ if(1){
                                        'Decreaser'))
 
   All_ratios=Ref_Ecoregions %>% left_join(P_Ecoregions, by=c('Ecoregion','taxon'))
-  write.csv(All_ratios,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//all_ratios_251121.csv')
+  write.csv(All_ratios,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//all_ratios_260210.csv')
 }
 #Trait info
 #read in the traits from NAMC's database
@@ -493,6 +512,7 @@ if(1){
 #contains bench ID and OTU
 #this needs to only be run once, as the table does not change.
 if(0){
+  trait_table=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//OTU_21_traits.csv')
   trait_table<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//All_bench_taxa_atrributes2.csv')
   OTU21<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//OTU21.csv')
   trait_table<-trait_table[trait_table$OTU %in% OTU21$taxonOTU,]
@@ -527,12 +547,12 @@ if(0){
   #ratios_w_traits<-ratios_w_traits[!duplicated(ratios_w_traits$taxon),]
   #dropping taxa that only occur at 10 or more sites
 
-write.csv(ratios_w_traits,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Regional_responses_and_traits_260206.csv',row.names = F)
+write.csv(ratios_w_traits,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Regional_responses_and_traits_260210.csv',row.names = F)
   write.csv(ratios_w_traits,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Spatial_scales_and_traits_MRF_251114.csv',row.names = F)
 }
 
 #read in table that came from the trait section
-finaltable3<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Regional_responses_and_traits_260206.csv')
+finaltable3<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Regional_responses_and_traits_260210.csv')
 #final_table3<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Spatial_scales_and_traits_MRF_251114.csv')
 
 a<-ggplot(All_Results[All_Results$status=='Reference',],aes(x=Fe,y=Fo))+geom_point()+geom_abline(color='red',linetype=2)+ggtitle('Reference')+labs(y='Fo',x='Fe')
@@ -610,22 +630,16 @@ redundant_pairs
 #binary variables = mutually exclusive traits
 #must remove those traits before running a dissimilarity distance
 traits_only2<-traits_only2[,names(traits_only2) %in% c('Develop_fast_season',
-                                                       'Emerge_synch_abbrev_Poorly',
-                                                       'Shape_not_streamline','Survive_desiccation_no',
-                                                       'Adult_exit_absent',
                                                        'Resp_abbrev_Gills',
-                                                       'Female_disp_abbrev_High','Swim_none',
-                                                       'Lifespan_long',
-                                                       'Attach_free_range_both',
-                                                       'Emerge_season_1_Spring',
-                                                       'Emerge_season_2_Summer',
-                                                       'Swim_strong',
-                                                       'Lifespan_very_short',
-                                                       'Attach_both',
                                                        'Occurence_drift_common',
                                                        'Swim_strong',
                                                        'Attach_free_range',
-                                                       'Attach_both')==F]
+                                                       'Attach_both',
+                                                       'Female_disp_abbrev_High','Swim_none',
+                                                       'Attach_free_range_both',
+                                                       'Emerge_season_1_Spring',
+                                                       'Emerge_season_2_Summer'
+                                                       )==F]
 
 #calculate gower distance on just traits
 traits_only3<- lapply(traits_only2[,2:ncol(traits_only2)], \(x) as.integer(as.factor(x)) - 1L)
@@ -667,27 +681,28 @@ top5
 #convert the Gower distance into a matrix for readability
 Gower_mat<-as.matrix(Gower_dist)
 #assign the taxa names
-row.names(Gower_mat)<-row.names(traits_imputed)
+row.names(Gower_mat)<-row.names(traits_only3)
 #perform PCoA
 PCOA<-ape::pcoa(Gower_mat)
+#scree plot. Axes 1 and 2 explain ~50% of variation
 eigenvalues=PCOA$values$Eigenvalues
 prop_var=eigenvalues/sum(eigenvalues)*100
 cum_var=cumsum(prop_var)
-barplot(prop_var[1:45],
-        names.arg = 1:45,
+barplot(prop_var[1:20],
+        names.arg = 1:20,
         main = "PCoA Scree Plot: Variance Explained per Axis",
         xlab = "PCoA Axis",
         ylab = "Variance Explained (%)",
         col = "steelblue",
         las = 2)
-lines(cum_var[1:45], type = "b", pch = 19, col = "red")
+
 #cmd scale traits for layering?
-gower_cmd=cmdscale(Gower_dist,k=45,eig=T)
+gower_cmd=cmdscale(Gower_dist,45,eig=T)
 
 gower_scores=data.frame(PCOA$vectors)
 #gower_scores=data.frame(Pco1=gower_cmd[,1],Pco2=gower_cmd[,2])
 gower_scores$taxon=row.names(Gower_dist)
-row.names(gower_scores)=row.names(traits_imputed)
+row.names(gower_scores)=row.names(traits_only3)
 
 fit=envfit(gower_scores[,c(2,3)],traits_only3,na.rm=T)
 trait_vect<-as.data.frame(fit$vectors$arrows)
@@ -695,41 +710,23 @@ trait_vec=as.data.frame(scores(fit, display = 'vectors'))
 trait_vect$trait <- rownames(trait_vect)
 colnames(trait_vect)[1:2] <- c("PCo2", "PCo3")
 mult=vegan::ordiArrowMul(trait_vec,display='species')
-arrow_multiplier <- 0.75 * max(abs(gower_scores[,c(2,3)])) / max(abs(trait_vect[,1:2]))
+arrow_multiplier <- 0.75 * max(abs(gower_scores[,c(1,2)])) / max(abs(trait_vect[,1:2]))
 trait_vect[,1:2] <- trait_vect[,1:2] * arrow_multiplier
 trait_vect=trait_vect[trait_vect$trait %in% names(top5),]
 
-PCOA_Scores<-as.data.frame(PCOA$vectors[,c(1,2,3)])
+PCOA_Scores<-as.data.frame(PCOA$vectors)
 #assign taxa names
 top_trait_arrows=trait_vect$trait
 PCOA_Scores$taxon<-row.names(traits_only)
 #renaming vectors for easier interpretation
 
-trait_vect$trait=c('Weak flyer',
-                   'Synch Emerge',
-                   'Slow develop',
-                   'Short adult',
-                   'No drift')
+trait_vect$trait=c('Slow develop',
+                   'Adults exit',
+                   'No drift',
+                   'No Dessic. Resist.',
+                   'Not streamlined')
 
 
-#Axes 1 and 3
-fit_A=envfit(gower_scores[,c(1,2)],traits_num,na.rm=T)
-trait_vect_A<-as.data.frame(fit_A$vectors$arrows)
-trait_vect_A$trait <- rownames(trait_vect_A)
-colnames(trait_vect_A)[1:2] <- c("PCo1", "PCo2")
-arrow_multiplier <- 0.75 * max(abs(gower_cmd[,1:2])) / max(abs(trait_vect_A[,1:2]))
-trait_vect_A[,1:2] <- trait_vect_A[,1:2] * arrow_multiplier
-trait_vect_A=trait_vect_A[trait_vect_A$trait %in% names(top5),]
-trait_vect_A$trait=c('Synch Emerge',
-                     'Univoltine',
-                     'Slow Develop',
-                     'Short life',
-                     'No drift')
-trait_vect_A$trait=c('Synch Emerge',
-                     'Slow Develop',
-                     'Short Life',
-                     'No drift',
-                     'No Attach')
 
 
 #join the responses with the PCoA scores
@@ -739,11 +736,11 @@ All_responses_and_scores=plyr::join(All_ratios,PCOA_Scores,by='taxon','left')
 #be sure to adjust axes as needed
 Responses_and_scores$status2=factor(Responses_and_scores$status,levels=c('Reference','Probabilistic'))
 ggplot(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.finite(Responses_and_scores$ratio) & Responses_and_scores$Fo>0,],
-       aes(x=Axis.2,y=Axis.3,color=Regional_Response))+
+       aes(x=Axis.3,y=Axis.4,color=Regional_Response))+
   geom_point(size=3,alpha=0.7)+
   stat_ellipse(level=0.8)+
   geom_segment(data=trait_vect,
-               aes(x=0,y=0,xend=PCo2,yend=PCo3),
+               aes(x=0,y=0,xend=PCo3,yend=PCo4),
                arrow=arrow(length=unit(0.25,'cm')),
                linewidth=1,
                alpha=0.5,inherit.aes = F)+
@@ -752,8 +749,8 @@ ggplot(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.fini
   #         hjust = 0.4, vjust = .9, color="black", size = 3.5) +
   geom_label(
     data = trait_vect,
-    aes(x = PCo2, y = PCo3, label = trait),
-    hjust = .56,
+    aes(x = PCo3, y = PCo4, label = trait),
+    hjust = ifelse(names(trait_vect)[1]=='PCo2',0.2, .75),
     vjust = 1,
     size = 3,
     fill = "white",      # background color
@@ -761,10 +758,10 @@ ggplot(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.fini
     label.size = 0.2,    # border thickness; set to 0 to remove outline
     inherit.aes = FALSE
   )+
-  # geom_text(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.finite(Responses_and_scores$ratio),],
-  #           aes(x=Axis.1,y=Axis.2,label=taxon),
-  #           color='black',
-  #           hjust=1,vjust=1, size=2)+
+   # geom_text(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.finite(Responses_and_scores$ratio),],
+   #           aes(x=Axis.1,y=Axis.2,label=taxon),
+   #           color='black',
+   #           hjust=0,vjust=0, size=2)+
   scale_color_manual(values=c("Increaser"="orange",
                               "Decreaser"="dodgerblue3",
                               "Neutral"='red',
@@ -773,12 +770,12 @@ ggplot(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.fini
   theme(legend.position = "top")
 #guides(color = guide_legend(nrow = 1))
 
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//regional_responses_traitspace_MRF_251202_Axes1_3_allaxesmantel.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_traitspace_260210_Axes2_3.png')
 
 
 #same but for prob sites.
 ggplot(All_responses_and_scores[is.finite(All_responses_and_scores$Pratio) & All_responses_and_scores$pFo > 0,],
-       aes(x = Axis.1, y = Axis.2, color = Presponse)) +
+       aes(x = Axis.2, y = Axis.3, color = Presponse)) +
   geom_point(size = 3, alpha = 0.7) +
   stat_ellipse(level = 0.8) +
   scale_color_manual(values = c(
@@ -791,7 +788,7 @@ ggplot(All_responses_and_scores[is.finite(All_responses_and_scores$Pratio) & All
   guides(color = guide_legend(title = 'Response'))+
   theme(legend.position = "top")+
   geom_segment(data=trait_vect,
-               aes(x=0,y=0,xend=PCo1,yend=PCo2),#                arrow=arrow(length=unit(0.25,'cm')),
+               aes(x=0,y=0,xend=PCo2,yend=PCo3),#                arrow=arrow(length=unit(0.25,'cm')),
                linewidth=1,
                alpha=0.5,inherit.aes = F, arrow=arrow(length=unit(.25,"centimeters")))+
   # geom_text(data = trait_vect,
@@ -799,8 +796,8 @@ ggplot(All_responses_and_scores[is.finite(All_responses_and_scores$Pratio) & All
   #           hjust = 0.5, vjust = .5, color="black", size = 3.5)
   geom_label(
     data = trait_vect,
-    aes(x = PCo1, y = PCo2, label = trait),
-    hjust = .56,
+    aes(x = PCo2, y = PCo3, label = trait),
+    hjust = ifelse(names(trait_vect)[1]=='PCo2',0.2, .56),
     vjust = 1,
     size = 3,
     fill = "white",      # background color
@@ -808,7 +805,7 @@ ggplot(All_responses_and_scores[is.finite(All_responses_and_scores$Pratio) & All
     label.size = 0.2,    # border thickness; set to 0 to remove outline
     inherit.aes = FALSE
   )
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//prob_responses_traitspace_Ecoregions_MRF_251202_Axes1_2_allaxesmantel.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//prob_responses_traitspace_Ecoregions_260210_Axes2_3_allaxesmantel.png')
 
 
 #general trend of traits across land uses at watershed scale
@@ -832,8 +829,8 @@ O_long$status='Reference'
 traits_only3$taxon=row.names(traits_only2)
 O_long=plyr::join(O_long,traits_only3)#[,names(traits_only) %in% c(names(top5),'taxon')])
 ProbOs_long=plyr::join(ProbOs_long,traits_only3)#[,names(traits_only) %in% c('taxon',names(top5))])
-site_cols=colnames(O_long)[1:659]#(ncol(O_long)-8)]
-traitcols=colnames(O_long)[662:ncol(O_long)]#(ncol(O_long)-4):ncol(O_long)]
+site_cols=colnames(O_long)[1:656]#(ncol(O_long)-8)]
+traitcols=colnames(O_long)[659:ncol(O_long)]#(ncol(O_long)-4):ncol(O_long)]
 Psite_cols=colnames(ProbOs_long)[1:349]#1:(ncol(ProbOs_long)-8)]
 Ptraitcols=colnames(ProbOs_long)[352:ncol(ProbOs_long)]#(ncol(ProbOs_long)-4):ncol(ProbOs_long)]
 O_long=as.data.frame(O_long %>%
@@ -868,13 +865,13 @@ P_long=as.data.frame(ProbOs_long %>%
 
 O_long$status='Reference'
 P_long$status='Probabilistic'
-rbind(O_long,P_long)
+wm_traits=rbind(O_long,P_long)
 
 clipr::write_clip(rbind(O_long,P_long))
 
 
 
-
+top5
 
 
 
