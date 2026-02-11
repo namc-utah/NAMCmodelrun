@@ -284,39 +284,86 @@ row.names(Gower_abun_mat)<-row.names(bug_log_wide)
 Gower_abun_MDS=vegan::metaMDS(Gower_abun_mat)
 
 #Gower_dist_PA<-cluster::daisy(bug_PA_wide,metric='gower')#type=list(asymm=1:ncol(bug_PA_wide)))
-Gower_dist_PA<-vegan::vegdist(bug_PA_wide,'bray',binary=T)
+Gower_dist_PA<-vegan::vegdist(PA[,-ncol(PA)],'bray',binary=T)
 Gower_PA_mat<-as.matrix(Gower_dist_PA)
 #assign the site names
-row.names(Gower_PA_mat)<-row.names(bug_log_wide)
-Gower_PA_MDS=vegan::metaMDS(Gower_PA_mat)
+row.names(Gower_PA_mat)<-row.names(PA)
+Gower_PA_MDS=vegan::metaMDS(Gower_PA_mat,k=3)
 
 abun_scores=as.data.frame(vegan::scores(Gower_abun_MDS))
 PA_scores=as.data.frame(vegan::scores(Gower_PA_MDS))
 
 abun_scores$Status=statuses_wide
-PA_scores$Status=statuses_wide
+PA_scores$Status=PA$status
 
-outlier=abun_scores[abun_scores$NMDS1 < -0.75,]
-abun_scores<-abun_scores[abun_scores$NMDS1 > -0.75,]
-PA_scores<-PA_scores[PA_scores$NMDS1 > -0.75,]
-ggplot(abun_scores,aes(x=NMDS1,y=NMDS2,fill=Status))+geom_point(pch=21)+
+NMDS_cal_preds=predcal[predcal$SiteCode %in% row.names(PA),]
+NMDS_prob_preds=prednew[row.names(prednew) %in% row.names(PA),]
+NMDS_cal_preds$SiteCode==row.names(PA)[PA$status=='Reference']
+row.names(NMDS_prob_preds)==row.names(PA)[PA$status=='Probabilistic']
+
+cal_pred_dat=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//WW_cal_preds.csv')
+NMDS_cal_preds<-plyr::join(NMDS_cal_preds,cal_pred_dat,by='COMID','left')
+env_dat=rbind(NMDS_cal_preds[,c('ElevCat','Precip8110Ws','Tmean8110Ws','WsAreaSqKm')],NMDS_prob_preds[,c('ElevCat','Precip8110Ws','Tmean8110Ws','WsAreaSqKm')])
+nmds_fit=envfit(Gower_PA_MDS,env_dat)
+
+nmds_fit=envfit(PA_scores[,c(2,3)],env_dat,na.rm=T)
+env_vect<-as.data.frame(nmds_fit$vectors$arrows)
+env_vec=as.data.frame(scores(nmds_fit, display = 'vectors'))
+env_vect$env <- rownames(env_vect)
+colnames(env_vect)[1:2] <- c("NMDS2", "NMDS3")
+mult=vegan::ordiArrowMul(env_vec,display='species')
+arrow_multiplier <- 0.75 * max(abs(PA_scores[,c(2,3)])) / max(abs(env_vect[,1:2]))
+env_vect[,1:2] <- env_vect[,1:2] * arrow_multiplier
+env_vect$env=c('ElevCat',
+               'PrecipWs',
+               'TmeanWs','WsArea')
+# ggplot(abun_scores,aes(x=NMDS1,y=NMDS3,fill=Status))+geom_point(pch=21)+
+#   scale_fill_manual(name='Status',
+#                     values=c('Reference' = 'purple4',
+#                              'Probabilistic' = 'yellow'))+ggtitle('Sites in OTU space (PA)')+
+#   stat_ellipse(level=0.8,data = subset(abun_scores, Status == "Reference"), color = "purple4", size = 1,type='t') +
+#   stat_ellipse(level=0.8,data = subset(abun_scores, Status == "Probabilistic"), color = "yellow", size = 1) #+stat_ellipse(level=0.8,type='t')+scale_color_manual(values=c('Reference'='red','Probabilistic' = 'blue'))
+# savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//sites_OTUspace_abun_ellipse.png')
+
+ggplot(PA_scores,aes(x=NMDS2,y=NMDS3,fill=Status))+geom_point(pch=21)+
   scale_fill_manual(name='Status',
                     values=c('Reference' = 'purple4',
                              'Probabilistic' = 'yellow'))+ggtitle('Sites in OTU space (PA)')+
-  stat_ellipse(level=0.8,data = subset(abun_scores, Status == "Reference"), color = "purple4", size = 1,type='t') +
-  stat_ellipse(level=0.8,data = subset(abun_scores, Status == "Probabilistic"), color = "yellow", size = 1) #+stat_ellipse(level=0.8,type='t')+scale_color_manual(values=c('Reference'='red','Probabilistic' = 'blue'))
-savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//sites_OTUspace_abun_ellipse.png')
-
-ggplot(PA_scores,aes(x=NMDS1,y=NMDS2,fill=Status))+geom_point(pch=21)+
-  scale_fill_manual(name='Status',
-                    values=c('Reference' = 'purple4',
-                             'Probabilistic' = 'yellow'))+ggtitle('Sites in OTU space (PA)')+
+  geom_segment(data=env_vect,
+               aes(x=0,y=0,xend=NMDS2,yend=NMDS3),#                arrow=arrow(length=unit(0.25,'cm')),
+               linewidth=1,
+               alpha=0.5,inherit.aes = F, arrow=arrow(length=unit(.25,"centimeters")))+
+  geom_label(
+    data = env_vect,
+    aes(x = NMDS2, y = NMDS3, label = env),
+    hjust = 0.75,
+    vjust = 0,
+    size = 3,
+    fill = "white",      # background color
+    color = "red",       # text color
+    label.size = 0.2,    # border thickness; set to 0 to remove outline
+    inherit.aes = FALSE
+  )+
 stat_ellipse(level=0.8,data = subset(PA_scores, Status == "Reference"), color = "purple4", size = 1,type='t') +
   stat_ellipse(level=0.8,data = subset(PA_scores, Status == "Probabilistic"), color = "yellow", size = 1)#+stat_ellipse(level=0.8,type='t')
-savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//sites_OTUspace_PA_ellipse.png')
 
-row.names(Pbc$vectors)=joined$sample_id
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_OTUspace_PA_ellipse_axes_2_3.png')
 
+
+ordisurf(PA_scores[,c(1,2)], log(env_dat$WsAreaSqKm),k=4,
+         pch=21,bg=ifelse(PA$status=='Reference','purple4','yellow'),
+         col='black',
+         main='logWsArea',
+         lwd=3)
+legend('topleft',
+       pch=rep(21,2),
+       pt.bg=c('purple4','yellow'),
+       bty='n',
+       leg=c('Reference',
+             'Probabilistic'),
+       cex=0.8)
+
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//PA_ordi_WsArea.png')
 Pgower_scores=data.frame(Pbc$vectors)
 #gower_scores=data.frame(Pco1=gower_cmd[,1],Pco2=gower_cmd[,2])
 Pgower_scores$taxon=site_PA_traits_weighted$sample_id

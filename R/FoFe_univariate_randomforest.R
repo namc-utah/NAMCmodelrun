@@ -364,11 +364,11 @@ B<-ggplot(data=EastXer_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercep
 #savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//MRF_allsites_FoFe.png')
 
 #getting highlight taxa for showing some inc/decs
-P_othplotdat$col=ifelse(row.names(P_othplotdat) %in% c('Antocha','Nemata','Ephemerella','Pisidiidae',
-                                                       'Tanypodinae'),
+P_othplotdat$col=ifelse(row.names(P_othplotdat) %in% c('Drunella_coloradensis_flavilinea','Nemata','Ephemerella','Peltodytes',
+                                                       'Tanypodinae','Ochthebius'),
                         'red',NA)
-Px_plotdat$col=ifelse(row.names(Px_plotdat) %in% c('Antocha','Nemata','Ephemerella','Pisidiidae',
-                                                   'Tanypodinae'),
+Px_plotdat$col=ifelse(row.names(Px_plotdat) %in% c('Drunella_coloradensis_flavilinea','Nemata','Ephemerella','Peltodytes',
+                                                   'Tanypodinae','Ochthebius'),
                       'red',NA)
 Poth_highlight=P_othplotdat[which(P_othplotdat$col=='red'),]
 Poth_highlight$taxon=row.names(Poth_highlight)
@@ -376,11 +376,12 @@ Px_highlight=Px_plotdat[which(Px_plotdat$col=='red'),]
 Px_highlight$taxon=row.names(Px_highlight)
 C<-ggplot(data=P_othplotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
   geom_point(data=Poth_highlight,aes(x=Fe,y=Fo,color=taxon))+
-  scale_color_manual(values=c('Antocha'='red',
-                              'Nemata'='purple',
-                              'Ephemerella'='orange',
-                              'Pisidiidae' = 'dodgerblue',
-                              'Tanypodinae' = 'yellow4'))+
+  scale_color_manual(values=c('Drunella_coloradensis_flavilinea' = 'dodgerblue',
+                              'Nemata' = 'blue',
+                              'Ephemerella' = 'red',
+                              'Peltodytes' = 'orange',
+                              'Tanypodinae' = 'purple',
+                              'Ochthebius' = 'yellow'))+
   annotate("text",
            x = -Inf, y = Inf, # Position at top-left corner
            label = 'Probabilistic',
@@ -390,11 +391,12 @@ C<-ggplot(data=P_othplotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept =
 D<-ggplot(data=Px_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
   ylim(0,max(EastXer_plotdat$Fo))+xlim(0,max(EastXer_plotdat$Fe))+
   geom_point(data=Px_highlight,aes(x=Fe,y=Fo,color=taxon))+
-  scale_color_manual(values=c('Antocha'='red',
-                              'Nemata'='purple',
-                              'Ephemerella'='orange',
-                              'Pisidiidae' = 'dodgerblue',
-                              'Tanypodinae' = 'yellow4'))+
+  scale_color_manual(values=c('Drunella_coloradensis_flavilinea' = 'dodgerblue',
+                              'Nemata' = 'blue',
+                              'Ephemerella' = 'red',
+                              'Peltodytes' = 'orange',
+                              'Tanypodinae' = 'purple',
+                              'Ochthebius' = 'yellow'))+
   annotate("text",
            x = -Inf, y = Inf, # Position at top-left corner
            label = 'Probabilistic',
@@ -421,11 +423,12 @@ tax_legend=get_only_legend(C)
 #redefine C with no legend
 C<-ggplot(data=P_othplotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
   geom_point(data=Poth_highlight,aes(x=Fe,y=Fo,color=taxon))+
-  scale_color_manual(values=c('Antocha'='red',
-                              'Nemata'='purple',
-                              'Ephemerella'='orange',
-                              'Pisidiidae' = 'dodgerblue',
-                              'Tanypodinae' = 'yellow4'))+
+  scale_color_manual(values=c('Drunella_coloradensis_flavilinea' = 'dodgerblue',
+                              'Nemata' = 'blue',
+                              'Ephemerella' = 'red',
+                              'Peltodytes' = 'orange',
+                              'Tanypodinae' = 'purple',
+                              'Ochthebius' = 'yellow'))+
   annotate("text",
            x = -Inf, y = Inf, # Position at top-left corner
            label = 'Probabilistic',
@@ -437,7 +440,7 @@ cmbin_plot=gridExtra::grid.arrange(A,B,C,D,ncol=2)
 #plot the final graph with shared legend
 gridExtra::grid.arrange(cmbin_plot,tax_legend,heights=c(10,1))
 
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//MRF_ecoregions_FoFe_sitecompare_260210_Colored.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//ecoregions_FoFe_sitecompare_260210_Colored.png')
 #get O/E scores for all sites / ecoregion subsets
 MRF_ref_OEs=OE_calc(results_data = results,
                     PA=train,
@@ -502,139 +505,45 @@ legend('topright',
        bty='n',
        cex=0.8)
 
-
-
-#get RMSE from model
-rmse_train <- sqrt(mean((MRF_ref_OEs$OtoE - 1)^2)); rmse_test <- sqrt(mean((MRF_test_OEs$OtoE - 1)^2))
-rmse_xer=sqrt(mean((XerOE$OtoE - 1)^2))
-rmse_oth=sqrt(mean((OthEco_OE$OtoE - 1)^2))
-rmse_train
-rmse_test
-
-
-boxplot(MRF_ref_OEs$OtoE,at=1,xlim=c(0,3),ylab='O/E',ylim=c(min(MRF_test_OEs$OtoE),max(MRF_ref_OEs$OtoE)),col='purple4')
-boxplot(MRF_test_OEs$OtoE,at=2,add=T,col='yellow3')
-legend('topright',
-       leg=c('Reference',
-             'Probabilistic'),
-       pch=rep(22,2),
-       pt.bg=c('purple4',
-               'yellow3'),
+boxplot(ratio,at=2,xlim=c(0,6),col='purple4',ylim=c(0,max(failedFoFe[is.finite(failedFoFe)])))
+boxplot(Pratio,at=3,add=T,col='yellow3')
+points(x=rep(3, length(sort(Pratio[is.finite(Pratio)],decreasing = T)[1:3])),y=(sort(Pratio[is.finite(Pratio)],decreasing = T)[1:3]),bg=c('blue','red','orange'),pch=21)
+boxplot(failedFoFe,at=4,add=T,col='red')
+points(x=rep(4, length(sort(failedFoFe[is.finite(failedFoFe)],decreasing = T)[1:3])),y=(sort(failedFoFe[is.finite(failedFoFe)],decreasing = T)[1:3]),bg=c('blue','purple','dodgerblue'),pch=21)
+axis(side=1,at=c(2:4),labels=c('Ref.','Prob.','Failed'))
+legend('topleft',
+       leg=c('Callibaties','Laccobius','Gyraulus','Paracloeodes','Gammarus'),
+       pch=rep(21,5),
+       pt.bg=c('blue','red','orange','purple','dodgerblue'),
        bty='n',
        cex=0.8)
 
-#axis(side=1,at=c(1,2),labels=c('Ref','Prob.'))
-abline(h=median(MRF_ref_OEs$OtoE),lty=2)
-abline(h=median(MRF_test_OEs$OtoE),lty=2)
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//Ref_prob_failed_boxes.png')
+
+
+
+
 
 #savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//OtoE_boxes_Pc0_251117.png')
 
 
 
-graphics.off()
-plot(MRF_ref_OEs$E,MRF_ref_OEs$O,ylab='O',xlab='E',main='Ref. O vs E',ylim=c(5,max(MRF_ref_OEs$O)),
-     xlim=c(5,max(MRF_ref_OEs$O)))
-abline(0,1,col='red')
-OE_lm<-lm(MRF_ref_OEs$O~MRF_ref_OEs$E)
-abline(OE_lm,col='blue')
-legend('topleft',
-       leg=c('1:1',
-             'Regression'),
-       lty=rep(1,2),
-       col=c('red','blue'),
-       bty='n')
+
 #savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//OvsE_Pc0_251023.png')
 
-coeffs=coef(OE_lm)
-coeffs
-MRF_WW_OEs=data.frame(Median_OE=median(na.omit(MRF_ref_OEs$OtoE)),
-                      Median_OE_p=median(na.omit(MRF_test_OEs$OtoE)),
-                      mean_OE=mean(na.omit(MRF_ref_OEs$OtoE)),
-                      mean_OE_p=mean(na.omit(MRF_test_OEs$OtoE)),
-                      SD=sd(na.omit(MRF_ref_OEs$OtoE)),
-                      SD_p=sd(na.omit(MRF_test_OEs$OtoE)),
-                      Slope=coeffs[2],
-                      R2=summary(OE_lm)$adj.r.squared)
-MRF_WW_OEs
-summary(OE_lm)$adj.r.squared
+
 
 
 
 #clipr::write_clip(MRF_WW_OEs)
 
 
-boxplot(get.mv.error(rf_model),ylab='taxon OOB Error')
+
 #savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//MRF_OOB_per_response_box.png')
 
 
 #testing model on known low OE score sites.
 #optional, just testing for overfit.
-
-deg=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//low_OE_sites.csv')
-predictor_deg_wide <- as.data.frame(deg %>%
-                                      select(sample_id, abbreviation, predictor_value) %>%
-                                      distinct() %>%
-                                      pivot_wider(names_from = abbreviation, values_from = predictor_value))
-
-row.names(predictor_deg_wide)=predictor_deg_wide$sample_id
-predictor_deg_wide<-predictor_deg_wide[,names(predictor_deg_wide) %in% 'sample_id'==F]
-predictor_deg_wide_sub=predictor_deg_wide[sample(nrow(predictor_deg_wide)*0.1),]
-deg_samps=row.names(predictor_deg_wide_sub)
-predictor_deg_wide_sub<-as.data.frame(lapply(predictor_deg_wide_sub,as.numeric))
-row.names(predictor_deg_wide_sub)=deg_samps
-deg_pred=predict(rf_model,predictor_deg_wide_sub)
-deg_results<-as.data.frame(sapply(deg_pred$regrOutput, function(x) x$predicted))
-row.names(deg_results)=row.names(predictor_deg_wide_sub)
-deg_sites=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Low_score_sites.csv')
-row.names(deg_sites)<-deg_sites$X;deg_sites=deg_sites[,-1]
-deg_sites<-deg_sites[row.names(deg_sites) %in% row.names(deg_results),]
-
-deg_sites<-deg_sites[match(row.names(deg_results),row.names(deg_sites)),]
-deg_sites=deg_sites[,names(deg_sites) %in% names(deg_results)]
-miss_deg=names(deg_results)[names(deg_results) %in% names(deg_sites)==F]
-for (taxon in miss_deg){
-  deg_sites[[taxon]]<-0
-}
-deg_sites=data.table::setcolorder(deg_sites,neworder = names(deg_results))
-deg_OEs=OE_calc(results_data = deg_results,PA=deg_sites, threshold)
-
-boxplot(MRF_ref_OEs$OtoE ,at=1,xlim=c(0,4),ylim=c(0,1.8))
-boxplot(MRF_test_OEs$OtoE,add=T,at=2)
-boxplot(deg_OEs$OtoE,add=T,at=3)
-abline(h=median(MRF_ref_OEs$OtoE),lty=2)
-abline(h=median(MRF_test_OEs$OtoE),lty=2)
-abline(h=median(deg_OEs$OtoE),lty=2)
-
-axis(side=1,at=1:3,labels=c('Reference','Probabilistic',"'Impaired'"))
-
-
-#savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//OE_types_boxes_Pc0_251023.png')
-
-plot(density(MRF_ref_OEs$OtoE),ty='l',main='O/E densities',xlim=c(0,1.6),xlab='O/E score',ylim=c(0,2.2))
-lines(density(MRF_test_OEs$OtoE),col='red')
-lines(density(deg_OEs$OtoE),col='blue')
-legend('topleft',
-       leg=c('Reference',
-             'Prob.',
-             "'Impaired'"),
-       lty=rep(1,3),
-       col=c('black','red','blue'),
-       bty='n')
-#savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//OE_types_densities_Pc0_251023.png')
-
-#ANOVA
-OE_dat_comp=data.frame(Group=as.factor(c(rep('Ref.',nrow(MRF_ref_OEs)),
-                                         rep('Prob.',nrow(MRF_test_OEs)),
-                                         rep('Deg.',nrow(deg_OEs)))),
-                       OE=c(MRF_ref_OEs$OtoE,MRF_test_OEs$OtoE,deg_OEs$OtoE))
-anova_res=aov(OE~Group,data=OE_dat_comp)
-summary(anova_res)
-
-median(MRF_test_OEs$OtoE)
-median(deg_OEs$OtoE)
-median(MRF_ref_OEs$OtoE)
-
-t.test(MRF_ref_OEs$OtoE, MRF_test_OEs$OtoE)
 
 
 

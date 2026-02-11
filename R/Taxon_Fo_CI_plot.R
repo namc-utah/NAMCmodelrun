@@ -11,7 +11,7 @@ CI_plot_dat$frequency=ifelse(CI_plot_dat$status=='Probabilistic',
                               CI_plot_dat$Fo/n_p,
                               CI_plot_dat$Fo/n_ref)
 #force name to be factor for plotting
-CI_plot_dat$taxon_proper<-as.factor(CI_plot_dat$taxon_rpoper)
+CI_plot_dat$taxon_proper<-as.factor(CI_plot_dat$taxon_proper)
 CI_plot_dat$Group<-as.factor(CI_plot_dat$Group)
 
 #plot saving fxn

@@ -48,20 +48,21 @@ Pes<-read.csv("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Project
 row.names(Pes)=Pes$sampleId;Pes=Pes[,-c(1,2)]
 
 #FailedPes=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//WestWide_failed_Pcs.csv')
-failed_sites<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//failed_sites.csv')
-FailedO=ProbOs[row.names(ProbOs) %in% failed_sites$sampleId,]
-FailedPes=Pes[row.names(Pes) %in% failed_sites$sampleId,]
+
 ProbOs<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_Prob_Os.csv')
 row.names(ProbOs)<-ProbOs$X;ProbOs=ProbOs[,-c(1,2)]
-ProbOs=ProbOs[row.names(ProbOs) %in% failed_sites$sampleId==F,]
-Pes=Pes[row.names(Pes) %in% failed_sites$sampleId==F,]
+
+
 ProbOs=ProbOs[,names(ProbOs) %in% c('Carabidae','Curculionidae')==F]
 Pes=Pes[,names(Pes) %in% c('Carabidae','Curculionidae')==F]
 Pes=Pes[match(names(ProbOs), names(Pes))]
 #write.csv(ProbOs,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_Prob_Os.csv')
 
-
-
+failed_sites<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//failed_sites.csv')
+FailedO=ProbOs[row.names(ProbOs) %in% failed_sites$sampleId,]
+FailedPes=Pes[row.names(Pes) %in% failed_sites$sampleId,]
+ProbOs=ProbOs[row.names(ProbOs) %in% failed_sites$sampleId==F,]
+Pes=Pes[row.names(Pes) %in% failed_sites$sampleId==F,]
 #dropping sampleId and assigning that to the row names
 
 
@@ -147,7 +148,7 @@ Fa=ggplot(data=P_Results,aes(y=Fo,x=Fe,label=taxon))+geom_point()+
   #geom_point(data = P_Results[P_Results$Regional_Response=='Decreaser',],color='dodgerblue')+
   #geom_point(data = P_Results[P_Results$Regional_Response=='Increaser',],color='orange2')+
   geom_abline(intercept = 0,slope = 1,col='red')+
-  geom_point(data=F_Results[F_Results$taxon %in% extreme_diffs$taxon,],aes(x=Fe,y=Fo,colour = taxon))+
+  geom_point(data=P_Results[P_Results$taxon %in% extreme_diffs$taxon,],aes(x=Fe,y=Fo,colour = taxon))+
   scale_color_manual(values=my_colors)+
   coord_cartesian(clip = "off") +
   # geom_text_repel(
@@ -155,14 +156,14 @@ Fa=ggplot(data=P_Results,aes(y=Fo,x=Fe,label=taxon))+geom_point()+
 
   annotate("text",
            x = -Inf, y = Inf, # Position at top-left corner
-           label = 'Failed',
+           label = 'Probabilistic',
            hjust = 0, vjust = 1, # Justify text relative to corner
            size = 5, color = "black")+
   theme(legend.position = "bottom")
 
 gridExtra::grid.arrange(P,Fa,ncol=1)
 
-savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_vs_Fe_Failed_colored_260206.png')
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_vs_Fe_Prob_colored_260210.png')
 
 write.csv(All_Results,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_WW_260210.csv')
 
@@ -513,7 +514,7 @@ if(1){
 #this needs to only be run once, as the table does not change.
 if(0){
   trait_table=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//OTU_21_traits.csv')
-  trait_table<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//All_bench_taxa_atrributes2.csv')
+  #trait_table<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//All_bench_taxa_atrributes2.csv')
   OTU21<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//OTU21.csv')
   trait_table<-trait_table[trait_table$OTU %in% OTU21$taxonOTU,]
   #trait_table<-trait_table[trait_table$OTU %in% All_ratios$taxon,]
@@ -704,11 +705,11 @@ gower_scores=data.frame(PCOA$vectors)
 gower_scores$taxon=row.names(Gower_dist)
 row.names(gower_scores)=row.names(traits_only3)
 
-fit=envfit(gower_scores[,c(2,3)],traits_only3,na.rm=T)
+fit=envfit(gower_scores[,c(1,2)],traits_only3,na.rm=T)
 trait_vect<-as.data.frame(fit$vectors$arrows)
 trait_vec=as.data.frame(scores(fit, display = 'vectors'))
 trait_vect$trait <- rownames(trait_vect)
-colnames(trait_vect)[1:2] <- c("PCo2", "PCo3")
+colnames(trait_vect)[1:2] <- c("PCo1", "PCo2")
 mult=vegan::ordiArrowMul(trait_vec,display='species')
 arrow_multiplier <- 0.75 * max(abs(gower_scores[,c(1,2)])) / max(abs(trait_vect[,1:2]))
 trait_vect[,1:2] <- trait_vect[,1:2] * arrow_multiplier
@@ -723,7 +724,7 @@ PCOA_Scores$taxon<-row.names(traits_only)
 trait_vect$trait=c('Slow develop',
                    'Adults exit',
                    'No drift',
-                   'No Dessic. Resist.',
+                   'No Desicc. Resist.',
                    'Not streamlined')
 
 
@@ -736,11 +737,11 @@ All_responses_and_scores=plyr::join(All_ratios,PCOA_Scores,by='taxon','left')
 #be sure to adjust axes as needed
 Responses_and_scores$status2=factor(Responses_and_scores$status,levels=c('Reference','Probabilistic'))
 ggplot(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.finite(Responses_and_scores$ratio) & Responses_and_scores$Fo>0,],
-       aes(x=Axis.3,y=Axis.4,color=Regional_Response))+
+       aes(x=Axis.2,y=Axis.3,color=Regional_Response))+
   geom_point(size=3,alpha=0.7)+
   stat_ellipse(level=0.8)+
   geom_segment(data=trait_vect,
-               aes(x=0,y=0,xend=PCo3,yend=PCo4),
+               aes(x=0,y=0,xend=PCo2,yend=PCo3),
                arrow=arrow(length=unit(0.25,'cm')),
                linewidth=1,
                alpha=0.5,inherit.aes = F)+
@@ -749,7 +750,7 @@ ggplot(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.fini
   #         hjust = 0.4, vjust = .9, color="black", size = 3.5) +
   geom_label(
     data = trait_vect,
-    aes(x = PCo3, y = PCo4, label = trait),
+    aes(x = PCo2, y = PCo3, label = trait),
     hjust = ifelse(names(trait_vect)[1]=='PCo2',0.2, .75),
     vjust = 1,
     size = 3,
@@ -758,10 +759,10 @@ ggplot(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.fini
     label.size = 0.2,    # border thickness; set to 0 to remove outline
     inherit.aes = FALSE
   )+
-   # geom_text(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.finite(Responses_and_scores$ratio),],
-   #           aes(x=Axis.1,y=Axis.2,label=taxon),
-   #           color='black',
-   #           hjust=0,vjust=0, size=2)+
+    # geom_text(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.finite(Responses_and_scores$ratio),],
+    #          aes(x=Axis.2,y=Axis.3,label=taxon),
+    #           color='black',
+    #           hjust=0,vjust=0, size=1)+
   scale_color_manual(values=c("Increaser"="orange",
                               "Decreaser"="dodgerblue3",
                               "Neutral"='red',
@@ -775,7 +776,7 @@ savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//A
 
 #same but for prob sites.
 ggplot(All_responses_and_scores[is.finite(All_responses_and_scores$Pratio) & All_responses_and_scores$pFo > 0,],
-       aes(x = Axis.2, y = Axis.3, color = Presponse)) +
+       aes(x = Axis.1, y = Axis.2, color = Presponse)) +
   geom_point(size = 3, alpha = 0.7) +
   stat_ellipse(level = 0.8) +
   scale_color_manual(values = c(
@@ -788,7 +789,7 @@ ggplot(All_responses_and_scores[is.finite(All_responses_and_scores$Pratio) & All
   guides(color = guide_legend(title = 'Response'))+
   theme(legend.position = "top")+
   geom_segment(data=trait_vect,
-               aes(x=0,y=0,xend=PCo2,yend=PCo3),#                arrow=arrow(length=unit(0.25,'cm')),
+               aes(x=0,y=0,xend=PCo1,yend=PCo2),#                arrow=arrow(length=unit(0.25,'cm')),
                linewidth=1,
                alpha=0.5,inherit.aes = F, arrow=arrow(length=unit(.25,"centimeters")))+
   # geom_text(data = trait_vect,
@@ -796,7 +797,7 @@ ggplot(All_responses_and_scores[is.finite(All_responses_and_scores$Pratio) & All
   #           hjust = 0.5, vjust = .5, color="black", size = 3.5)
   geom_label(
     data = trait_vect,
-    aes(x = PCo2, y = PCo3, label = trait),
+    aes(x = PCo1, y = PCo2, label = trait),
     hjust = ifelse(names(trait_vect)[1]=='PCo2',0.2, .56),
     vjust = 1,
     size = 3,
@@ -805,7 +806,7 @@ ggplot(All_responses_and_scores[is.finite(All_responses_and_scores$Pratio) & All
     label.size = 0.2,    # border thickness; set to 0 to remove outline
     inherit.aes = FALSE
   )
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//prob_responses_traitspace_Ecoregions_260210_Axes2_3_allaxesmantel.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//prob_responses_traitspace_Ecoregions_260210_Axes1_2_allaxesmantel.png')
 
 
 #general trend of traits across land uses at watershed scale
