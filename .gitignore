@@ -1,5 +1,5 @@
 # History files
-.Rhistory
+*.Rhistory
 .Rapp.history
 
 # User-specific files
@@ -37,8 +37,19 @@ vignettes/*.pdf
 
 # MacOS finder files
 .DS_Store
-.Rproj.user
-.Rproj
+*.Rproj.user
+*.Rproj
 
-.csv
-.xls
+*.csv
+*.xls
+*.xlsx
+*.png
+*.sbx
+*.shp
+*.prj
+*.cpg
+*.shx
+*.xml
+*.dbf
+*.sbn
+*.jpeg
