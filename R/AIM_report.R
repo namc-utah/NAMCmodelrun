@@ -28,6 +28,7 @@ Report=NAMCr::query("modelResults", sampleIds=samples$sampleId)
 Report=subset(Report, is.na(modelResult)==FALSE)
 
 
+
 #### Step 4 format output into format needed for AIM database ####
 
 # bug data
@@ -67,12 +68,12 @@ Report3<-left_join(Report3,invasives, by='SampleID')
 Report3$InvasiveInvertSpecies[is.na(Report3$InvasiveInvertSpecies)]<-"Absent"
 
 # WQ data (predicted WQ values only) raw WQ data back from the Baker lab is not stored by NAMC and rather just excel spreadsheet is forwarded on
-WQ=subset(Report2,modelId %in% c(301,302,303), select=c('SampleID','EvaluationID','PointID','OE_MMI_ModelUsed','oResult','eResult','modelResult'))
+WQ=subset(Report2,modelId %in% c(301,302,303))
+WQ_pivot=tidyr::pivot_wider(WQ,id_cols=c("sampleId",'visitId','customerSiteCode'),names_from=c('modelAbbr'), values_from=c("eResult",))
 WQ$OE_MMI_ModelUsed=ifelse(WQ$OE_MMI_ModelUsed=='TN_2023','PredictedTotalNitrogen',
                            ifelse(WQ$OE_MMI_ModelUsed=='TP_2023','PredictedTotalPhosphorous',
                                   ifelse(WQ$OE_MMI_ModelUsed=='SC_2023','PredictedSpecificConductance',
                                          WQ$OE_MMI_ModelUsed)))
-WQ_pivot=tidyr::pivot_wider(WQ,id_cols=c('SampleID','EvaluationID','PointID'),names_from=c('OE_MMI_ModelUsed'), values_from=c("eResult"))
 
 #join bug and WQ data
 Final=dplyr::full_join(Report3,WQ_pivot, by=c('SampleID','EvaluationID','PointID'))
