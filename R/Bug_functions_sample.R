@@ -328,7 +328,7 @@ CO_v5_bug_export<-function(sampleIds){
   #CObugs=CObugs[,c("Project","Station","Name","Location","CollDate","Organism","Individuals","Stage","CommentsTaxa","RepNum","Grids","CommentsSample","CommentsRep")]
   #write excel file to workspace
   write.csv(CObugs2,file = paste0(CO_path,"CObugs","boxId_",CObugs2$Project[1],"_",Sys.Date(),".csv"),row.names=FALSE)
-  cat(paste("csv with CO bugs has been written out to the CO EDAS imports folder.",
+  cat(paste("csv with CO bugs has been written out to the CO EDAS (2025) imports folder.",
             "Convert this csv to excel 2003 and import into CO EDAS access database to compute the CSCI score.",
             "Follow instructions in this pdf Box\\NAMC\\OE_Modeling\\NAMC_Supported_OEmodels\\CO\\Documentation\\EDAS2017\\Tutorial Guide to EDAS_Version 1.7.pdf",
             "to import bug and habitat data, harmonize taxa list, rarefy and compute MMI",

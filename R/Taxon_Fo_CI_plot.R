@@ -1,10 +1,10 @@
 #number of reference sites / prob sites
 #for creating frequency
-n_ref= 646
+n_ref= 656
 n_p=349
 library(tidyverse)
 #read in data
-CI_plot_dat=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//CI_plot_data.csv')
+CI_plot_dat=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//CI_plot_dat.csv')
 #create frequency
 #Fo / all sites
 CI_plot_dat$frequency=ifelse(CI_plot_dat$status=='Probabilistic',
@@ -236,4 +236,6 @@ ggplot(small_plot[small_plot$status=='Reference',], aes(x = frequency, y = ypos,
   #plot.margin = margin(5, 5, 5, 20))+
   #move legend for readability
   theme(legend.position = 'left')
-savp(10,10,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//test2.png')
+savp(10,10,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//small_CI_plot.png')
+
+

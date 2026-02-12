@@ -469,6 +469,7 @@ P_Ecoregions$Presponse=ifelse(P_Ecoregions$Pratio > 1.2,'Increaser',
 
 All_ratios=Ref_Ecoregions %>% left_join(P_Ecoregions, by=c('Ecoregion','taxon'))
 write.csv(All_ratios,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//all_ratios_251121.csv')
+}
 #Trait info
 #read in the traits from NAMC's database
 #translationID=21

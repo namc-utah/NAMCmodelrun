@@ -1,18 +1,27 @@
 #PcoA for sites using traits as variables
 #this chunk is readind in the data,
 #subseting, etc
+if(0){
 abun<-read.csv("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//abundances.csv")
 abun$sample_id<-as.character(abun$sample_id)
 abun<-abun[,-1]
-PA<-ifelse(abun>0,1,0)
+}
+refs=Os
+Probs=ProbOs
+refs$status='Reference'
+Probs$status='Probabilistic'
+PA=rbind(refs,Probs)#PA<-ifelse(abun>0,1,0)
 failed_sites<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//failed_sites.csv')
-ref_a<-abun[abun$Status=='Reference',]
-ref_a<-ref_a[ref_a$sample_id %in% c(116830,132243,132807, 185022)==F,]
-prob_a<-abun[abun$Status=='Probabilistic',]
-prob_a<-prob_a[prob_a$sample_id %in% failed_sites$sampleId==F,]
-traits<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//All_bench_taxa_atrributes2.csv')
+PA=PA[row.names(PA) %in% failed_sites$sampleId==F,]
+#ref_a<-abun[abun$Status=='Reference',]
+#ref_a<-ref_a[ref_a$sample_id %in% c(116830,132243,132807, 185022)==F,]
+#prob_a<-abun[abun$Status=='Probabilistic',]
+#prob_a<-prob_a[prob_a$sample_id %in% failed_sites$sampleId==F,]
+traits<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//OTU_21_traits.csv')
 OTU21<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//OTU21.csv')
 traits<-traits[traits$OTU %in% OTU21$taxonOTU,]
+PA=PA[,names(PA) %in% c('status',traits$OTU)]
+
 ref_a<-ref_a[ref_a$OTU %in% OTU21$taxonOTU,]
 ref_PA<-ref_a
 ref_PA[,3]<-ifelse(ref_a[,3]>0,1,0)
@@ -33,8 +42,8 @@ wide_traits=wide_traits[!duplicated(wide_traits$OTU),]
 #add the OTU names to the dataset
 
 #set the top5 traits identified from the Gower matrix
-top5<- c("Swim_strong",           "Develop_slow_season",   "Habit_prim_Clinger",    "Rheophily_abbrev_eros",
-         "Lifespan_short"    )
+top5s<- c("Develop_slow_season",    "Adult_exit_absent",      "Survive_desiccation_no", "Occurance_drift_rare" ,
+"Shape_not_streamline")
 #subset out traits we won't be using,
 #such as affinities, secondary feeding, etc.
 wide_traits<- wide_traits %>%
@@ -43,24 +52,30 @@ wide_traits<- wide_traits %>%
 taxa_traits_num<- lapply(wide_traits[,2:ncol(wide_traits)], function(x) {
   ifelse(x == "TRUE", 1, ifelse(x == "FALSE", 0, NA))
 })
+
 #now just combine the lapplied object into one data frame
 taxa_traits_num<-as.data.frame(do.call(cbind,taxa_traits_num))
+taxa_traits_num[is.na(taxa_traits_num)]<-0
 #set OTU so we can join
 taxa_traits_num$OTU=wide_traits$OTU
 
 #optional#
 #get just the top 5 traits
-taxa_traits_num<-taxa_traits_num[,names(taxa_traits_num) %in% c('OTU', top5)]
+taxa_traits_num<-taxa_traits_num[,names(taxa_traits_num) %in% c('OTU', top5s)]
 #look at just the taxa who appear at > 10 sites and have traits.
-taxa_traits_num<-taxa_traits_num[taxa_traits_num$OTU %in% taxa_notraits_rare$taxon==F,]
+#taxa_traits_num<-taxa_traits_num[taxa_traits_num$OTU %in% taxa_notraits_rare$taxon==F,]
 #subset sampleId for later, if needed
-ref_a_samps<-ref_a$sample_id
+#ref_a_samps<-ref_a$sample_id
 #ref_a<-ref_a[,-2]
 #join the traits to the respsective community data
-joined<-plyr::join(ref_a,taxa_traits_num,type='left')
-ref_P_joined<-plyr::join(ref_PA,taxa_traits_num,type='left')
-p_joined<-plyr::join(prob_a,taxa_traits_num,type='left')
-p_P_joined<-plyr::join(prob_PA,taxa_traits_num,type='left')
+PA_long=PA %>%
+  tibble::rownames_to_column(var='sample_id') %>%
+  pivot_longer(cols=-c(sample_id,status),
+                    names_to = 'OTU',values_to = 'PA')
+joined<-plyr::join(PA_long,taxa_traits_num,type='left')
+# ref_P_joined<-plyr::join(ref_PA,taxa_traits_num,type='left')
+# p_joined<-plyr::join(prob_a,taxa_traits_num,type='left')
+# p_P_joined<-plyr::join(prob_PA,taxa_traits_num,type='left')
 
 #set the trait columns
 #for dplyr to calculate the weighted traits
@@ -91,14 +106,14 @@ site_traits_weighted <- joined %>%
 #   mutate(across(where(is.numeric), ~.x*split_count))
 
 
-trait_cols=5:ncol(ref_P_joined)
-trait_cols=names(ref_P_joined)[trait_cols]
- site_PA_traits_weighted<-ref_P_joined %>%
+# trait_cols=5:ncol(ref_P_joined)
+# trait_cols=names(ref_P_joined)[trait_cols]
+ site_PA_traits_weighted<-joined %>%
   #mutate(across(all_of(trait_cols), ~ .x * (split_count))) %>%  # presence = 1/0
-  group_by(sample_id) %>%
+  group_by(sample_id,status) %>%
    dplyr::summarise(
      # PA-weighted trait per site
-     across(all_of(trait_cols), ~ sum(.x * split_count, na.rm = TRUE) / sum(split_count, na.rm = TRUE), .names = "PA_{.col}"),
+     across(all_of(trait_cols), ~ sum(.x * PA, na.rm = TRUE) / sum(PA, na.rm = TRUE), .names = "PA_{.col}"),
      .groups = "drop"
    )
  #   dplyr::summarise(across(all_of(trait_cols),
@@ -186,13 +201,14 @@ All_site_trait_small<-All_site_traits_weighted[,-c(1,ncol(All_site_traits_weight
 All_PA_site_trait_small<-All_PA_site_traits_weighted[,-c(1,ncol(All_PA_site_traits_weighted))]
 #run the gower dissimilarity matrix on the trait datasets
 sit_gow<-cluster::daisy(All_site_trait_small,metric='gower')
-sit_PA_gow<-cluster::daisy(All_PA_site_trait_small,metric='gower')
-
+sit_PA_gow<-cluster::daisy(site_PA_traits_weighted[,3:ncol(site_PA_traits_weighted)],metric='gower')
+row.names(sit_PA_gow)=site_PA_traits_weighted$sample_id
 #compute PCOA scores
 bc<-ape::pcoa(sit_gow)
 BC_scores<-as.data.frame(bc$vectors[,1:2])
 Pbc<-ape::pcoa(sit_PA_gow)
 pBC_scores<-as.data.frame(Pbc$vectors[,1:2])
+pBC_scores$status=site_PA_traits_weighted$status
 BC_scores$status=All_site_traits_weighted$status
 pBC_scores$status=All_PA_site_traits_weighted$status
 row.names(BC_scores)=All_site_traits_weighted$sample_id
@@ -216,7 +232,7 @@ ggplot(pBC_scores,aes(x=Axis.1,y=Axis.2,fill=status))+geom_point(pch=21)+
   stat_ellipse(level=0.8,data = subset(pBC_scores, status == "Reference"), color = "purple4", size = 1,type='t') +
   stat_ellipse(level=0.8,data = subset(pBC_scores, status == "Probabilistic"), color = "yellow", size = 1,type='t')
 
-savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//sites_PA_top5_traitspace.png')
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_PA_top5_traitspace.png')
 
 
 
@@ -268,34 +284,142 @@ row.names(Gower_abun_mat)<-row.names(bug_log_wide)
 Gower_abun_MDS=vegan::metaMDS(Gower_abun_mat)
 
 #Gower_dist_PA<-cluster::daisy(bug_PA_wide,metric='gower')#type=list(asymm=1:ncol(bug_PA_wide)))
-Gower_dist_PA<-vegan::vegdist(bug_PA_wide,'bray',binary=T)
+Gower_dist_PA<-vegan::vegdist(PA[,-ncol(PA)],'bray',binary=T)
 Gower_PA_mat<-as.matrix(Gower_dist_PA)
 #assign the site names
-row.names(Gower_PA_mat)<-row.names(bug_log_wide)
-Gower_PA_MDS=vegan::metaMDS(Gower_PA_mat)
+row.names(Gower_PA_mat)<-row.names(PA)
+Gower_PA_MDS=vegan::metaMDS(Gower_PA_mat,k=3)
 
 abun_scores=as.data.frame(vegan::scores(Gower_abun_MDS))
 PA_scores=as.data.frame(vegan::scores(Gower_PA_MDS))
 
 abun_scores$Status=statuses_wide
-PA_scores$Status=statuses_wide
+PA_scores$Status=PA$status
 
-outlier=abun_scores[abun_scores$NMDS1 < -0.75,]
-abun_scores<-abun_scores[abun_scores$NMDS1 > -0.75,]
-PA_scores<-PA_scores[PA_scores$NMDS1 > -0.75,]
-ggplot(abun_scores,aes(x=NMDS1,y=NMDS2,fill=Status))+geom_point(pch=21)+
+NMDS_cal_preds=predcal[predcal$SiteCode %in% row.names(PA),]
+NMDS_prob_preds=prednew[row.names(prednew) %in% row.names(PA),]
+NMDS_cal_preds$SiteCode==row.names(PA)[PA$status=='Reference']
+row.names(NMDS_prob_preds)==row.names(PA)[PA$status=='Probabilistic']
+
+cal_pred_dat=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//WW_cal_preds.csv')
+NMDS_cal_preds<-plyr::join(NMDS_cal_preds,cal_pred_dat,by='COMID','left')
+env_dat=rbind(NMDS_cal_preds[,c('ElevCat','Precip8110Ws','Tmean8110Ws','WsAreaSqKm')],NMDS_prob_preds[,c('ElevCat','Precip8110Ws','Tmean8110Ws','WsAreaSqKm')])
+nmds_fit=envfit(Gower_PA_MDS,env_dat)
+
+nmds_fit=envfit(PA_scores[,c(2,3)],env_dat,na.rm=T)
+env_vect<-as.data.frame(nmds_fit$vectors$arrows)
+env_vec=as.data.frame(scores(nmds_fit, display = 'vectors'))
+env_vect$env <- rownames(env_vect)
+colnames(env_vect)[1:2] <- c("NMDS2", "NMDS3")
+mult=vegan::ordiArrowMul(env_vec,display='species')
+arrow_multiplier <- 0.75 * max(abs(PA_scores[,c(2,3)])) / max(abs(env_vect[,1:2]))
+env_vect[,1:2] <- env_vect[,1:2] * arrow_multiplier
+env_vect$env=c('ElevCat',
+               'PrecipWs',
+               'TmeanWs','WsArea')
+# ggplot(abun_scores,aes(x=NMDS1,y=NMDS3,fill=Status))+geom_point(pch=21)+
+#   scale_fill_manual(name='Status',
+#                     values=c('Reference' = 'purple4',
+#                              'Probabilistic' = 'yellow'))+ggtitle('Sites in OTU space (PA)')+
+#   stat_ellipse(level=0.8,data = subset(abun_scores, Status == "Reference"), color = "purple4", size = 1,type='t') +
+#   stat_ellipse(level=0.8,data = subset(abun_scores, Status == "Probabilistic"), color = "yellow", size = 1) #+stat_ellipse(level=0.8,type='t')+scale_color_manual(values=c('Reference'='red','Probabilistic' = 'blue'))
+# savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//sites_OTUspace_abun_ellipse.png')
+
+ggplot(PA_scores,aes(x=NMDS2,y=NMDS3,fill=Status))+geom_point(pch=21)+
   scale_fill_manual(name='Status',
                     values=c('Reference' = 'purple4',
                              'Probabilistic' = 'yellow'))+ggtitle('Sites in OTU space (PA)')+
-  stat_ellipse(level=0.8,data = subset(abun_scores, Status == "Reference"), color = "purple4", size = 1,type='t') +
-  stat_ellipse(level=0.8,data = subset(abun_scores, Status == "Probabilistic"), color = "yellow", size = 1) #+stat_ellipse(level=0.8,type='t')+scale_color_manual(values=c('Reference'='red','Probabilistic' = 'blue'))
-savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//sites_OTUspace_abun_ellipse.png')
-
-ggplot(PA_scores,aes(x=NMDS1,y=NMDS2,fill=Status))+geom_point(pch=21)+
-  scale_fill_manual(name='Status',
-                    values=c('Reference' = 'purple4',
-                             'Probabilistic' = 'yellow'))+ggtitle('Sites in OTU space (PA)')+
+  geom_segment(data=env_vect,
+               aes(x=0,y=0,xend=NMDS2,yend=NMDS3),#                arrow=arrow(length=unit(0.25,'cm')),
+               linewidth=1,
+               alpha=0.5,inherit.aes = F, arrow=arrow(length=unit(.25,"centimeters")))+
+  geom_label(
+    data = env_vect,
+    aes(x = NMDS2, y = NMDS3, label = env),
+    hjust = 0.75,
+    vjust = 0,
+    size = 3,
+    fill = "white",      # background color
+    color = "red",       # text color
+    label.size = 0.2,    # border thickness; set to 0 to remove outline
+    inherit.aes = FALSE
+  )+
 stat_ellipse(level=0.8,data = subset(PA_scores, Status == "Reference"), color = "purple4", size = 1,type='t') +
   stat_ellipse(level=0.8,data = subset(PA_scores, Status == "Probabilistic"), color = "yellow", size = 1)#+stat_ellipse(level=0.8,type='t')
-savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//sites_OTUspace_PA_ellipse.png')
 
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_OTUspace_PA_ellipse_axes_2_3.png')
+
+
+ordisurf(PA_scores[,c(1,2)], log(env_dat$WsAreaSqKm),k=4,
+         pch=21,bg=ifelse(PA$status=='Reference','purple4','yellow'),
+         col='black',
+         main='logWsArea',
+         lwd=3)
+legend('topleft',
+       pch=rep(21,2),
+       pt.bg=c('purple4','yellow'),
+       bty='n',
+       leg=c('Reference',
+             'Probabilistic'),
+       cex=0.8)
+
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//PA_ordi_WsArea.png')
+Pgower_scores=data.frame(Pbc$vectors)
+#gower_scores=data.frame(Pco1=gower_cmd[,1],Pco2=gower_cmd[,2])
+Pgower_scores$taxon=site_PA_traits_weighted$sample_id
+
+Pbc_cmd=cmdscale(sit_PA_gow,k=3)
+env_fut=envfit(ord=Pgower_scores[,c(2,3)],env=site_PA_traits_weighted,eig=T)
+ptrait_vect<-as.data.frame(env_fut$vectors$arrows)
+ptrait_vec=as.data.frame(scores(env_fut,display='vectors'))
+ptrait_vect$trait <- rownames(ptrait_vect)
+colnames(ptrait_vect)[1:2] <- c("PCo2", "PCo3")
+ptrait_vect=ptrait_vect[ptrait_vect$trait %in% paste0('PA_',top5s),]
+ptrait_vect$trait=c('Slow develop',
+                   'Adults exit',
+                   'No drift',
+                   'No Dessic. Resist.',
+                   'Not streamlined')
+pPCOA_Scores<-as.data.frame(Pbc$vectors)
+#assign taxa names
+ptop_trait_arrows=ptrait_vect$trait
+pPCOA_Scores$sample_id<-site_PA_traits_weighted$sample_id
+
+p_sites_and_coords=plyr::join(site_PA_traits_weighted,pPCOA_Scores)
+
+
+
+point_max <- max(abs(Pgower_scores[,1:2]))
+arrow_max <- max(abs(ptrait_vect[,1:2]))
+arrow_multiplier <- (point_max / arrow_max) * 0.4  # 0.8 keeps them inside the points
+
+# Apply scaling
+ptrait_vect$PCo2 <- ptrait_vect$PCo2 * arrow_multiplier
+ptrait_vect$PCo3 <- ptrait_vect$PCo3 * arrow_multiplier
+
+# --- 2. Plotting with corrected scales ---
+ggplot(p_sites_and_coords, aes(x=Axis.2, y=Axis.3, fill=status)) +
+  geom_point(pch=21) +
+  stat_ellipse(level=0.8,data = subset(p_sites_and_coords, status == "Reference"), color = "purple4", size = 1,type='t') +
+  stat_ellipse(level=0.8,data = subset(p_sites_and_coords, status == "Probabilistic"), color = "yellow", size = 1,type='t')+# Added alpha for fill
+  # FIX: Change fill to color to match aes(color=status)
+  scale_fill_manual(name='status',
+                     values=c('Reference' = 'purple4',
+                              'Probabilistic' = 'yellow')) +
+  geom_segment(data=ptrait_vect,
+               aes(x=0, y=0, xend=PCo2, yend=PCo3),
+               arrow=arrow(length=unit(0.25, 'cm')),
+               linewidth=1,
+               inherit.aes = FALSE,
+               color="black") + # Set a fixed color so it doesn't look for 'status'
+  geom_label(
+    data = ptrait_vect,
+    aes(x = PCo2, y = PCo3, label = trait),
+    size = 3,
+    fill = "white",
+    color = "red",
+    hjust=.35,
+    label.size = 0.2,
+    inherit.aes = FALSE
+  ) # CRITICAL for PCoA: ensures 1 unit on X = 1 unit on Y
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_OTUspace_PA_ellipse_traits_axes2_3.png')

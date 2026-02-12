@@ -23,7 +23,7 @@ boxes=NAMCr::query("boxes",include = c('boxId','alias','boxState','sampleCount',
 #all AIM data
 samples=NAMCr::query("samples",projectId=49)
 #Only data for a certain box or boxes of interest
-#samples=NAMCr::query("samples",boxId=c()#input list of boxes of interest from above boxes query
+samples=NAMCr::query("samples",boxId=c(12709))#input list of boxes of interest from above boxes query
 Report=NAMCr::query("modelResults", sampleIds=samples$sampleId)
 Report=subset(Report, is.na(modelResult)==FALSE)
 
@@ -40,7 +40,7 @@ Report2$OE_MMI_ModelApplicability=ifelse(Report2$OE_MMI_ModelApplicability=='TRU
 Report2$MMI_Macroinvertebrate=ifelse(Report2$modelId %in% c(3,4,5,6,8,24),Report2$modelResult,NA)
 Report2$OE_Macroinvertebrate=ifelse(Report2$modelId %in% c(1,2,7,9,10,11,12,13:23,25:26),Report2$modelResult, NA)
 # get standard field office level results for AIM database
-Report3=subset(Report2, modelId %in% c(1:7,9:26) & notes!='National')
+Report3=subset(Report2, modelId %in% c(1:7,9:26))# & notes!='National')
 ###If you want results for a national report get westwide OE scores comment out above line and uncomment this line... invasive species should be gotten only from field office level query above
 ##Report3=subset(Report2, modelId %in% c(25,26))
 
@@ -52,7 +52,15 @@ bugRaw = NAMCr::query(
   sampleIds=samples$sampleId
 )
 #subset taxa in samples to only invasives
-bugraw = subset(bugRaw,taxonomyId %in% c(1330,1331,2633, 2671,4933,4934,4935,4936,4937,4938,4939,4940,4941,4942,1019,1994,5096,1515,1518,1604,2000,4074,1369,2013,1579))
+bugraw = subset(bugRaw,taxonomyId %in% c(1330,1331,2633, 2671,4933,4934,
+                                         4935,4936,4937,4938,4939,4940,
+                                         4941,4942,1019,1994,5096,
+                                         1604,2000,4074,1369,2013,
+                                         1579,9584,9585,9586,9587,601,632,611,
+                                         650,936,1369,1514,1515,1518,
+                                         1579,1604,1637,1658,1817,1953,
+                                         1970,1971,1990,2000,2013,2053,8878,5510,
+                                         607,820,3943,4194,3833,1030))
 #create list of invasives present at a site
 invasives<-bugraw %>% dplyr::group_by(sampleId) %>% dplyr::summarize(InvasiveInvertSpecies=paste0(list(unique(scientificName)),collapse=''))
 # remove list formatting
