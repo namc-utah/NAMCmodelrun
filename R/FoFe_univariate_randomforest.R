@@ -242,7 +242,7 @@ legend('topright',
 # ---------------------------
 #creating O/E scores, quasi-RIVPACS style
 #set the Pc threshold, in this case, 0.5
-threshold <- 0.5
+threshold <- 0
 #define fxn that will calculate the O/E scores
 OE_calc=function(results_data, PA,threshold){
   Os=list()
@@ -328,7 +328,11 @@ abline(0,1,col='red')
 OthEco_plotdat=data.frame(Fo=Oth_Fo,Fe=Oth_Fe)
 EastXer_plotdat=data.frame(Fo=X_Fo,Fe=X_Fe)
 P_othplotdat=data.frame(Fo=PFos_oth,Fe=PFes_oth)
+row.names(P_othplotdat)=ifelse(row.names(P_othplotdat)=='Drunella_coloradensis_flavilinea',
+                               'Drunella coloradensis/flavilinea',row.names(P_othplotdat))
 Px_plotdat=data.frame(Fo=Px_Fo,Fe=Px_Fe)
+row.names(Px_plotdat)=ifelse(row.names(Px_plotdat)=='Drunella_coloradensis_flavilinea',
+                               'Drunella coloradensis/flavilinea',row.names(Px_plotdat))
 
 # WW_Xer=Os[Os$X %in% groups$`Eastern Xeric Plateaus`$sampleId==T,]
 # WW_E_Xer=Es[Es$X %in% groups$`Eastern Xeric Plateaus`$sampleId==T,]
@@ -364,10 +368,10 @@ B<-ggplot(data=EastXer_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercep
 #savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//MRF_allsites_FoFe.png')
 
 #getting highlight taxa for showing some inc/decs
-P_othplotdat$col=ifelse(row.names(P_othplotdat) %in% c('Drunella_coloradensis_flavilinea','Nemata','Ephemerella','Peltodytes',
+P_othplotdat$col=ifelse(row.names(P_othplotdat) %in% c('Drunella coloradensis/flavilinea','Nemata','Ephemerella','Peltodytes',
                                                        'Tanypodinae','Ochthebius'),
                         'red',NA)
-Px_plotdat$col=ifelse(row.names(Px_plotdat) %in% c('Drunella_coloradensis_flavilinea','Nemata','Ephemerella','Peltodytes',
+Px_plotdat$col=ifelse(row.names(Px_plotdat) %in% c('Drunella coloradensis/flavilinea','Nemata','Ephemerella','Peltodytes',
                                                    'Tanypodinae','Ochthebius'),
                       'red',NA)
 Poth_highlight=P_othplotdat[which(P_othplotdat$col=='red'),]
@@ -376,7 +380,7 @@ Px_highlight=Px_plotdat[which(Px_plotdat$col=='red'),]
 Px_highlight$taxon=row.names(Px_highlight)
 C<-ggplot(data=P_othplotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
   geom_point(data=Poth_highlight,aes(x=Fe,y=Fo,color=taxon))+
-  scale_color_manual(values=c('Drunella_coloradensis_flavilinea' = 'dodgerblue',
+  scale_color_manual(values=c('Drunella coloradensis/flavilinea' = 'dodgerblue',
                               'Nemata' = 'blue',
                               'Ephemerella' = 'red',
                               'Peltodytes' = 'orange',
@@ -391,7 +395,7 @@ C<-ggplot(data=P_othplotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept =
 D<-ggplot(data=Px_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
   ylim(0,max(EastXer_plotdat$Fo))+xlim(0,max(EastXer_plotdat$Fe))+
   geom_point(data=Px_highlight,aes(x=Fe,y=Fo,color=taxon))+
-  scale_color_manual(values=c('Drunella_coloradensis_flavilinea' = 'dodgerblue',
+  scale_color_manual(values=c('Drunella coloradensis/flavilinea' = 'dodgerblue',
                               'Nemata' = 'blue',
                               'Ephemerella' = 'red',
                               'Peltodytes' = 'orange',
@@ -423,7 +427,7 @@ tax_legend=get_only_legend(C)
 #redefine C with no legend
 C<-ggplot(data=P_othplotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
   geom_point(data=Poth_highlight,aes(x=Fe,y=Fo,color=taxon))+
-  scale_color_manual(values=c('Drunella_coloradensis_flavilinea' = 'dodgerblue',
+  scale_color_manual(values=c('Drunella coloradensis/flavilinea' = 'dodgerblue',
                               'Nemata' = 'blue',
                               'Ephemerella' = 'red',
                               'Peltodytes' = 'orange',
@@ -440,29 +444,31 @@ cmbin_plot=gridExtra::grid.arrange(A,B,C,D,ncol=2)
 #plot the final graph with shared legend
 gridExtra::grid.arrange(cmbin_plot,tax_legend,heights=c(10,1))
 
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//ecoregions_FoFe_sitecompare_260210_Colored.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//ecoregions_FoFe_sitecompare_260212_Colored.png')
 #get O/E scores for all sites / ecoregion subsets
-MRF_ref_OEs=OE_calc(results_data = results,
-                    PA=train,
+ref_OEs=OE_calc(results_data = Pcs_sum,
+                    PA=ben_dat,
                     threshold=threshold)
-row.names(MRF_ref_OEs)=row.names(results)
+ref_OEs_other=OE_calc(results_data = Pcs_sum_oth,
+                      PA=ben_dat_oth,
+                      threshold=threshold)
 pred_probs=pred_probs[match(names(PFos), names(pred_probs))]
 Pr_PA=Pr_PA[match(names(PFos), names(Pr_PA))]
-MRF_test_OEs=OE_calc(results_data=pred_probs,
-                     PA=Pr_PA,
+test_OEs=OE_calc(results_data=Pes,
+                     PA=ProbOs,
                      threshold=threshold)
-XerOE=OE_calc(results_data = EastXer,
-              PA=XerTrain,
+XerOE=OE_calc(results_data = Pcs_sum_X,
+              PA=ben_dat_X,
               threshold=threshold)
-OthEco_OE=OE_calc(results_data = OthEco,
-                  PA=OthTrain,
+OthEco_OE=OE_calc(results_data = Pcs_sum_oth,
+                  PA=ben_dat_oth,
                   threshold=threshold)
 
 POthOE=OE_calc(results_data = pred_probs_oth,
                PA=Pr_PA_oth,
                threshold = threshold)
-PXOE=OE_calc(results_data = pred_probs_x,
-             PA=Pr_PA_x,
+PXOE=OE_calc(results_data = pred_probs_X,
+             PA=Pr_PA_X,
              threshold = threshold)
 # WW_calc=OE_calc(results_data = WW_E[,-1],
 #                 PA=WW[,-1],
@@ -471,8 +477,7 @@ PXOE=OE_calc(results_data = pred_probs_x,
 #                 PA=WW_Xer[,-1],
 #                 threshold = threshold)
 sd(OthEco_OE$OtoE)
-boxplot(OthEco_OE$OtoE,at=1,xlim=c(0,5),ylab='O/E score',col='purple4',ylim=c(0,2),
-        names=c('A'))
+boxplot(OthEco_OE$OtoE,at=1,xlim=c(0,5),ylab='O/E score',col='purple4',ylim=c(0,2))
 boxplot(POthOE$OtoE,at=2,add=T,col='yellow3')
 boxplot(XerOE$OtoE,at=3,add=T,col='purple4')
 boxplot(PXOE$OtoE,at=4,add=T,col='yellow3')
@@ -487,9 +492,20 @@ legend('topright',
        bty='n',
        cex=0.8)
 #
-#savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//OtoE_boxes_ecoregions_251117.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//OtoE_boxes_ecoregions_260212.png')
 #savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//OtoE_boxes_Pc05_251106.png')
 ### This is just looking at O/E performance and metrics surrounding it
+boxplot(ref_OEs$OtoE,at=1,xlim=c(0,3),col='purple4',ylim=c(0,max(test_OEs$OtoE)))
+boxplot(test_OEs$OtoE,at=2,add=T,col='yellow3')
+legend('topright',
+       leg=c('Reference',
+             'Probabilistic'),
+       pch=rep(22,2),
+       pt.bg=c('purple4',
+               'yellow3'),
+       bty='n',
+       cex=0.8)
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//OtoE_boxes_Pc0_260212.png')
 
 boxplot(Pratio,at=2,col='yellow3',ylim=c(0,70),xlim=c(0,5))
 boxplot(Px_ratio,at=3,add=T,col='purple4')

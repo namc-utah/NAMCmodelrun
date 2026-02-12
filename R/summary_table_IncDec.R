@@ -85,8 +85,8 @@ xer_final_tab[,5:6]=xer_final_tab[,5:6]*100
 
 clipr::write_clip(xer_final_tab)
 all_summ=
-  piv2 %>%
-    group_by(Group, taxon) %>%
+  piv2[piv2$Fo > 0,] %>%
+    group_by(taxon) %>%
   dplyr::summarise(
     # If it's an increaser in ANY ecoregion, it's an increaser overall (1 or 0)
     Inc = max(Inc, na.rm = TRUE),
@@ -113,7 +113,7 @@ all_summ=
   #                          Prop_Decreaser = Num_Decreasers / Total_Taxa,
   #                          .groups = "drop"
   #                        ))
-all_total_tab=piv2 %>%
+all_total_tab=piv2[piv2$Fo > 0,]%>%
   # 1. Collapse to unique taxa first
   group_by(taxon) %>%
   dplyr::summarise(
@@ -145,3 +145,5 @@ all_final_tab[,5:6]=all_final_tab[,5:6]*100
 all_final_tab
 
 clipr::write_clip(all_final_tab)
+all_summ[all_summ$Group=='Annelida',]
+all_total_tab

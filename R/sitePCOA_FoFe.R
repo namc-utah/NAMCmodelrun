@@ -423,3 +423,15 @@ ggplot(p_sites_and_coords, aes(x=Axis.2, y=Axis.3, fill=status)) +
     inherit.aes = FALSE
   ) # CRITICAL for PCoA: ensures 1 unit on X = 1 unit on Y
 savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_OTUspace_PA_ellipse_traits_axes2_3.png')
+
+
+
+
+
+#curious to see what taxa appear in each quadrant of an ordination?
+top5traits=traits[traits$attribute_name %in% names(top5),]
+okay=top5traits %>%
+  pivot_wider(id_cols = OTU,
+              names_from = attribute_name,
+              values_from = attribute_value,
+              )

@@ -97,8 +97,8 @@ F_Results=data.frame(taxon=names(FailedO),
                      Fo=FailedO,
                      Fe=FailedE,
                      ratio=failedFoFe)
-
-
+P_Results$taxon[P_Results$taxon=='Drunella_coloradensis_flavilinea']<-'Drunella coloradensis/flavilinea'
+F_Results$taxon[F_Results$taxon=='Drunella_coloradensis_flavilinea']<-'Drunella coloradensis/flavilinea'
 #a few reference taxa are increasers, but this could be due to the cutoff.
 #The 4 taxa (Cinygma, Hesperoconopa, Limnophila, and Paraperla) have a ratio
 # > 1.2 but < 1.3.
@@ -142,7 +142,7 @@ P=ggplot(data=Ref_Results,aes(y=Fo,x=Fe))+geom_point()+
            hjust = 0, vjust = 1, # Justify text relative to corner
            size = 5, color = "black")+
   lims(x=c(0,350),y=c(0,max(P_Results$Fo)))
-Fa=ggplot(data=P_Results,aes(y=Fo,x=Fe,label=taxon))+geom_point()+
+Fa=ggplot(data=F_Results,aes(y=Fo,x=Fe,label=taxon))+geom_point()+
   #geom_point(data=P_Results[P_Results$Regional_Response=='Neutral',],color='grey50')+
   #geom_text_repel(box.padding = 0.5, max.overlaps = Inf) +
   #geom_point(data = P_Results[P_Results$Regional_Response=='Decreaser',],color='dodgerblue')+
@@ -156,14 +156,14 @@ Fa=ggplot(data=P_Results,aes(y=Fo,x=Fe,label=taxon))+geom_point()+
 
   annotate("text",
            x = -Inf, y = Inf, # Position at top-left corner
-           label = 'Probabilistic',
+           label = 'Failed',
            hjust = 0, vjust = 1, # Justify text relative to corner
            size = 5, color = "black")+
   theme(legend.position = "bottom")
 
 gridExtra::grid.arrange(P,Fa,ncol=1)
 
-savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_vs_Fe_Prob_colored_260210.png')
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_vs_Fe_Failed_colored_260212.png')
 
 write.csv(All_Results,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_WW_260210.csv')
 
@@ -874,6 +874,18 @@ clipr::write_clip(rbind(O_long,P_long))
 
 top5
 
-
+criterion<-function(values) {
+  values ==0
+}
+common_names=intersect(names(X_Fo),names(Px_Fo))
+crit1<-X_Fo >0
+crit2<-Px_Fo ==0
+matching_crit=common_names[crit1 & crit2]
+matching_crit
+common_names=intersect(names(Oth_Fo),names(PFos_oth))
+crit1<-Oth_Fo >0
+crit2<-PFos_oth ==0
+matching_crit=common_names[crit1 & crit2]
+matching_crit
 
 
