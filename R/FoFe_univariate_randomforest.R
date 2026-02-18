@@ -43,16 +43,24 @@ raw_ratio=Fos_raw/Fes_raw
 plot(Fes_raw,Fos_raw,xlab='Fe',ylab='Fo',
      main='Original Westwide Fo/Fe')
 abline(0,1,col='red')
-raw_OE=OE_calc(results_data = Pcs_raw[
-  !(row.names(Pcs_raw) %in% Xeric_P),
-  !(names(Pcs_raw) %in% c("Carabidae", "Curculionidae"))
+raw_OEx=OE_calc(results_data = Pcs_raw[
+  (row.names(Pcs_raw) %in% Xeric_P),
+  #!(names(Pcs_raw) %in% c("Carabidae", "Curculionidae"))
 ],
                PA=ben_dat_raw[
-                 !(row.names(ben_dat_raw) %in% Xeric_P),
-                 !(names(ben_dat_raw) %in% c("Carabidae", "Curculionidae"))
+                 (row.names(ben_dat_raw) %in% Xeric_P),
+                 #!(names(ben_dat_raw) %in% c("Carabidae", "Curculionidae"))
                ],threshold = 0.5)
 sd(raw_OE$OtoE)
 mean(raw_OE$OtoE)
+raw_OEx=OE_calc(results_data = Pcs_raw[
+  (row.names(Pcs_raw) %in% Xeric_P),
+  #!(names(Pcs_raw) %in% c("Carabidae", "Curculionidae"))
+],
+PA=ben_dat_raw[
+  (row.names(ben_dat_raw) %in% Xeric_P),
+  #!(names(ben_dat_raw) %in% c("Carabidae", "Curculionidae"))
+],threshold = 0.5)
 #calculating Fo and Fe
 Fos=colSums(ben_dat)
 Fos_trim=colSums(ben_dat_trim)
@@ -222,7 +230,8 @@ boxplot(Oth_ratio,at=1,xlim=c(0,5),ylim=c(0,max(Px_ratio[is.finite(Px_ratio)])),
 boxplot(Pratio_oth,at=2,add=T,col='yellow3')
 boxplot(X_ratio,at=3,add=T,col='purple3')
 boxplot(Px_ratio,at=4,add=T,col='yellow3')
-points(x=rep(4, length(sort(Px_ratio[is.finite(Px_ratio)],decreasing = T)[1:3])),y=(sort(Px_ratio[is.finite(Px_ratio)],decreasing = T)[1:3]),bg=c('blue','red','orange','dodgerblue','black'),pch=21)
+points(rep(2,length(sort(Pratio_oth[is.finite(Pratio_oth)],decreasing = T)[1:3])),y=(sort(Pratio_oth[is.finite(Pratio_oth)],decreasing = T)[1:3]),bg=c('blue','red','orange'),pch=21)
+points(x=rep(4, length(sort(Px_ratio[is.finite(Px_ratio)],decreasing = T)[1:3])),y=(sort(Px_ratio[is.finite(Px_ratio)],decreasing = T)[1:3]),bg=c('blue','red','orange'),pch=21)
 mtext(text = c("Other", "Xeric"), side = 1, line = 1, at = c(1.5, 3.5), cex = 1)
 mtext(text=c('Ref.','Prob.','Ref.','Prob.'),side=1,line=2, at=c(1,2,3,4),cex=0.7)
 legend('topleft',
@@ -363,7 +372,9 @@ A<-ggplot(data=OthEco_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept
            label = 'Reference',
            hjust = 0, vjust = 1, # Justify text relative to corner
            size = 4, color = "black")
-B<-ggplot(data=EastXer_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+ggtitle('Eastern Xeric')+
+B<-ggplot(data=EastXer_plotdat,aes(y=Fo,x=Fe))+geom_point()+
+  ylim(0,max(P_othplotdat$Fo))+xlim(0,max(P_othplotdat$Fe))+
+  geom_abline(intercept = 0,slope = 1,col='red')+ggtitle('Eastern Xeric')+
   annotate("text",
            x = -Inf, y = Inf, # Position at top-left corner
            label = 'Reference',
@@ -374,11 +385,11 @@ B<-ggplot(data=EastXer_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercep
 #savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//MRF_allsites_FoFe.png')
 
 #getting highlight taxa for showing some inc/decs
-P_othplotdat$col=ifelse(row.names(P_othplotdat) %in% c('Drunella coloradensis/flavilinea','Nemata','Ephemerella','Peltodytes',
-                                                       'Tanypodinae','Ochthebius'),
+P_othplotdat$col=ifelse(row.names(P_othplotdat) %in% c('Callibaetis','Cambaridae','Laccobius',
+                                                       'Paracloeodes','Sciomyzidae'),
                         'red',NA)
-Px_plotdat$col=ifelse(row.names(Px_plotdat) %in% c('Drunella coloradensis/flavilinea','Nemata','Ephemerella','Peltodytes',
-                                                   'Tanypodinae','Ochthebius'),
+Px_plotdat$col=ifelse(row.names(Px_plotdat) %in% c('Callibaetis','Cambaridae','Laccobius',
+                                                   'Paracloeodes','Sciomyzidae'),
                       'red',NA)
 Poth_highlight=P_othplotdat[which(P_othplotdat$col=='red'),]
 Poth_highlight$taxon=row.names(Poth_highlight)
@@ -386,12 +397,12 @@ Px_highlight=Px_plotdat[which(Px_plotdat$col=='red'),]
 Px_highlight$taxon=row.names(Px_highlight)
 C<-ggplot(data=P_othplotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
   geom_point(data=Poth_highlight,aes(x=Fe,y=Fo,color=taxon))+
-  scale_color_manual(values=c('Drunella coloradensis/flavilinea' = 'dodgerblue',
-                              'Nemata' = 'blue',
-                              'Ephemerella' = 'red',
-                              'Peltodytes' = 'orange',
-                              'Tanypodinae' = 'purple',
-                              'Ochthebius' = 'yellow'))+
+  ylim(0,max(P_othplotdat$Fo))+xlim(0,max(P_othplotdat$Fe))+
+  scale_color_manual(values=c('Callibaetis' = 'red',
+                              'Cambaridae' = 'dodgerblue',
+                              'Laccobius' = 'purple',
+                              'Paracloeodes' = 'orange',
+                              'Sciomyzidae' = 'blue'))+
   annotate("text",
            x = -Inf, y = Inf, # Position at top-left corner
            label = 'Probabilistic',
@@ -399,14 +410,13 @@ C<-ggplot(data=P_othplotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept =
            size = 4, color = "black")+
   theme(legend.position = "bottom")
 D<-ggplot(data=Px_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
-  ylim(0,max(EastXer_plotdat$Fo))+xlim(0,max(EastXer_plotdat$Fe))+
+  ylim(0,max(P_othplotdat$Fo))+xlim(0,max(P_othplotdat$Fe))+# EastXer_plotdat$Fe))+
   geom_point(data=Px_highlight,aes(x=Fe,y=Fo,color=taxon))+
-  scale_color_manual(values=c('Drunella coloradensis/flavilinea' = 'dodgerblue',
-                              'Nemata' = 'blue',
-                              'Ephemerella' = 'red',
-                              'Peltodytes' = 'orange',
-                              'Tanypodinae' = 'purple',
-                              'Ochthebius' = 'yellow'))+
+  scale_color_manual(values=c('Callibaetis' = 'red',
+                              'Cambaridae' = 'dodgerblue',
+                              'Laccobius' = 'purple',
+                              'Paracloeodes' = 'orange',
+                              'Sciomyzidae' = 'blue'))+
   annotate("text",
            x = -Inf, y = Inf, # Position at top-left corner
            label = 'Probabilistic',
@@ -433,12 +443,12 @@ tax_legend=get_only_legend(C)
 #redefine C with no legend
 C<-ggplot(data=P_othplotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
   geom_point(data=Poth_highlight,aes(x=Fe,y=Fo,color=taxon))+
-  scale_color_manual(values=c('Drunella coloradensis/flavilinea' = 'dodgerblue',
-                              'Nemata' = 'blue',
-                              'Ephemerella' = 'red',
-                              'Peltodytes' = 'orange',
-                              'Tanypodinae' = 'purple',
-                              'Ochthebius' = 'yellow'))+
+  ylim(0,max(P_othplotdat$Fo))+xlim(0,max(P_othplotdat$Fe))+
+  scale_color_manual(values=c('Callibaetis' = 'red',
+                              'Cambaridae' = 'dodgerblue',
+                              'Laccobius' = 'purple',
+                              'Paracloeodes' = 'orange',
+                              'Sciomyzidae' = 'blue'))+
   annotate("text",
            x = -Inf, y = Inf, # Position at top-left corner
            label = 'Probabilistic',
@@ -450,7 +460,7 @@ cmbin_plot=gridExtra::grid.arrange(A,B,C,D,ncol=2)
 #plot the final graph with shared legend
 gridExtra::grid.arrange(cmbin_plot,tax_legend,heights=c(10,1))
 
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//ecoregions_FoFe_sitecompare_260218_Colored.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//ecoregions_FoFe_sitecompare_260218_300N_Colored.png')
 #get O/E scores for all sites / ecoregion subsets
 ref_OEs=OE_calc(results_data = Pcs_sum,
                     PA=ben_dat,

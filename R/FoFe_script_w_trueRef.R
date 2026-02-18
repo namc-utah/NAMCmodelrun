@@ -113,15 +113,15 @@ F_Results$Regional_Response=ifelse(F_Results$ratio >1.2, "Increaser",
 F_Results$status='Failed'
 All_Results<-rbind(Ref_Results,P_Results,F_Results)
 P_Results$diff <- P_Results$Fe - P_Results$Fo #make a difference column
-bottom_right <- head(P_Results[order(-P_Results$diff), ], 3) #get the two most decreasesrs
-top_left <- head(P_Results[order(P_Results$diff), ], 3) #get the two most inc
-extreme_diffs <- rbind(top_left, bottom_right)
-P_Results$col=ifelse(P_Results$taxon %in% c(extreme_diffs$taxon),
+# bottom_right <- head(P_Results[order(-P_Results$diff), ], 3) #get the two most decreasesrs
+# top_left <- head(P_Results[order(P_Results$diff), ], 3) #get the two most inc
+extreme_diffs <- c('Callibaetis','Laccobius','Paracloeodes','Cambaridae','Sciomyzidae')
+P_Results$col=ifelse(P_Results$taxon %in% extreme_diffs,
                      'red',NA)
 highlight_dat=P_Results[which(P_Results$col=='red'),]
 my_colors <- setNames(
   c('red', 'purple', 'orange', 'dodgerblue','blue','yellow2'),
-  extreme_diffs$taxon[1:6]
+  extreme_diffs[1:6]
 )
 # F_Results$diff <- F_Results$Fe - F_Results$Fo #make a difference column
 # Fbottom_right <- head(F_Results[order(-F_Results$diff), ], 3) #get the two most decreasesrs
@@ -148,7 +148,7 @@ Fa=ggplot(data=F_Results,aes(y=Fo,x=Fe,label=taxon))+geom_point()+
   #geom_point(data = P_Results[P_Results$Regional_Response=='Decreaser',],color='dodgerblue')+
   #geom_point(data = P_Results[P_Results$Regional_Response=='Increaser',],color='orange2')+
   geom_abline(intercept = 0,slope = 1,col='red')+
-  geom_point(data=P_Results[P_Results$taxon %in% extreme_diffs$taxon,],aes(x=Fe,y=Fo,colour = taxon))+
+  geom_point(data=F_Results[F_Results$taxon %in% extreme_diffs,],aes(x=Fe,y=Fo,colour = taxon))+
   scale_color_manual(values=my_colors)+
   coord_cartesian(clip = "off") +
   # geom_text_repel(
@@ -163,7 +163,7 @@ Fa=ggplot(data=F_Results,aes(y=Fo,x=Fe,label=taxon))+geom_point()+
 
 gridExtra::grid.arrange(P,Fa,ncol=1)
 
-savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_vs_Fe_Failed_colored_260212.png')
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_vs_Fe_failed_colored_260218.png')
 
 write.csv(All_Results,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_WW_260210.csv')
 
@@ -689,14 +689,14 @@ PCOA<-ape::pcoa(Gower_mat)
 eigenvalues=PCOA$values$Eigenvalues
 prop_var=eigenvalues/sum(eigenvalues)*100
 cum_var=cumsum(prop_var)
-barplot(prop_var[1:20],
-        names.arg = 1:20,
+barplot(prop_var[1:40],
+        names.arg = 1:40,
         main = "PCoA Scree Plot: Variance Explained per Axis",
         xlab = "PCoA Axis",
         ylab = "Variance Explained (%)",
         col = "steelblue",
         las = 2)
-
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//PCoA_Scree.png')
 #cmd scale traits for layering?
 gower_cmd=cmdscale(Gower_dist,45,eig=T)
 
@@ -864,11 +864,58 @@ P_long=as.data.frame(ProbOs_long %>%
                        ))
 
 
+compute_site_trait_means <- function(data, site_cols, trait_cols) {
+  data %>%
+    tidyr::pivot_longer(
+      cols = tidyselect::all_of(site_cols),
+      names_to = "Site",
+      values_to = "Presence"
+    ) %>%
+    dplyr::group_by(Site) %>%
+    dplyr::summarise(
+      dplyr::across(
+        tidyselect::all_of(trait_cols),
+        ~ sum(.x * Presence, na.rm = TRUE) /
+          sum(Presence, na.rm = TRUE)
+      ),
+      .groups = "drop"
+    )
+}
+
+compute_design_means <- function(data, site_cols, trait_cols) {
+  compute_site_trait_means(data, site_cols, trait_cols) %>%
+    dplyr::summarise(
+      dplyr::across(
+        everything(),
+        ~ mean(.x, na.rm = TRUE)
+      )
+    )
+}
+omeans=compute_design_means(O_long,site_cols,trait_cols)
+pmeans=compute_design_means(ProbOs_long,Psite_cols,Ptraitcols)
+omeans
+pmeans
+pmeans=pmeans[,names(omeans)]
+omeans$status='Reference'
+pmeans$status='Probabilistic'
+
+
+combined_means <- dplyr::bind_rows(
+  omeans %>% dplyr::mutate(status = "Reference"),
+  pmeans %>% dplyr::mutate(status = "Probabilistic")
+) %>%
+  dplyr::summarise(
+    dplyr::across(
+      -c(status),
+      ~ mean(.x, na.rm = TRUE)
+    )
+  )
+
 O_long$status='Reference'
 P_long$status='Probabilistic'
-wm_traits=rbind(O_long,P_long)
-
-clipr::write_clip(rbind(O_long,P_long))
+wm_traits=rbind(omeans,pmeans)
+wm_traits[,names(wm_traits) %in% names(top5)]
+clipr::write_clip(wm_traits)
 
 
 
@@ -877,14 +924,14 @@ top5
 criterion<-function(values) {
   values ==0
 }
-common_names=intersect(names(X_Fo),names(Px_Fo))
-crit1<-X_Fo >0
-crit2<-Px_Fo ==0
+common_names=intersect(names(Px_Fo),names(X_Fo))
+crit1<-Px_Fo >0
+crit2<-X_Fo ==0
 matching_crit=common_names[crit1 & crit2]
 matching_crit
 common_names=intersect(names(Oth_Fo),names(PFos_oth))
-crit1<-Oth_Fo >0
-crit2<-PFos_oth ==0
+crit1<-Oth_Fo ==0
+crit2<-PFos_oth >0
 matching_crit=common_names[crit1 & crit2]
 matching_crit
 

@@ -298,15 +298,23 @@ PA_scores$Status=PA$status
 
 NMDS_cal_preds=predcal[predcal$SiteCode %in% row.names(PA),]
 NMDS_prob_preds=prednew[row.names(prednew) %in% row.names(PA),]
+prob_comids=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//prob_comids.csv')
+NMDS_prob_preds$sampleId=row.names(NMDS_prob_preds)
+NMDS_prob_preds=plyr::join(NMDS_prob_preds,prob_comids,by='sampleId')
+row.names(NMDS_prob_preds)<-NMDS_prob_preds$sampleId
 NMDS_cal_preds$SiteCode==row.names(PA)[PA$status=='Reference']
 row.names(NMDS_prob_preds)==row.names(PA)[PA$status=='Probabilistic']
 
 cal_pred_dat=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//WW_cal_preds.csv')
 NMDS_cal_preds<-plyr::join(NMDS_cal_preds,cal_pred_dat,by='COMID','left')
-env_dat=rbind(NMDS_cal_preds[,c('ElevCat','Precip8110Ws','Tmean8110Ws','WsAreaSqKm')],NMDS_prob_preds[,c('ElevCat','Precip8110Ws','Tmean8110Ws','WsAreaSqKm')])
-nmds_fit=envfit(Gower_PA_MDS,env_dat)
 
-nmds_fit=envfit(PA_scores[,c(2,3)],env_dat,na.rm=T)
+env_dat=rbind(NMDS_cal_preds[,c('ElevCat','Precip8110Ws','Tmean8110Ws','WsAreaSqKm','COMID')],NMDS_prob_preds[,c('ElevCat','Precip8110Ws','Tmean8110Ws','WsAreaSqKm','COMID')])
+AgUrb_dat=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//all_site_UrbAg.csv')
+env_dat=plyr::join(env_dat,AgUrb_dat[,c('COMID','PCtCrop','AvgUrb')],by='COMID','left')
+nmds_fit=envfit(Gower_PA_MDS,env_dat[,!names(env_dat)=='COMID'])
+
+
+nmds_fit=envfit(PA_scores[,c(2,3)],env_dat[,!names(env_dat)=='COMID'],na.rm=T)
 env_vect<-as.data.frame(nmds_fit$vectors$arrows)
 env_vec=as.data.frame(scores(nmds_fit, display = 'vectors'))
 env_vect$env <- rownames(env_vect)
@@ -316,7 +324,9 @@ arrow_multiplier <- 0.75 * max(abs(PA_scores[,c(2,3)])) / max(abs(env_vect[,1:2]
 env_vect[,1:2] <- env_vect[,1:2] * arrow_multiplier
 env_vect$env=c('ElevCat',
                'PrecipWs',
-               'TmeanWs','WsArea')
+               'TmeanWs','WsArea',
+               'PctCrops',
+               'AvgPctUrb')
 # ggplot(abun_scores,aes(x=NMDS1,y=NMDS3,fill=Status))+geom_point(pch=21)+
 #   scale_fill_manual(name='Status',
 #                     values=c('Reference' = 'purple4',
@@ -347,7 +357,7 @@ ggplot(PA_scores,aes(x=NMDS2,y=NMDS3,fill=Status))+geom_point(pch=21)+
 stat_ellipse(level=0.8,data = subset(PA_scores, Status == "Reference"), color = "purple4", size = 1,type='t') +
   stat_ellipse(level=0.8,data = subset(PA_scores, Status == "Probabilistic"), color = "yellow", size = 1)#+stat_ellipse(level=0.8,type='t')
 
-savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_OTUspace_PA_ellipse_axes_2_3.png')
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_OTUspace_PA_ellipse_axes_2_3_wAgUrb.png')
 
 
 ordisurf(PA_scores[,c(1,2)], log(env_dat$WsAreaSqKm),k=4,
