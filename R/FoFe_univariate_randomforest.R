@@ -164,7 +164,11 @@ Prob_combined_FoFes=as.data.frame(cbind(PFos,PFes))
 
 #Poth_Fosmall=Poth_Fo[names(Poth_Fo) %in% taxa_notraits_rare$taxon==F]
 #Poth_Fesmall=Poth_Fe[names(Poth_Fe) %in% taxa_notraits_rare$taxon==F]
+
 Px_Fo=colSums(Pr_PA_X);Px_Fe=colSums(pred_probs_X)
+names(Px_Fo)==names(Px_Fe)
+Px_Fo=Px_Fo[sort(names(Px_Fo))]
+Px_Fe=Px_Fe[sort(names(Px_Fe))]
 #Px_Fosmall=Px_Fo[names(Px_Fo) %in% taxa_notraits_rare$taxon==F]
 #Px_Fesmall=Px_Fe[names(Px_Fe) %in% taxa_notraits_rare$taxon==F]
 #Poth_ratio=Poth_Fo/Poth_Fe
@@ -172,6 +176,7 @@ Px_ratio=Px_Fo/Px_Fe
 #Poth_ratio_small=Poth_Fosmall/Poth_Fesmall
 #Px_ratio_small=Px_Fosmall/Poth_Fesmall
 names(PFos)==names(PFes)
+names(PFos_oth)==names(PFes_oth)
 
 
 plot(PFes,PFos,ylab='Fo',xlab='Fe',main='Prob. Fo vs Fe')
@@ -217,28 +222,27 @@ boxplot(Oth_ratio,at=1,xlim=c(0,5),ylim=c(0,max(Px_ratio[is.finite(Px_ratio)])),
 boxplot(Pratio_oth,at=2,add=T,col='yellow3')
 boxplot(X_ratio,at=3,add=T,col='purple3')
 boxplot(Px_ratio,at=4,add=T,col='yellow3')
-points(x=rep(4, length(sort(Px_ratio[is.finite(Px_ratio)],decreasing = T)[1:5])),y=(sort(Px_ratio[is.finite(Px_ratio)],decreasing = T)[1:5]),bg=c('blue','red','orange','dodgerblue','black'),pch=21)
+points(x=rep(4, length(sort(Px_ratio[is.finite(Px_ratio)],decreasing = T)[1:3])),y=(sort(Px_ratio[is.finite(Px_ratio)],decreasing = T)[1:3]),bg=c('blue','red','orange','dodgerblue','black'),pch=21)
 mtext(text = c("Other", "Xeric"), side = 1, line = 1, at = c(1.5, 3.5), cex = 1)
+mtext(text=c('Ref.','Prob.','Ref.','Prob.'),side=1,line=2, at=c(1,2,3,4),cex=0.7)
 legend('topleft',
-       leg=c('Psychodidae',
-             'Optioservus',
-             'Lepidostoma',
-             'Other Chironomidae',
-             'Rhyacophila'),
-       pt.bg=c('blue','red','orange','dodgerblue','black'),
+       leg=c('Paracloeodes',
+             'Callibaetis',
+             'Gammarus'),
+       pt.bg=c('blue','red','orange'),
        pch=rep(21,5),
        bty='n',
        cex=0.8,
-       ncol=2)
-legend('topright',
-       leg=c('Reference',
-             'Probabilistic'),
-       pch=rep(22,2),
-       pt.bg=c('purple4',
-               'yellow3'),
-       bty='n',
-       cex=0.8)
-#savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//ecoregion_boxplot_compare_260210_colored.png')
+       ncol=1)
+# legend('topright',
+#        leg=c('Reference',
+#              'Probabilistic'),
+#        pch=rep(22,2),
+#        pt.bg=c('purple4',
+#                'yellow3'),
+#        bty='n',
+#        cex=0.8)
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//ecoregion_boxplot_compare_260218_colored.png')
 # ---------------------------
 #creating O/E scores, quasi-RIVPACS style
 #set the Pc threshold, in this case, 0.5
@@ -324,6 +328,8 @@ plot(OthFe,OthFo)
 abline(0,1,col='red')
 plot(XerFe,XerFo)
 abline(0,1,col='red')
+Oth_Fo=Oth_Fo[sort(names(Oth_Fo))]
+Oth_Fe=Oth_Fe[sort(names(Oth_Fe))]
 
 OthEco_plotdat=data.frame(Fo=Oth_Fo,Fe=Oth_Fe)
 EastXer_plotdat=data.frame(Fo=X_Fo,Fe=X_Fe)
@@ -444,7 +450,7 @@ cmbin_plot=gridExtra::grid.arrange(A,B,C,D,ncol=2)
 #plot the final graph with shared legend
 gridExtra::grid.arrange(cmbin_plot,tax_legend,heights=c(10,1))
 
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//ecoregions_FoFe_sitecompare_260212_Colored.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//ecoregions_FoFe_sitecompare_260218_Colored.png')
 #get O/E scores for all sites / ecoregion subsets
 ref_OEs=OE_calc(results_data = Pcs_sum,
                     PA=ben_dat,
