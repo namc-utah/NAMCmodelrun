@@ -1054,9 +1054,9 @@ top5
 criterion<-function(values) {
   values ==0
 }
-common_names=intersect(names(Px_Fo),names(X_Fo))
-crit1<-Px_Fo >0
-crit2<-X_Fo ==0
+common_names=intersect(names(PFos_oth),names(Oth_Fo))
+crit1<-PFos_oth >0
+crit2<-Oth_Fo >0
 matching_crit=common_names[crit1 & crit2]
 matching_crit
 common_names=intersect(names(Oth_Fo),names(PFos_oth))
@@ -1064,5 +1064,6 @@ crit1<-Oth_Fo ==0
 crit2<-PFos_oth >0
 matching_crit=common_names[crit1 & crit2]
 matching_crit
+
 
 
