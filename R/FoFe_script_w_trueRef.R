@@ -714,6 +714,7 @@ mult=vegan::ordiArrowMul(trait_vec,display='species')
 arrow_multiplier <- 0.75 * max(abs(gower_scores[,c(1,2)])) / max(abs(trait_vect[,1:2]))
 trait_vect[,1:2] <- trait_vect[,1:2] * arrow_multiplier
 trait_vect=trait_vect[trait_vect$trait %in% names(top5),]
+trait_vect[,1:2]<-trait_vect[,1:2]*-1
 
 PCOA_Scores<-as.data.frame(PCOA$vectors)
 #assign taxa names
@@ -721,11 +722,11 @@ top_trait_arrows=trait_vect$trait
 PCOA_Scores$taxon<-row.names(traits_only)
 #renaming vectors for easier interpretation
 
-trait_vect$trait=c('Slow develop',
-                   'Adults exit',
-                   'No drift',
-                   'No Desicc. Resist.',
-                   'Not streamlined')
+trait_vect$trait=c('Fast develop',
+                   'Adults enter/exit',
+                   'Drift',
+                   'Desicc. Resist.',
+                   'Streamlined')
 
 
 
@@ -737,11 +738,11 @@ All_responses_and_scores=plyr::join(All_ratios,PCOA_Scores,by='taxon','left')
 #be sure to adjust axes as needed
 Responses_and_scores$status2=factor(Responses_and_scores$status,levels=c('Reference','Probabilistic'))
 ggplot(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.finite(Responses_and_scores$ratio) & Responses_and_scores$Fo>0,],
-       aes(x=Axis.2,y=Axis.3,color=Regional_Response))+
+       aes(x=Axis.1, y=Axis.2,color=Regional_Response))+
   geom_point(size=3,alpha=0.7)+
   stat_ellipse(level=0.8)+
   geom_segment(data=trait_vect,
-               aes(x=0,y=0,xend=PCo2,yend=PCo3),
+               aes(x=0,y=0,xend=PCo1,yend=PCo5),
                arrow=arrow(length=unit(0.25,'cm')),
                linewidth=1,
                alpha=0.5,inherit.aes = F)+
@@ -750,7 +751,7 @@ ggplot(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.fini
   #         hjust = 0.4, vjust = .9, color="black", size = 3.5) +
   geom_label(
     data = trait_vect,
-    aes(x = PCo2, y = PCo3, label = trait),
+    aes(x = PCo1, y = PCo2, label = trait),
     hjust = ifelse(names(trait_vect)[1]=='PCo2',0.2, .75),
     vjust = 1,
     size = 3,
@@ -771,10 +772,11 @@ ggplot(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.fini
   theme(legend.position = "top")
 #guides(color = guide_legend(nrow = 1))
 
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_traitspace_260210_Axes2_3.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_traitspace_260219_Axes2_3_flipped.png')
 
 
 #same but for prob sites.
+if(0){
 ggplot(All_responses_and_scores[is.finite(All_responses_and_scores$Pratio) & All_responses_and_scores$pFo > 0,],
        aes(x = Axis.1, y = Axis.2, color = Presponse)) +
   geom_point(size = 3, alpha = 0.7) +
@@ -807,7 +809,135 @@ ggplot(All_responses_and_scores[is.finite(All_responses_and_scores$Pratio) & All
     inherit.aes = FALSE
   )
 savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//prob_responses_traitspace_Ecoregions_260210_Axes1_2_allaxesmantel.png')
+}
 
+
+A<-ggplot(All_responses_and_scores[is.finite(All_responses_and_scores$Pratio) & All_responses_and_scores$pFo > 0,],
+          aes(x = Axis.1, y = Axis.2, color = Presponse)) +
+  geom_point(size = 3, alpha = 0.7) +
+  stat_ellipse(level = 0.8) +
+  scale_color_manual(values = c(
+    "Increaser" = "orange",
+    "Decreaser" = "dodgerblue3",
+    "Neutral" = "red",
+    "Not expected" = "black"
+  )) +
+  facet_wrap(~Ecoregion) +
+  guides(color = guide_legend(title = 'Response',ncol=3))+
+  geom_segment(data=trait_vect,
+               aes(x=0,y=0,xend=PCo1,yend=PCo2),#                arrow=arrow(length=unit(0.25,'cm')),
+               linewidth=1,
+               alpha=0.5,inherit.aes = F, arrow=arrow(length=unit(.25,"centimeters")))+
+  # geom_text(data = trait_vect,
+  #           aes(x = PCo1, y = PCo1, label = trait),
+  #           hjust = 0.5, vjust = .5, color="black", size = 3.5)
+  geom_label(
+    data = trait_vect,
+    aes(x = PCo1, y = PCo2, label = trait),
+    hjust = ifelse(names(trait_vect)[1]=='PCo1',0.2, .56),
+    vjust = 1,
+    size = 3,
+    fill = "white",      # background color
+    color = "red",       # text color
+    label.size = 0.2,    # border thickness; set to 0 to remove outline
+    inherit.aes = FALSE
+  )
+
+
+B<-ggplot(All_responses_and_scores[is.finite(All_responses_and_scores$Rratio) & All_responses_and_scores$Fo > 0,],
+          aes(x = Axis.1, y = Axis.2, color = Rresponse)) +
+  geom_point(size = 3, alpha = 0.7) +
+  stat_ellipse(level = 0.8) +
+  scale_color_manual(values = c(
+    "Increaser" = "orange",
+    "Decreaser" = "dodgerblue3",
+    "Neutral" = "red",
+    "Not expected" = "black"
+  )) +
+  facet_wrap(~Ecoregion) +
+  guides(color = guide_legend(title = 'Response'))+
+  geom_segment(data=trait_vect,
+               aes(x=0,y=0,xend=PCo1,yend=PCo2),#                arrow=arrow(length=unit(0.25,'cm')),
+               linewidth=1,
+               alpha=0.5,inherit.aes = F, arrow=arrow(length=unit(.25,"centimeters")))+
+  # geom_text(data = trait_vect,
+  #           aes(x = PCo1, y = PCo1, label = trait),
+  #           hjust = 0.5, vjust = .5, color="black", size = 3.5)
+  geom_label(
+    data = trait_vect,
+    aes(x = PCo1, y = PCo2, label = trait),
+    hjust = ifelse(names(trait_vect)[1]=='PCo1',0.2, .56),
+    vjust = 1,
+    size = 3,
+    fill = "white",      # background color
+    color = "red",       # text color
+    label.size = 0.2,    # border thickness; set to 0 to remove outline
+    inherit.aes = FALSE
+  )+theme(legend.position = 'none')+
+  annotate("text",
+           x = -Inf, y =Inf, # Position at top-left corner
+           label = 'Reference',
+           hjust = 0, vjust = 1, # Justify text relative to corner
+           size = 3, color = "black")
+#getting a shared legend for this large panel is hard.
+#use a function
+get_only_legend <- function(plot) {
+
+  # get tabular interpretation of plot
+  plot_table <- ggplot_gtable(ggplot_build(plot))
+
+  #  Mark only legend in plot
+  legend_plot <- which(sapply(plot_table$grobs, function(x) x$name) == "guide-box")
+
+  # extract legend
+  legend_tiles <- plot_table$grobs[[legend_plot]]
+
+  # return legend
+  return(legend_tiles)
+}
+tax_legend=get_only_legend(A)
+A<-ggplot(All_responses_and_scores[is.finite(All_responses_and_scores$Pratio) & All_responses_and_scores$pFo > 0,],
+          aes(x = Axis.1, y = Axis.2, color = Presponse)) +
+  geom_point(size = 3, alpha = 0.7) +
+  stat_ellipse(level = 0.8) +
+  scale_color_manual(values = c(
+    "Increaser" = "orange",
+    "Decreaser" = "dodgerblue3",
+    "Neutral" = "red",
+    "Not expected" = "black"
+  )) +
+  facet_wrap(~Ecoregion) +
+  guides(color = guide_legend(title = 'Response'))+
+  geom_segment(data=trait_vect,
+               aes(x=0,y=0,xend=PCo1,yend=PCo2),#                arrow=arrow(length=unit(0.25,'cm')),
+               linewidth=1,
+               alpha=0.5,inherit.aes = F, arrow=arrow(length=unit(.25,"centimeters")))+
+  # geom_text(data = trait_vect,
+  #           aes(x = PCo1, y = PCo1, label = trait),
+  #           hjust = 0.5, vjust = .5, color="black", size = 3.5)
+  geom_label(
+    data = trait_vect,
+    aes(x = PCo1, y = PCo2, label = trait),
+    hjust = ifelse(names(trait_vect)[1]=='PCo1',0.2, .56),
+    vjust = 1,
+    size = 3,
+    fill = "white",      # background color
+    color = "red",       # text color
+    label.size = 0.2,    # border thickness; set to 0 to remove outline
+    inherit.aes = FALSE
+  )+theme(legend.position = 'none')+
+  annotate("text",
+           x = -Inf, y = Inf, # Position at top-left corner
+           label = 'Probabilistic',
+           hjust = 0, vjust = 1, # Justify text relative to corner
+           size = 3, color = "black")
+#redefine C with no legend
+
+#define the plot, but don't plot it
+cmbin_plot=gridExtra::grid.arrange(B,A,ncol=1)
+#plot the final graph with shared legend
+gridExtra::grid.arrange(cmbin_plot,tax_legend,heights=c(10,1))
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//prob_responses_traitspace_Ecoregions_260219_axes_1_2.png')
 
 #general trend of traits across land uses at watershed scale
 #plotting distinct because of the duplicated records that come with the ecoregion,

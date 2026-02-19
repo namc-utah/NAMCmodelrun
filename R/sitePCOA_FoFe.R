@@ -385,11 +385,12 @@ ptrait_vec=as.data.frame(scores(env_fut,display='vectors'))
 ptrait_vect$trait <- rownames(ptrait_vect)
 colnames(ptrait_vect)[1:2] <- c("PCo2", "PCo3")
 ptrait_vect=ptrait_vect[ptrait_vect$trait %in% paste0('PA_',top5s),]
-ptrait_vect$trait=c('Slow develop',
-                   'Adults exit',
-                   'No drift',
-                   'No Dessic. Resist.',
-                   'Not streamlined')
+ptrait_vect[,1:2]<-ptrait_vect[,1:2]*-1
+ptrait_vect$trait=c('Fast develop',
+                   'Adults enter/exit',
+                   'Drift',
+                   'Dessic. Resist.',
+                   'Streamlined')
 pPCOA_Scores<-as.data.frame(Pbc$vectors)
 #assign taxa names
 ptop_trait_arrows=ptrait_vect$trait
@@ -432,7 +433,7 @@ ggplot(p_sites_and_coords, aes(x=Axis.2, y=Axis.3, fill=status)) +
     label.size = 0.2,
     inherit.aes = FALSE
   ) # CRITICAL for PCoA: ensures 1 unit on X = 1 unit on Y
-savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_OTUspace_PA_ellipse_traits_axes2_3.png')
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_OTUspace_PA_ellipse_traits_axes2_3_flipped.png')
 
 
 
