@@ -26,7 +26,12 @@ savp = function(W,H,fn) {
   dev.copy(dev=png,file=fn,wi=W,he=H,un="in",res=650)
   dev.off()
 }
-
+val_bugs=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//WW_validation_data.csv')
+row.names(val_bugs)<-val_bugs$Site;val_bugs=val_bugs[,-c(1,2)]
+val_preds=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//val_preds.csv')
+row.names(val_preds)<-val_preds$SiteCode;val_preds=val_preds[,-c(1,2)]
+val_Pcs=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Val_Pcs_summedTany.csv')
+row.names(val_Pcs)=val_Pcs$sampleId;val_Pcs=val_Pcs[,-c(1,2)]
 #taxa_notraits_rare=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//taxa_to_drop.csv')
 #nonrare=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//nonrare_taxa.csv')
 
@@ -1065,5 +1070,178 @@ crit2<-PFos_oth >0
 matching_crit=common_names[crit1 & crit2]
 matching_crit
 
+#validation data
+val_bugs=val_bugs[,names(val_Pcs)]
+val_bugs=val_bugs[match(row.names(val_Pcs), row.names(val_bugs)),]
+row.names(val_bugs)==row.names(val_Pcs)
+names(val_bugs)[names(val_bugs)=='ABEDUS']='Abedus'
+
+val_bugs=val_bugs[,names(val_bugs) %in% c('Carabidae','Curculionidae')==F]
+val_Pcs=val_Pcs[,names(val_Pcs) %in% c('Carabidae','Curculionidae')==F]
+names(val_Pcs)[names(val_Pcs)=='ABEDUS']='Abedus'
+
+valFos=colSums(val_bugs)
+valFes=colSums(val_Pcs)
+names(valFos)==names(valFes)
+val_ratio=valFos/valFes
+val_diffs=c('Soyedina','Nemertea','Margaritifera','Abedus','Pedicia','Mystacides')
+val_plotdat=data.frame(Fo=valFos,Fe=valFes,taxon=names(valFos))
+val_plotdat$col=ifelse(row.names(val_plotdat) %in% val_diffs,
+                        'red',NA)
+val_highlight=val_plotdat[which(val_plotdat$col=='red'),]
+xeric_V=val_bugs[row.names(val_bugs) %in% Xeric_P,]
+xeric_V_pcs=val_Pcs[row.names(val_Pcs) %in% Xeric_P,]
+xeric_V_Fos=colSums(xeric_V)
+xeric_V_Pcs=colSums(xeric_V_pcs)
+xeric_val_plotdat=data.frame(Fo=xeric_V_Fos,Fe=xeric_V_Pcs,taxon=names(valFos))
+xeric_val_plotdat$col=ifelse(row.names(xeric_val_plotdat) %in% val_diffs,
+                             'red',NA)
+xeric_val_highlight=xeric_val_plotdat[which(xeric_val_plotdat$col=='red'),]
+Oth_V=val_bugs[!(row.names(val_bugs) %in% Xeric_P),]
+Oth_V_pcs=val_Pcs[!(row.names(val_Pcs) %in% Xeric_P),]
+oth_v_Fos=colSums(Oth_V)
+oth_v_Fes=colSums(Oth_V_pcs)
+oth_val_plotdat=data.frame(Fo=oth_v_Fos,Fe=oth_v_Fes,taxon=names(valFos))
+oth_val_plotdat$col=ifelse(row.names(oth_val_plotdat) %in% val_diffs,
+                           'red',NA)
+oth_val_highlight=oth_val_plotdat[which(oth_val_plotdat$col=='red'),]
+R=ggplot(data=Ref_Results,aes(y=Fo,x=Fe))+geom_point()+
+  geom_abline(intercept = 0,slope = 1,col='red')+
+  annotate("text",
+           x = -Inf, y = Inf, # Position at top-left corner
+           label = 'Reference',
+           hjust = 0, vjust = 1, # Justify text relative to corner
+           size = 5, color = "black")+
+  lims(x=c(0,10),y=c(0,10))
+
+V=ggplot(data=val_plotdat,aes(y=Fo,x=Fe))+geom_point()+
+  geom_point(data=val_highlight,aes(x=Fe,y=Fo,color=taxon))+
+  geom_abline(intercept = 0,slope = 1,col='red')+
+  annotate("text",
+           x = -Inf, y = Inf, # Position at top-left corner
+           label = 'Validation',
+           hjust = 0, vjust = 1, # Justify text relative to corner
+           size = 5, color = "black")+
+  scale_color_manual(values=c('Soyedina' = 'red',
+                              'Nemertea' = 'dodgerblue',
+                              'Margaritifera' = 'purple',
+                              'Abedus' = 'orange',
+                              'Pedicia' = 'blue',
+                              'Mystacides' = 'yellow4'))+
+  theme(legend.position = 'bottom')+
+  lims(x=c(0,10),y=c(0,10))
+gridExtra::grid.arrange(R,V,ncol=1)
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Ref_vs_val_FoFe_n10.png' )
 
 
+
+
+
+A<-ggplot(data=OthEco_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+ggtitle('Other Ecoregions')+
+  xlim(0,50)+ylim(0,50)+
+  annotate("text",
+           x = -Inf, y = Inf, # Position at top-left corner
+           label = 'Reference',
+           hjust = 0, vjust = 1, # Justify text relative to corner
+           size = 4, color = "black")
+B<-ggplot(data=EastXer_plotdat,aes(y=Fo,x=Fe))+geom_point()+
+  ylim(0,50)+xlim(0,50)+
+  geom_abline(intercept = 0,slope = 1,col='red')+ggtitle('Eastern Xeric')+
+  annotate("text",
+           x = -Inf, y = Inf, # Position at top-left corner
+           label = 'Reference',
+           hjust = 0, vjust = 1, # Justify text relative to corner
+           size = 4, color = "black")
+
+
+
+C<-ggplot(data=oth_val_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
+  geom_point(data=oth_val_highlight,aes(x=Fe,y=Fo,color=taxon))+
+  scale_color_manual(values=c('Soyedina' = 'red',
+                              'Nemertea' = 'dodgerblue',
+                              'Margaritifera' = 'purple',
+                              'Abedus' = 'orange',
+                              'Pedicia' = 'blue',
+                              'Mystacides' = 'yellow4'))+
+  annotate("text",
+           x = -Inf, y = Inf, # Position at top-left corner
+           label = 'Validation',
+           hjust = 0, vjust = 1, # Justify text relative to corner
+           size = 4, color = "black")+
+  theme(legend.position = "bottom")
+D<-ggplot(data=xeric_val_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
+  geom_point(data=xeric_val_highlight,aes(x=Fe,y=Fo,color=taxon))+
+  scale_color_manual(values=c('Soyedina' = 'red',
+                              'Nemertea' = 'dodgerblue',
+                              'Margaritifera' = 'purple',
+                              'Abedus' = 'orange',
+                              'Pedicia' = 'blue',
+                              'Mystacides' = 'yellow4'))+
+  annotate("text",
+           x = -Inf, y = Inf, # Position at top-left corner
+           label = 'Validation',
+           hjust = 0, vjust = 1, # Justify text relative to corner
+           size = 4, color = "black")+
+  theme(legend.position = "none")
+#getting a shared legend for this large panel is hard.
+#use a function
+get_only_legend <- function(plot) {
+
+  # get tabular interpretation of plot
+  plot_table <- ggplot_gtable(ggplot_build(plot))
+
+  #  Mark only legend in plot
+  legend_plot <- which(sapply(plot_table$grobs, function(x) x$name) == "guide-box")
+
+  # extract legend
+  legend_tiles <- plot_table$grobs[[legend_plot]]
+
+  # return legend
+  return(legend_tiles)
+}
+tax_legend=get_only_legend(C)
+#redefine C with no legend
+C<-ggplot(data=oth_val_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
+  geom_point(data=oth_val_highlight,aes(x=Fe,y=Fo,color=taxon))+
+  scale_color_manual(values=c('Soyedina' = 'red',
+                              'Nemertea' = 'dodgerblue',
+                              'Margaritifera' = 'purple',
+                              'Abedus' = 'orange',
+                              'Pedicia' = 'blue',
+                              'Mystacides' = 'yellow4'))+
+  annotate("text",
+           x = -Inf, y = Inf, # Position at top-left corner
+           label = 'Validation',
+           hjust = 0, vjust = 1, # Justify text relative to corner
+           size = 4, color = "black")+
+  theme(legend.position = "none")
+#define the plot, but don't plot it
+cmbin_plot=gridExtra::grid.arrange(A,B,C,D,ncol=2)
+#plot the final graph with shared legend
+gridExtra::grid.arrange(cmbin_plot,tax_legend,heights=c(10,1))
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_Fe_RandV_ecos.png')
+val_OE=OE_calc(val_Pcs,
+        val_bugs,
+        threshold=0)
+mean(val_OE$OtoE)
+sd(val_OE$OtoE)
+
+val_xer_OE=OE_calc(xeric_V_pcs,
+                   xeric_V,
+                   threshold = 0)
+val_oth_OE=OE_calc(Oth_V_pcs,
+                   Oth_V,
+                   threshold = 0)
+boxplot(ref_OEs_other$OtoE,at=2,xlim=c(1,6),col='purple4')
+boxplot(val_oth_OE$OtoE,at=3,add=T,col='green4')
+boxplot(XerOE$OtoE,at=4,add=T,col='purple4')
+boxplot(val_xer_OE$OtoE,at=5,add=T,col='green4')
+mtext(text = c("Other", "Xeric"), side = 1, line = 1, at = c(2.5, 4.5), cex = 1)
+mtext(text=c('Ref.','Val.','Ref.','Val.'),side=1,line=2, at=c(2,3,4,5),cex=0.7)
+legend('topright',
+       leg=c('Reference','Validation'),
+       pch=rep(22,2),
+       pt.bg=c('purple4','green4'),
+       bty='n',
+       cex=0.8)
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Ref_vs_Val_OEs_0.png')

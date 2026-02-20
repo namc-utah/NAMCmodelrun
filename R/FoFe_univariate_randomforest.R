@@ -129,7 +129,8 @@ Xeric_P=c(171583, 171664, 171668, 171669, 171777, 173398, 173404,
           #these are the reference sites used in the westwide model
           "87087", "HAWK-216", "HAWK-225", "HAWK-226", "HAWK-227", "HAWK-228", "HAWK-241",
           "HAWK-86",  "HAWK-89", "HAWK-92",  "WE-1036",  "WE-1047",  "WE-1055",  "WE-1079",
-          "WE-1085",  "WE-21",    "WE-47",    "WE-866",  "WE-889",   "WE-905")
+          "WE-1085",  "WE-21",    "WE-47",    "WE-866",  "WE-889",   "WE-905",
+          'R6REM-5','WE-317')
 
 ben_dat_oth=ben_dat[row.names(ben_dat) %in% Xeric_P==F,]
 Pcs_sum_oth=Pcs_sum[row.names(Pcs_sum) %in% Xeric_P==F,]
@@ -282,7 +283,7 @@ OE_calc=function(results_data, PA,threshold){
 
 OEs=OE_calc(results_data = Pcs,
         PA=ben_dat,
-        threshold = threshold)
+        threshold = 0.5)
 row.names(OEs)=row.names(Pcs)
 All_Xer=c(186872,187130,187162,187182,
           187183,187222,187250,187275,

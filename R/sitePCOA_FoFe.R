@@ -360,10 +360,10 @@ stat_ellipse(level=0.8,data = subset(PA_scores, Status == "Reference"), color = 
 savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_OTUspace_PA_ellipse_axes_2_3_wAgUrb.png')
 
 
-ordisurf(PA_scores[,c(1,2)], log(env_dat$WsAreaSqKm),k=4,
+ordisurf(PA_scores[,c(1,2)], env_dat$PCtCrop,k=4,
          pch=21,bg=ifelse(PA$status=='Reference','purple4','yellow'),
          col='black',
-         main='logWsArea',
+         main='PctCrop',
          lwd=3)
 legend('topleft',
        pch=rep(21,2),
@@ -373,7 +373,7 @@ legend('topleft',
              'Probabilistic'),
        cex=0.8)
 
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//PA_ordi_WsArea.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//PA_ordi_Crop.png')
 Pgower_scores=data.frame(Pbc$vectors)
 #gower_scores=data.frame(Pco1=gower_cmd[,1],Pco2=gower_cmd[,2])
 Pgower_scores$taxon=site_PA_traits_weighted$sample_id
