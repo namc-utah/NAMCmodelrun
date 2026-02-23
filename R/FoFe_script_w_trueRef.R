@@ -1064,11 +1064,11 @@ crit1<-PFos_oth >0
 crit2<-Oth_Fo >0
 matching_crit=common_names[crit1 & crit2]
 matching_crit
-common_names=intersect(names(Oth_Fo),names(PFos_oth))
-crit1<-Oth_Fo ==0
-crit2<-PFos_oth >0
+common_names=intersect(names(X_Fo),names(Px_Fo))
+crit1<-X_Fo>0
+crit2<-Px_Fo >0
 matching_crit=common_names[crit1 & crit2]
-matching_crit
+X_Fo[matching_crit]
 
 #validation data
 val_bugs=val_bugs[,names(val_Pcs)]
@@ -1182,7 +1182,8 @@ D<-ggplot(data=xeric_val_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(interc
            label = 'Validation',
            hjust = 0, vjust = 1, # Justify text relative to corner
            size = 4, color = "black")+
-  theme(legend.position = "none")
+  theme(legend.position = "none")+
+  lims(x=c(0,50),y=c(0,50))
 #getting a shared legend for this large panel is hard.
 #use a function
 get_only_legend <- function(plot) {
@@ -1219,7 +1220,7 @@ C<-ggplot(data=oth_val_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercep
 cmbin_plot=gridExtra::grid.arrange(A,B,C,D,ncol=2)
 #plot the final graph with shared legend
 gridExtra::grid.arrange(cmbin_plot,tax_legend,heights=c(10,1))
-savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_Fe_RandV_ecos.png')
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_Fe_RandV_ecos_same_axes.png')
 val_OE=OE_calc(val_Pcs,
         val_bugs,
         threshold=0)
