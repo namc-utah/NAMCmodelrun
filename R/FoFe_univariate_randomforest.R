@@ -380,7 +380,8 @@ B<-ggplot(data=EastXer_plotdat,aes(y=Fo,x=Fe))+geom_point()+
            x = -Inf, y = Inf, # Position at top-left corner
            label = 'Reference',
            hjust = 0, vjust = 1, # Justify text relative to corner
-           size = 4, color = "black")
+           size = 4, color = "black")+
+  lims(x=c(0,30),y=c(0,30))
 #ggplot(data=combined_dat,aes(x=Fe,y=Fo))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
 # xlim(0,max(Px_plotdat$Fe))
 #savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//MRF_allsites_FoFe.png')
@@ -411,7 +412,7 @@ C<-ggplot(data=P_othplotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept =
            size = 4, color = "black")+
   theme(legend.position = "bottom")
 D<-ggplot(data=Px_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
-  ylim(0,max(P_othplotdat$Fo))+xlim(0,max(P_othplotdat$Fe))+# EastXer_plotdat$Fe))+
+  ylim(0,30)+xlim(0,30)+# EastXer_plotdat$Fe))+
   geom_point(data=Px_highlight,aes(x=Fe,y=Fo,color=taxon))+
   scale_color_manual(values=c('Callibaetis' = 'red',
                               'Cambaridae' = 'dodgerblue',
@@ -461,7 +462,7 @@ cmbin_plot=gridExtra::grid.arrange(A,B,C,D,ncol=2)
 #plot the final graph with shared legend
 gridExtra::grid.arrange(cmbin_plot,tax_legend,heights=c(10,1))
 
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//ecoregions_FoFe_sitecompare_260218_300N_Colored.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//ecoregions_FoFe_sitecompare_260224_Colored.png')
 #get O/E scores for all sites / ecoregion subsets
 ref_OEs=OE_calc(results_data = Pcs_sum,
                     PA=ben_dat,

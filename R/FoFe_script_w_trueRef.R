@@ -170,7 +170,7 @@ gridExtra::grid.arrange(P,Fa,ncol=1)
 
 savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_vs_Fe_failed_colored_260218.png')
 
-write.csv(All_Results,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_WW_260210.csv')
+write.csv(All_Results,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_WW_260223.csv')
 
 #assigning sites to EcoRegions
 #using the shapefile on NAMC's GIS folder,
@@ -1135,7 +1135,7 @@ savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//A
 
 
 
-
+#validation and ref plots
 
 A<-ggplot(data=OthEco_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+ggtitle('Other Ecoregions')+
   xlim(0,50)+ylim(0,50)+
@@ -1226,7 +1226,7 @@ val_OE=OE_calc(val_Pcs,
         threshold=0)
 mean(val_OE$OtoE)
 sd(val_OE$OtoE)
-
+#val and ref O/Es
 val_xer_OE=OE_calc(xeric_V_pcs,
                    xeric_V,
                    threshold = 0)
