@@ -346,9 +346,14 @@ EastXer_plotdat=data.frame(Fo=X_Fo,Fe=X_Fe)
 P_othplotdat=data.frame(Fo=PFos_oth,Fe=PFes_oth)
 row.names(P_othplotdat)=ifelse(row.names(P_othplotdat)=='Drunella_coloradensis_flavilinea',
                                'Drunella coloradensis/flavilinea',row.names(P_othplotdat))
+
+row.names(P_othplotdat)=ifelse(row.names(P_othplotdat)=='DRUNELLA_DODDSI',
+                               'Drunella doddsii',row.names(P_othplotdat))
 Px_plotdat=data.frame(Fo=Px_Fo,Fe=Px_Fe)
 row.names(Px_plotdat)=ifelse(row.names(Px_plotdat)=='Drunella_coloradensis_flavilinea',
                                'Drunella coloradensis/flavilinea',row.names(Px_plotdat))
+row.names(Px_plotdat)=ifelse(row.names(Px_plotdat)=='DRUNELLA_DODDSI',
+                             'Drunella doddsii',row.names(Px_plotdat))
 
 # WW_Xer=Os[Os$X %in% groups$`Eastern Xeric Plateaus`$sampleId==T,]
 # WW_E_Xer=Es[Es$X %in% groups$`Eastern Xeric Plateaus`$sampleId==T,]
@@ -387,11 +392,9 @@ B<-ggplot(data=EastXer_plotdat,aes(y=Fo,x=Fe))+geom_point()+
 #savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//MRF_allsites_FoFe.png')
 
 #getting highlight taxa for showing some inc/decs
-P_othplotdat$col=ifelse(row.names(P_othplotdat) %in% c('Callibaetis','Cambaridae','Laccobius',
-                                                       'Paracloeodes','Sciomyzidae'),
+P_othplotdat$col=ifelse(row.names(P_othplotdat) %in% c('Drunella coloradensis/flavilinea','Tanypodinae','Ephemerella','Antocha','Scirtidae','Peltodytes','Drunella doddsii'),
                         'red',NA)
-Px_plotdat$col=ifelse(row.names(Px_plotdat) %in% c('Callibaetis','Cambaridae','Laccobius',
-                                                   'Paracloeodes','Sciomyzidae'),
+Px_plotdat$col=ifelse(row.names(Px_plotdat) %in% c('Drunella coloradensis/flavilinea','Tanypodinae','Ephemerella','Antocha','Scirtidae','Peltodytes','Drunella doddsii'),
                       'red',NA)
 Poth_highlight=P_othplotdat[which(P_othplotdat$col=='red'),]
 Poth_highlight$taxon=row.names(Poth_highlight)
@@ -400,31 +403,35 @@ Px_highlight$taxon=row.names(Px_highlight)
 C<-ggplot(data=P_othplotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
   geom_point(data=Poth_highlight,aes(x=Fe,y=Fo,color=taxon))+
   ylim(0,max(P_othplotdat$Fo))+xlim(0,max(P_othplotdat$Fe))+
-  scale_color_manual(values=c('Callibaetis' = 'red',
-                              'Cambaridae' = 'dodgerblue',
-                              'Laccobius' = 'purple',
-                              'Paracloeodes' = 'orange',
-                              'Sciomyzidae' = 'blue'))+
+  scale_color_manual(values=c('Drunella coloradensis/flavilinea' = 'blue',
+                              'Tanypodinae' = 'chocolate4',
+                              'Ephemerella' = 'orange',
+                              'Antocha' = 'dodgerblue',
+                              'Scirtidae' = 'deepskyblue4',
+                              'Peltodytes' = 'darkgoldenrod3',
+                              'Drunella doddsii' = 'dodgerblue3'))+
   annotate("text",
            x = -Inf, y = Inf, # Position at top-left corner
            label = 'Probabilistic',
            hjust = 0, vjust = 1, # Justify text relative to corner
            size = 4, color = "black")+
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom")+lims(x=c(0,300),y=c(0,300))
 D<-ggplot(data=Px_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
   ylim(0,30)+xlim(0,30)+# EastXer_plotdat$Fe))+
   geom_point(data=Px_highlight,aes(x=Fe,y=Fo,color=taxon))+
-  scale_color_manual(values=c('Callibaetis' = 'red',
-                              'Cambaridae' = 'dodgerblue',
-                              'Laccobius' = 'purple',
-                              'Paracloeodes' = 'orange',
-                              'Sciomyzidae' = 'blue'))+
+  scale_color_manual(values=c('Drunella coloradensis/flavilinea' = 'blue',
+                              'Tanypodinae' = 'chocolate4',
+                              'Ephemerella' = 'orange',
+                              'Antocha' = 'dodgerblue',
+                              'Scirtidae' = 'deepskyblue4',
+                              'Peltodytes' = 'darkgoldenrod3',
+                              'Drunella doddsii' = 'dodgerblue3'))+
   annotate("text",
            x = -Inf, y = Inf, # Position at top-left corner
            label = 'Probabilistic',
            hjust = 0, vjust = 1, # Justify text relative to corner
            size = 4, color = "black")+
-  theme(legend.position = "none")
+  theme(legend.position = "none")+lims(x=c(0,30),y=c(0,30))
 #getting a shared legend for this large panel is hard.
 #use a function
 get_only_legend <- function(plot) {
@@ -446,17 +453,19 @@ tax_legend=get_only_legend(C)
 C<-ggplot(data=P_othplotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
   geom_point(data=Poth_highlight,aes(x=Fe,y=Fo,color=taxon))+
   ylim(0,max(P_othplotdat$Fo))+xlim(0,max(P_othplotdat$Fe))+
-  scale_color_manual(values=c('Callibaetis' = 'red',
-                              'Cambaridae' = 'dodgerblue',
-                              'Laccobius' = 'purple',
-                              'Paracloeodes' = 'orange',
-                              'Sciomyzidae' = 'blue'))+
+  scale_color_manual(values=c('Drunella coloradensis/flavilinea' = 'blue',
+                              'Tanypodinae' = 'chocolate4',
+                              'Ephemerella' = 'orange',
+                              'Antocha' = 'dodgerblue',
+                              'Scirtidae' = 'deepskyblue4',
+                              'Peltodytes' = 'darkgoldenrod3',
+                              'Drunella doddsii' = 'dodgerblue3'))+ #dec
   annotate("text",
            x = -Inf, y = Inf, # Position at top-left corner
            label = 'Probabilistic',
            hjust = 0, vjust = 1, # Justify text relative to corner
            size = 4, color = "black")+
-  theme(legend.position = "none")
+  theme(legend.position = "none")+lims(x=c(0,300),y=c(0,300))
 #define the plot, but don't plot it
 cmbin_plot=gridExtra::grid.arrange(A,B,C,D,ncol=2)
 #plot the final graph with shared legend

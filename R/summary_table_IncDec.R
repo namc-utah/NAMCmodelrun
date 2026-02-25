@@ -3,6 +3,7 @@
 piv_dat=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//all_ratios_260210.csv')
 piv_dat$Inc=ifelse(piv_dat$Presponse=='Increaser',1,0)
 piv_dat$Dec=ifelse(piv_dat$Presponse=='Decreaser',1,0)
+piv_dat=piv_dat[piv_dat$taxon!='Nemata',]
 
 
 piv_clean=piv_dat%>%
@@ -86,7 +87,7 @@ xer_final_tab[,5:6]=xer_final_tab[,5:6]*100
 clipr::write_clip(xer_final_tab)
 all_summ=
   piv2[piv2$Fo > 0,] %>%
-    group_by(taxon) %>%
+    group_by(taxon,Group) %>%
   dplyr::summarise(
     # If it's an increaser in ANY ecoregion, it's an increaser overall (1 or 0)
     Inc = max(Inc, na.rm = TRUE),

@@ -104,6 +104,8 @@ F_Results=data.frame(taxon=names(FailedO),
                      ratio=failedFoFe)
 P_Results$taxon[P_Results$taxon=='Drunella_coloradensis_flavilinea']<-'Drunella coloradensis/flavilinea'
 F_Results$taxon[F_Results$taxon=='Drunella_coloradensis_flavilinea']<-'Drunella coloradensis/flavilinea'
+P_Results$taxon[P_Results$taxon=='DRUNELLA_DODDSI']<-'Drunella doddsii'
+F_Results$taxon[F_Results$taxon=='DRUNELLA_DODDSI']<-'Drunella doddsii'
 #a few reference taxa are increasers, but this could be due to the cutoff.
 #The 4 taxa (Cinygma, Hesperoconopa, Limnophila, and Paraperla) have a ratio
 # > 1.2 but < 1.3.
@@ -120,14 +122,16 @@ All_Results<-rbind(Ref_Results,P_Results,F_Results)
 P_Results$diff <- P_Results$Fe - P_Results$Fo #make a difference column
 # bottom_right <- head(P_Results[order(-P_Results$diff), ], 3) #get the two most decreasesrs
 # top_left <- head(P_Results[order(P_Results$diff), ], 3) #get the two most inc
-extreme_diffs <- c('Callibaetis','Laccobius','Paracloeodes','Cambaridae','Sciomyzidae')
+extreme_diffs <- c(#'Callibaetis','Laccobius','Paracloeodes','Cambaridae','Sciomyzidae',
+  'Drunella coloradensis/flavilinea','Tanypodinae','Ephemerella','Antocha','Scirtidae','Peltodytes','Drunella doddsii')
 P_Results$col=ifelse(P_Results$taxon %in% extreme_diffs,
                      'red',NA)
 highlight_dat=P_Results[which(P_Results$col=='red'),]
 my_colors <- setNames(
-  c('red', 'purple', 'orange', 'dodgerblue','blue','yellow2'),
-  extreme_diffs[1:6]
-)
+  c('blue','chocolate4',
+    'orange','dodgerblue','deepskyblue4','darkgoldenrod3','dodgerblue3'),
+  extreme_diffs)
+
 # F_Results$diff <- F_Results$Fe - F_Results$Fo #make a difference column
 # Fbottom_right <- head(F_Results[order(-F_Results$diff), ], 3) #get the two most decreasesrs
 # Ftop_left <- head(F_Results[order(F_Results$diff), ], 3) #get the two most inc
@@ -148,10 +152,10 @@ P=ggplot(data=Ref_Results,aes(y=Fo,x=Fe))+geom_point()+
            size = 5, color = "black")+
   lims(x=c(0,350),y=c(0,max(P_Results$Fo)))
 Fa=ggplot(data=F_Results,aes(y=Fo,x=Fe,label=taxon))+geom_point()+
-  #geom_point(data=P_Results[P_Results$Regional_Response=='Neutral',],color='grey50')+
+  #geom_point(data=F_Results[F_Results$Regional_Response=='Neutral',],color='grey50')+
   #geom_text_repel(box.padding = 0.5, max.overlaps = Inf) +
-  #geom_point(data = P_Results[P_Results$Regional_Response=='Decreaser',],color='dodgerblue')+
-  #geom_point(data = P_Results[P_Results$Regional_Response=='Increaser',],color='orange2')+
+  #geom_point(data = F_Results[F_Results$Regional_Response=='Decreaser',],color='dodgerblue')+
+  #geom_point(data = F_Results[F_Results$Regional_Response=='Increaser',],color='orange2')+
   geom_abline(intercept = 0,slope = 1,col='red')+
   geom_point(data=F_Results[F_Results$taxon %in% extreme_diffs,],aes(x=Fe,y=Fo,colour = taxon))+
   scale_color_manual(values=my_colors)+
@@ -168,7 +172,7 @@ Fa=ggplot(data=F_Results,aes(y=Fo,x=Fe,label=taxon))+geom_point()+
 
 gridExtra::grid.arrange(P,Fa,ncol=1)
 
-savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_vs_Fe_failed_colored_260218.png')
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_vs_Fe_Failed_colored_260224.png')
 
 write.csv(All_Results,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_WW_260223.csv')
 
@@ -1084,7 +1088,12 @@ valFos=colSums(val_bugs)
 valFes=colSums(val_Pcs)
 names(valFos)==names(valFes)
 val_ratio=valFos/valFes
-val_diffs=c('Soyedina','Nemertea','Margaritifera','Abedus','Pedicia','Mystacides')
+val_diffs=c('Hexatoma',
+            'Pisidiidae',
+            'Tanypodinae',
+            'Glossosoma',
+            'Drunella doddsii','Leptophlebiidae','Malenka')
+val_plotdat$taxon=ifelse(val_plotdat$taxon =='DRUNELLA_DODDSI','Drunella doddsii',val_plotdat$taxon)
 val_plotdat=data.frame(Fo=valFos,Fe=valFes,taxon=names(valFos))
 val_plotdat$col=ifelse(row.names(val_plotdat) %in% val_diffs,
                         'red',NA)
@@ -1112,7 +1121,7 @@ R=ggplot(data=Ref_Results,aes(y=Fo,x=Fe))+geom_point()+
            label = 'Reference',
            hjust = 0, vjust = 1, # Justify text relative to corner
            size = 5, color = "black")+
-  lims(x=c(0,10),y=c(0,10))
+  lims(x=c(0,50),y=c(0,50))
 
 V=ggplot(data=val_plotdat,aes(y=Fo,x=Fe))+geom_point()+
   geom_point(data=val_highlight,aes(x=Fe,y=Fo,color=taxon))+
@@ -1122,16 +1131,17 @@ V=ggplot(data=val_plotdat,aes(y=Fo,x=Fe))+geom_point()+
            label = 'Validation',
            hjust = 0, vjust = 1, # Justify text relative to corner
            size = 5, color = "black")+
-  scale_color_manual(values=c('Soyedina' = 'red',
-                              'Nemertea' = 'dodgerblue',
-                              'Margaritifera' = 'purple',
-                              'Abedus' = 'orange',
-                              'Pedicia' = 'blue',
-                              'Mystacides' = 'yellow4'))+
+  scale_color_manual(values=c('Hexatoma'='deepskyblue4',
+                              'Pisidiidae' = 'orange', #inc
+                              'Tanypodinae' = 'blue', #inc,
+                              'Leptophlebiidae'= 'chocolate4', #inc
+                              'Glossosoma' = 'dodgerblue', #dec
+                              'Drunella doddsii' = 'cyan3',
+                              'Malenka'= 'chocolate'))+
   theme(legend.position = 'bottom')+
-  lims(x=c(0,10),y=c(0,10))
+  lims(x=c(0,50),y=c(0,50))
 gridExtra::grid.arrange(R,V,ncol=1)
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Ref_vs_val_FoFe_n10.png' )
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Ref_vs_val_FoFe_n50.png' )
 
 
 
@@ -1151,18 +1161,19 @@ B<-ggplot(data=EastXer_plotdat,aes(y=Fo,x=Fe))+geom_point()+
            x = -Inf, y = Inf, # Position at top-left corner
            label = 'Reference',
            hjust = 0, vjust = 1, # Justify text relative to corner
-           size = 4, color = "black")
+           size = 4, color = "black")+lims(x=c(0,20),y=c(0,20))
 
 
 
 C<-ggplot(data=oth_val_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
   geom_point(data=oth_val_highlight,aes(x=Fe,y=Fo,color=taxon))+
-  scale_color_manual(values=c('Soyedina' = 'red',
-                              'Nemertea' = 'dodgerblue',
-                              'Margaritifera' = 'purple',
-                              'Abedus' = 'orange',
-                              'Pedicia' = 'blue',
-                              'Mystacides' = 'yellow4'))+
+  scale_color_manual(values=c('Hexatoma'='deepskyblue4',
+                              'Pisidiidae' = 'orange', #inc
+                              'Tanypodinae' = 'blue', #inc,
+                              'Leptophlebiidae'= 'chocolate4', #inc
+                              'Glossosoma' = 'dodgerblue', #dec
+                              'Drunella doddsii' = 'cyan3',
+                              'Malenka'= 'chocolate'))+
   annotate("text",
            x = -Inf, y = Inf, # Position at top-left corner
            label = 'Validation',
@@ -1171,19 +1182,20 @@ C<-ggplot(data=oth_val_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercep
   theme(legend.position = "bottom")
 D<-ggplot(data=xeric_val_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
   geom_point(data=xeric_val_highlight,aes(x=Fe,y=Fo,color=taxon))+
-  scale_color_manual(values=c('Soyedina' = 'red',
-                              'Nemertea' = 'dodgerblue',
-                              'Margaritifera' = 'purple',
-                              'Abedus' = 'orange',
-                              'Pedicia' = 'blue',
-                              'Mystacides' = 'yellow4'))+
+  scale_color_manual(values=c('Hexatoma'='deepskyblue4',
+                              'Pisidiidae' = 'orange', #inc
+                              'Tanypodinae' = 'blue', #inc,
+                              'Leptophlebiidae'= 'chocolate4', #inc
+                              'Glossosoma' = 'dodgerblue', #dec
+                              'Drunella doddsii' = 'cyan3',
+                              'Malenka'= 'chocolate'))+
   annotate("text",
            x = -Inf, y = Inf, # Position at top-left corner
            label = 'Validation',
            hjust = 0, vjust = 1, # Justify text relative to corner
            size = 4, color = "black")+
   theme(legend.position = "none")+
-  lims(x=c(0,50),y=c(0,50))
+  lims(x=c(0,20),y=c(0,20))
 #getting a shared legend for this large panel is hard.
 #use a function
 get_only_legend <- function(plot) {
@@ -1204,12 +1216,13 @@ tax_legend=get_only_legend(C)
 #redefine C with no legend
 C<-ggplot(data=oth_val_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
   geom_point(data=oth_val_highlight,aes(x=Fe,y=Fo,color=taxon))+
-  scale_color_manual(values=c('Soyedina' = 'red',
-                              'Nemertea' = 'dodgerblue',
-                              'Margaritifera' = 'purple',
-                              'Abedus' = 'orange',
-                              'Pedicia' = 'blue',
-                              'Mystacides' = 'yellow4'))+
+  scale_color_manual(values=c('Hexatoma'='deepskyblue4',
+                              'Pisidiidae' = 'orange', #inc
+                              'Tanypodinae' = 'blue', #inc,
+                              'Leptophlebiidae'= 'chocolate4', #inc
+                              'Glossosoma' = 'dodgerblue', #dec
+                              'Drunella doddsii' = 'cyan3',
+                              'Malenka'= 'chocolate'))+
   annotate("text",
            x = -Inf, y = Inf, # Position at top-left corner
            label = 'Validation',
@@ -1220,7 +1233,7 @@ C<-ggplot(data=oth_val_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercep
 cmbin_plot=gridExtra::grid.arrange(A,B,C,D,ncol=2)
 #plot the final graph with shared legend
 gridExtra::grid.arrange(cmbin_plot,tax_legend,heights=c(10,1))
-savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_Fe_RandV_ecos_same_axes.png')
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_Fe_RandV_Ecos_n20.png')
 val_OE=OE_calc(val_Pcs,
         val_bugs,
         threshold=0)

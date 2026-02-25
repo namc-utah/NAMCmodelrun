@@ -5,6 +5,7 @@ n_p=349
 library(tidyverse)
 #read in data
 CI_plot_dat=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//CI_plot_dat.csv')
+CI_plot_dat=CI_plot_dat[CI_plot_dat$taxon!='Nemata',]
 #create frequency
 #Fo / all sites
 CI_plot_dat$frequency=ifelse(CI_plot_dat$status=='Probabilistic',
