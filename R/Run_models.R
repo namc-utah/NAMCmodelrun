@@ -19,9 +19,8 @@
 # ---------------------------------------------------------------
 
 if (exists("boxId")) {
-  def_samples = NAMCr::query("samples", boxId = boxId)
-}else
-  {
+  def_samples = NAMCr::query("samples", boxId=boxId)
+}else{
   def_samples = NAMCr::query("samples", projectId = projectId)
 }
 #def_samples<-def_samples[def_samples$sampleId <= 219683,]
@@ -34,7 +33,7 @@ def_samples=def_samples[def_samples$siteId %in% CritHab$siteId,]
 #this section will subset out the modelID that is appropriate for the OR
 #models.
 if(modelID %in% 10:12){
-  OR_geo<-sf::st_read(paste0(ecoregion_base_path ,'GIS//GIS_Stats//Oregon//ecoregion//OR_Model_Boundaries.shp'))
+  OR_geo<-sf::st_read(paste0(user_path ,'Box//NAMC WATS Department Files//GIS//GIS_Stats//Oregon//ecoregion//OR_Model_Boundaries.shp'))
 
   OR_coords<-sf::st_as_sf(def_samples,coords=c('siteLongitude','siteLatitude'),crs=4269)
   OR_coords<-sf::st_transform(OR_coords,sf::st_crs(OR_geo))
@@ -478,7 +477,7 @@ if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29)]==T)>=1)
 }else{
 
 }
-modelResults=modelResults[!is.na(modelResults),]
+#modelResults=modelResults[!is.na(modelResults),]
 # ---------------------------------------------------------------
 # Always run model applicability test
 # ---------------------------------------------------------------
@@ -538,7 +537,10 @@ finalResults
 # Get additional bug metrics (fixed count)
 # ---------------------------------------------------------------
 ##### get fixed count column #####
-bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
+if(modelID==1){
+  sumrarefiedOTUTaxa = finalResults[,c("sampleId","Count")]
+  names(sumrarefiedOTUTaxa)[2]<-'fixedCount'
+}else{bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
                        translationId = def_models$translationId[1],
                        fixedCount = def_models$fixedCount[1],
                        sampleIds=sampleIds
@@ -546,13 +548,15 @@ bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
 sumrarefiedOTUTaxa = bugsOTU  %>%
   dplyr::group_by(sampleId) %>%
   dplyr::summarize(fixedCount = sum(splitCount))
-
+}
 ################################################
 
 
 finalResults=dplyr::left_join(finalResults,sumrarefiedOTUTaxa,by="sampleId")
 #IF NATIONAL UNCOMMENT OUT THE LINE BELOW
+if(modelId %in% c(25,26)){
 finalResults$notes='National'
+}
 
 
 # ---------------------------------------------------------------
@@ -649,7 +653,7 @@ for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to th
       NAMCr::save(
         api_endpoint = "setModelResult",
         sampleId = finalResults$sampleId[i],
-        modelId = modelID,
+        modelId = finalResults$modelId[i],
         modelResult = finalResults$CSCI[i],
         fixedCount = finalResults$fixedCount[i],
         modelApplicability = finalResults$ModelApplicability[i],

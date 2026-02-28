@@ -26,7 +26,12 @@ savp = function(W,H,fn) {
   dev.copy(dev=png,file=fn,wi=W,he=H,un="in",res=650)
   dev.off()
 }
-
+val_bugs=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//WW_validation_data.csv')
+row.names(val_bugs)<-val_bugs$Site;val_bugs=val_bugs[,-c(1,2)]
+val_preds=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//val_preds.csv')
+row.names(val_preds)<-val_preds$SiteCode;val_preds=val_preds[,-c(1,2)]
+val_Pcs=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Val_Pcs_summedTany.csv')
+row.names(val_Pcs)=val_Pcs$sampleId;val_Pcs=val_Pcs[,-c(1,2)]
 #taxa_notraits_rare=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//taxa_to_drop.csv')
 #nonrare=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//nonrare_taxa.csv')
 
@@ -97,8 +102,10 @@ F_Results=data.frame(taxon=names(FailedO),
                      Fo=FailedO,
                      Fe=FailedE,
                      ratio=failedFoFe)
-
-
+P_Results$taxon[P_Results$taxon=='Drunella_coloradensis_flavilinea']<-'Drunella coloradensis/flavilinea'
+F_Results$taxon[F_Results$taxon=='Drunella_coloradensis_flavilinea']<-'Drunella coloradensis/flavilinea'
+P_Results$taxon[P_Results$taxon=='DRUNELLA_DODDSI']<-'Drunella doddsii'
+F_Results$taxon[F_Results$taxon=='DRUNELLA_DODDSI']<-'Drunella doddsii'
 #a few reference taxa are increasers, but this could be due to the cutoff.
 #The 4 taxa (Cinygma, Hesperoconopa, Limnophila, and Paraperla) have a ratio
 # > 1.2 but < 1.3.
@@ -113,16 +120,18 @@ F_Results$Regional_Response=ifelse(F_Results$ratio >1.2, "Increaser",
 F_Results$status='Failed'
 All_Results<-rbind(Ref_Results,P_Results,F_Results)
 P_Results$diff <- P_Results$Fe - P_Results$Fo #make a difference column
-bottom_right <- head(P_Results[order(-P_Results$diff), ], 3) #get the two most decreasesrs
-top_left <- head(P_Results[order(P_Results$diff), ], 3) #get the two most inc
-extreme_diffs <- rbind(top_left, bottom_right)
-P_Results$col=ifelse(P_Results$taxon %in% c(extreme_diffs$taxon),
+# bottom_right <- head(P_Results[order(-P_Results$diff), ], 3) #get the two most decreasesrs
+# top_left <- head(P_Results[order(P_Results$diff), ], 3) #get the two most inc
+extreme_diffs <- c(#'Callibaetis','Laccobius','Paracloeodes','Cambaridae','Sciomyzidae',
+  'Drunella coloradensis/flavilinea','Tanypodinae','Ephemerella','Antocha','Scirtidae','Peltodytes','Drunella doddsii')
+P_Results$col=ifelse(P_Results$taxon %in% extreme_diffs,
                      'red',NA)
 highlight_dat=P_Results[which(P_Results$col=='red'),]
 my_colors <- setNames(
-  c('red', 'purple', 'orange', 'dodgerblue','blue','yellow2'),
-  extreme_diffs$taxon[1:6]
-)
+  c('blue','chocolate4',
+    'orange','dodgerblue','deepskyblue4','darkgoldenrod3','dodgerblue3'),
+  extreme_diffs)
+
 # F_Results$diff <- F_Results$Fe - F_Results$Fo #make a difference column
 # Fbottom_right <- head(F_Results[order(-F_Results$diff), ], 3) #get the two most decreasesrs
 # Ftop_left <- head(F_Results[order(F_Results$diff), ], 3) #get the two most inc
@@ -142,13 +151,13 @@ P=ggplot(data=Ref_Results,aes(y=Fo,x=Fe))+geom_point()+
            hjust = 0, vjust = 1, # Justify text relative to corner
            size = 5, color = "black")+
   lims(x=c(0,350),y=c(0,max(P_Results$Fo)))
-Fa=ggplot(data=P_Results,aes(y=Fo,x=Fe,label=taxon))+geom_point()+
-  #geom_point(data=P_Results[P_Results$Regional_Response=='Neutral',],color='grey50')+
+Fa=ggplot(data=F_Results,aes(y=Fo,x=Fe,label=taxon))+geom_point()+
+  #geom_point(data=F_Results[F_Results$Regional_Response=='Neutral',],color='grey50')+
   #geom_text_repel(box.padding = 0.5, max.overlaps = Inf) +
-  #geom_point(data = P_Results[P_Results$Regional_Response=='Decreaser',],color='dodgerblue')+
-  #geom_point(data = P_Results[P_Results$Regional_Response=='Increaser',],color='orange2')+
+  #geom_point(data = F_Results[F_Results$Regional_Response=='Decreaser',],color='dodgerblue')+
+  #geom_point(data = F_Results[F_Results$Regional_Response=='Increaser',],color='orange2')+
   geom_abline(intercept = 0,slope = 1,col='red')+
-  geom_point(data=P_Results[P_Results$taxon %in% extreme_diffs$taxon,],aes(x=Fe,y=Fo,colour = taxon))+
+  geom_point(data=F_Results[F_Results$taxon %in% extreme_diffs,],aes(x=Fe,y=Fo,colour = taxon))+
   scale_color_manual(values=my_colors)+
   coord_cartesian(clip = "off") +
   # geom_text_repel(
@@ -156,16 +165,16 @@ Fa=ggplot(data=P_Results,aes(y=Fo,x=Fe,label=taxon))+geom_point()+
 
   annotate("text",
            x = -Inf, y = Inf, # Position at top-left corner
-           label = 'Probabilistic',
+           label = 'Failed',
            hjust = 0, vjust = 1, # Justify text relative to corner
            size = 5, color = "black")+
   theme(legend.position = "bottom")
 
 gridExtra::grid.arrange(P,Fa,ncol=1)
 
-savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_vs_Fe_Prob_colored_260210.png')
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_vs_Fe_Failed_colored_260224.png')
 
-write.csv(All_Results,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_WW_260210.csv')
+write.csv(All_Results,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_WW_260223.csv')
 
 #assigning sites to EcoRegions
 #using the shapefile on NAMC's GIS folder,
@@ -689,14 +698,14 @@ PCOA<-ape::pcoa(Gower_mat)
 eigenvalues=PCOA$values$Eigenvalues
 prop_var=eigenvalues/sum(eigenvalues)*100
 cum_var=cumsum(prop_var)
-barplot(prop_var[1:20],
-        names.arg = 1:20,
+barplot(prop_var[1:40],
+        names.arg = 1:40,
         main = "PCoA Scree Plot: Variance Explained per Axis",
         xlab = "PCoA Axis",
         ylab = "Variance Explained (%)",
         col = "steelblue",
         las = 2)
-
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//PCoA_Scree.png')
 #cmd scale traits for layering?
 gower_cmd=cmdscale(Gower_dist,45,eig=T)
 
@@ -714,6 +723,7 @@ mult=vegan::ordiArrowMul(trait_vec,display='species')
 arrow_multiplier <- 0.75 * max(abs(gower_scores[,c(1,2)])) / max(abs(trait_vect[,1:2]))
 trait_vect[,1:2] <- trait_vect[,1:2] * arrow_multiplier
 trait_vect=trait_vect[trait_vect$trait %in% names(top5),]
+trait_vect[,1:2]<-trait_vect[,1:2]*-1
 
 PCOA_Scores<-as.data.frame(PCOA$vectors)
 #assign taxa names
@@ -721,11 +731,11 @@ top_trait_arrows=trait_vect$trait
 PCOA_Scores$taxon<-row.names(traits_only)
 #renaming vectors for easier interpretation
 
-trait_vect$trait=c('Slow develop',
-                   'Adults exit',
-                   'No drift',
-                   'No Desicc. Resist.',
-                   'Not streamlined')
+trait_vect$trait=c('Fast develop',
+                   'Adults enter/exit',
+                   'Drift',
+                   'Desicc. Resist.',
+                   'Streamlined')
 
 
 
@@ -737,11 +747,11 @@ All_responses_and_scores=plyr::join(All_ratios,PCOA_Scores,by='taxon','left')
 #be sure to adjust axes as needed
 Responses_and_scores$status2=factor(Responses_and_scores$status,levels=c('Reference','Probabilistic'))
 ggplot(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.finite(Responses_and_scores$ratio) & Responses_and_scores$Fo>0,],
-       aes(x=Axis.2,y=Axis.3,color=Regional_Response))+
+       aes(x=Axis.1, y=Axis.2,color=Regional_Response))+
   geom_point(size=3,alpha=0.7)+
   stat_ellipse(level=0.8)+
   geom_segment(data=trait_vect,
-               aes(x=0,y=0,xend=PCo2,yend=PCo3),
+               aes(x=0,y=0,xend=PCo1,yend=PCo5),
                arrow=arrow(length=unit(0.25,'cm')),
                linewidth=1,
                alpha=0.5,inherit.aes = F)+
@@ -750,7 +760,7 @@ ggplot(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.fini
   #         hjust = 0.4, vjust = .9, color="black", size = 3.5) +
   geom_label(
     data = trait_vect,
-    aes(x = PCo2, y = PCo3, label = trait),
+    aes(x = PCo1, y = PCo2, label = trait),
     hjust = ifelse(names(trait_vect)[1]=='PCo2',0.2, .75),
     vjust = 1,
     size = 3,
@@ -771,10 +781,11 @@ ggplot(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.fini
   theme(legend.position = "top")
 #guides(color = guide_legend(nrow = 1))
 
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_traitspace_260210_Axes2_3.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_traitspace_260219_Axes2_3_flipped.png')
 
 
 #same but for prob sites.
+if(0){
 ggplot(All_responses_and_scores[is.finite(All_responses_and_scores$Pratio) & All_responses_and_scores$pFo > 0,],
        aes(x = Axis.1, y = Axis.2, color = Presponse)) +
   geom_point(size = 3, alpha = 0.7) +
@@ -807,7 +818,135 @@ ggplot(All_responses_and_scores[is.finite(All_responses_and_scores$Pratio) & All
     inherit.aes = FALSE
   )
 savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//prob_responses_traitspace_Ecoregions_260210_Axes1_2_allaxesmantel.png')
+}
 
+
+A<-ggplot(All_responses_and_scores[is.finite(All_responses_and_scores$Pratio) & All_responses_and_scores$pFo > 0,],
+          aes(x = Axis.1, y = Axis.2, color = Presponse)) +
+  geom_point(size = 3, alpha = 0.7) +
+  stat_ellipse(level = 0.8) +
+  scale_color_manual(values = c(
+    "Increaser" = "orange",
+    "Decreaser" = "dodgerblue3",
+    "Neutral" = "red",
+    "Not expected" = "black"
+  )) +
+  facet_wrap(~Ecoregion) +
+  guides(color = guide_legend(title = 'Response',ncol=3))+
+  geom_segment(data=trait_vect,
+               aes(x=0,y=0,xend=PCo1,yend=PCo2),#                arrow=arrow(length=unit(0.25,'cm')),
+               linewidth=1,
+               alpha=0.5,inherit.aes = F, arrow=arrow(length=unit(.25,"centimeters")))+
+  # geom_text(data = trait_vect,
+  #           aes(x = PCo1, y = PCo1, label = trait),
+  #           hjust = 0.5, vjust = .5, color="black", size = 3.5)
+  geom_label(
+    data = trait_vect,
+    aes(x = PCo1, y = PCo2, label = trait),
+    hjust = ifelse(names(trait_vect)[1]=='PCo1',0.2, .56),
+    vjust = 1,
+    size = 3,
+    fill = "white",      # background color
+    color = "red",       # text color
+    label.size = 0.2,    # border thickness; set to 0 to remove outline
+    inherit.aes = FALSE
+  )
+
+
+B<-ggplot(All_responses_and_scores[is.finite(All_responses_and_scores$Rratio) & All_responses_and_scores$Fo > 0,],
+          aes(x = Axis.1, y = Axis.2, color = Rresponse)) +
+  geom_point(size = 3, alpha = 0.7) +
+  stat_ellipse(level = 0.8) +
+  scale_color_manual(values = c(
+    "Increaser" = "orange",
+    "Decreaser" = "dodgerblue3",
+    "Neutral" = "red",
+    "Not expected" = "black"
+  )) +
+  facet_wrap(~Ecoregion) +
+  guides(color = guide_legend(title = 'Response'))+
+  geom_segment(data=trait_vect,
+               aes(x=0,y=0,xend=PCo1,yend=PCo2),#                arrow=arrow(length=unit(0.25,'cm')),
+               linewidth=1,
+               alpha=0.5,inherit.aes = F, arrow=arrow(length=unit(.25,"centimeters")))+
+  # geom_text(data = trait_vect,
+  #           aes(x = PCo1, y = PCo1, label = trait),
+  #           hjust = 0.5, vjust = .5, color="black", size = 3.5)
+  geom_label(
+    data = trait_vect,
+    aes(x = PCo1, y = PCo2, label = trait),
+    hjust = ifelse(names(trait_vect)[1]=='PCo1',0.2, .56),
+    vjust = 1,
+    size = 3,
+    fill = "white",      # background color
+    color = "red",       # text color
+    label.size = 0.2,    # border thickness; set to 0 to remove outline
+    inherit.aes = FALSE
+  )+theme(legend.position = 'none')+
+  annotate("text",
+           x = -Inf, y =Inf, # Position at top-left corner
+           label = 'Reference',
+           hjust = 0, vjust = 1, # Justify text relative to corner
+           size = 3, color = "black")
+#getting a shared legend for this large panel is hard.
+#use a function
+get_only_legend <- function(plot) {
+
+  # get tabular interpretation of plot
+  plot_table <- ggplot_gtable(ggplot_build(plot))
+
+  #  Mark only legend in plot
+  legend_plot <- which(sapply(plot_table$grobs, function(x) x$name) == "guide-box")
+
+  # extract legend
+  legend_tiles <- plot_table$grobs[[legend_plot]]
+
+  # return legend
+  return(legend_tiles)
+}
+tax_legend=get_only_legend(A)
+A<-ggplot(All_responses_and_scores[is.finite(All_responses_and_scores$Pratio) & All_responses_and_scores$pFo > 0,],
+          aes(x = Axis.1, y = Axis.2, color = Presponse)) +
+  geom_point(size = 3, alpha = 0.7) +
+  stat_ellipse(level = 0.8) +
+  scale_color_manual(values = c(
+    "Increaser" = "orange",
+    "Decreaser" = "dodgerblue3",
+    "Neutral" = "red",
+    "Not expected" = "black"
+  )) +
+  facet_wrap(~Ecoregion) +
+  guides(color = guide_legend(title = 'Response'))+
+  geom_segment(data=trait_vect,
+               aes(x=0,y=0,xend=PCo1,yend=PCo2),#                arrow=arrow(length=unit(0.25,'cm')),
+               linewidth=1,
+               alpha=0.5,inherit.aes = F, arrow=arrow(length=unit(.25,"centimeters")))+
+  # geom_text(data = trait_vect,
+  #           aes(x = PCo1, y = PCo1, label = trait),
+  #           hjust = 0.5, vjust = .5, color="black", size = 3.5)
+  geom_label(
+    data = trait_vect,
+    aes(x = PCo1, y = PCo2, label = trait),
+    hjust = ifelse(names(trait_vect)[1]=='PCo1',0.2, .56),
+    vjust = 1,
+    size = 3,
+    fill = "white",      # background color
+    color = "red",       # text color
+    label.size = 0.2,    # border thickness; set to 0 to remove outline
+    inherit.aes = FALSE
+  )+theme(legend.position = 'none')+
+  annotate("text",
+           x = -Inf, y = Inf, # Position at top-left corner
+           label = 'Probabilistic',
+           hjust = 0, vjust = 1, # Justify text relative to corner
+           size = 3, color = "black")
+#redefine C with no legend
+
+#define the plot, but don't plot it
+cmbin_plot=gridExtra::grid.arrange(B,A,ncol=1)
+#plot the final graph with shared legend
+gridExtra::grid.arrange(cmbin_plot,tax_legend,heights=c(10,1))
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//prob_responses_traitspace_Ecoregions_260219_axes_1_2.png')
 
 #general trend of traits across land uses at watershed scale
 #plotting distinct because of the duplicated records that come with the ecoregion,
@@ -864,16 +1003,259 @@ P_long=as.data.frame(ProbOs_long %>%
                        ))
 
 
+compute_site_trait_means <- function(data, site_cols, trait_cols) {
+  data %>%
+    tidyr::pivot_longer(
+      cols = tidyselect::all_of(site_cols),
+      names_to = "Site",
+      values_to = "Presence"
+    ) %>%
+    dplyr::group_by(Site) %>%
+    dplyr::summarise(
+      dplyr::across(
+        tidyselect::all_of(trait_cols),
+        ~ sum(.x * Presence, na.rm = TRUE) /
+          sum(Presence, na.rm = TRUE)
+      ),
+      .groups = "drop"
+    )
+}
+
+compute_design_means <- function(data, site_cols, trait_cols) {
+  compute_site_trait_means(data, site_cols, trait_cols) %>%
+    dplyr::summarise(
+      dplyr::across(
+        everything(),
+        ~ mean(.x, na.rm = TRUE)
+      )
+    )
+}
+omeans=compute_design_means(O_long,site_cols,trait_cols)
+pmeans=compute_design_means(ProbOs_long,Psite_cols,Ptraitcols)
+omeans
+pmeans
+pmeans=pmeans[,names(omeans)]
+omeans$status='Reference'
+pmeans$status='Probabilistic'
+
+
+combined_means <- dplyr::bind_rows(
+  omeans %>% dplyr::mutate(status = "Reference"),
+  pmeans %>% dplyr::mutate(status = "Probabilistic")
+) %>%
+  dplyr::summarise(
+    dplyr::across(
+      -c(status),
+      ~ mean(.x, na.rm = TRUE)
+    )
+  )
+
 O_long$status='Reference'
 P_long$status='Probabilistic'
-wm_traits=rbind(O_long,P_long)
-
-clipr::write_clip(rbind(O_long,P_long))
+wm_traits=rbind(omeans,pmeans)
+wm_traits[,names(wm_traits) %in% names(top5)]
+clipr::write_clip(wm_traits)
 
 
 
 top5
 
+criterion<-function(values) {
+  values ==0
+}
+common_names=intersect(names(PFos_oth),names(Oth_Fo))
+crit1<-PFos_oth >0
+crit2<-Oth_Fo >0
+matching_crit=common_names[crit1 & crit2]
+matching_crit
+common_names=intersect(names(X_Fo),names(Px_Fo))
+crit1<-X_Fo>0
+crit2<-Px_Fo >0
+matching_crit=common_names[crit1 & crit2]
+X_Fo[matching_crit]
+
+#validation data
+val_bugs=val_bugs[,names(val_Pcs)]
+val_bugs=val_bugs[match(row.names(val_Pcs), row.names(val_bugs)),]
+row.names(val_bugs)==row.names(val_Pcs)
+names(val_bugs)[names(val_bugs)=='ABEDUS']='Abedus'
+
+val_bugs=val_bugs[,names(val_bugs) %in% c('Carabidae','Curculionidae')==F]
+val_Pcs=val_Pcs[,names(val_Pcs) %in% c('Carabidae','Curculionidae')==F]
+names(val_Pcs)[names(val_Pcs)=='ABEDUS']='Abedus'
+
+valFos=colSums(val_bugs)
+valFes=colSums(val_Pcs)
+names(valFos)==names(valFes)
+val_ratio=valFos/valFes
+val_diffs=c('Hexatoma',
+            'Pisidiidae',
+            'Tanypodinae',
+            'Glossosoma',
+            'Drunella doddsii','Leptophlebiidae','Malenka')
+val_plotdat$taxon=ifelse(val_plotdat$taxon =='DRUNELLA_DODDSI','Drunella doddsii',val_plotdat$taxon)
+val_plotdat=data.frame(Fo=valFos,Fe=valFes,taxon=names(valFos))
+val_plotdat$col=ifelse(row.names(val_plotdat) %in% val_diffs,
+                        'red',NA)
+val_highlight=val_plotdat[which(val_plotdat$col=='red'),]
+xeric_V=val_bugs[row.names(val_bugs) %in% Xeric_P,]
+xeric_V_pcs=val_Pcs[row.names(val_Pcs) %in% Xeric_P,]
+xeric_V_Fos=colSums(xeric_V)
+xeric_V_Pcs=colSums(xeric_V_pcs)
+xeric_val_plotdat=data.frame(Fo=xeric_V_Fos,Fe=xeric_V_Pcs,taxon=names(valFos))
+xeric_val_plotdat$col=ifelse(row.names(xeric_val_plotdat) %in% val_diffs,
+                             'red',NA)
+xeric_val_highlight=xeric_val_plotdat[which(xeric_val_plotdat$col=='red'),]
+Oth_V=val_bugs[!(row.names(val_bugs) %in% Xeric_P),]
+Oth_V_pcs=val_Pcs[!(row.names(val_Pcs) %in% Xeric_P),]
+oth_v_Fos=colSums(Oth_V)
+oth_v_Fes=colSums(Oth_V_pcs)
+oth_val_plotdat=data.frame(Fo=oth_v_Fos,Fe=oth_v_Fes,taxon=names(valFos))
+oth_val_plotdat$col=ifelse(row.names(oth_val_plotdat) %in% val_diffs,
+                           'red',NA)
+oth_val_highlight=oth_val_plotdat[which(oth_val_plotdat$col=='red'),]
+R=ggplot(data=Ref_Results,aes(y=Fo,x=Fe))+geom_point()+
+  geom_abline(intercept = 0,slope = 1,col='red')+
+  annotate("text",
+           x = -Inf, y = Inf, # Position at top-left corner
+           label = 'Reference',
+           hjust = 0, vjust = 1, # Justify text relative to corner
+           size = 5, color = "black")+
+  lims(x=c(0,50),y=c(0,50))
+
+V=ggplot(data=val_plotdat,aes(y=Fo,x=Fe))+geom_point()+
+  geom_point(data=val_highlight,aes(x=Fe,y=Fo,color=taxon))+
+  geom_abline(intercept = 0,slope = 1,col='red')+
+  annotate("text",
+           x = -Inf, y = Inf, # Position at top-left corner
+           label = 'Validation',
+           hjust = 0, vjust = 1, # Justify text relative to corner
+           size = 5, color = "black")+
+  scale_color_manual(values=c('Hexatoma'='deepskyblue4',
+                              'Pisidiidae' = 'orange', #inc
+                              'Tanypodinae' = 'blue', #inc,
+                              'Leptophlebiidae'= 'chocolate4', #inc
+                              'Glossosoma' = 'dodgerblue', #dec
+                              'Drunella doddsii' = 'cyan3',
+                              'Malenka'= 'chocolate'))+
+  theme(legend.position = 'bottom')+
+  lims(x=c(0,50),y=c(0,50))
+gridExtra::grid.arrange(R,V,ncol=1)
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Ref_vs_val_FoFe_n50.png' )
 
 
 
+#validation and ref plots
+
+A<-ggplot(data=OthEco_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+ggtitle('Other Ecoregions')+
+  xlim(0,50)+ylim(0,50)+
+  annotate("text",
+           x = -Inf, y = Inf, # Position at top-left corner
+           label = 'Reference',
+           hjust = 0, vjust = 1, # Justify text relative to corner
+           size = 4, color = "black")
+B<-ggplot(data=EastXer_plotdat,aes(y=Fo,x=Fe))+geom_point()+
+  ylim(0,50)+xlim(0,50)+
+  geom_abline(intercept = 0,slope = 1,col='red')+ggtitle('Eastern Xeric')+
+  annotate("text",
+           x = -Inf, y = Inf, # Position at top-left corner
+           label = 'Reference',
+           hjust = 0, vjust = 1, # Justify text relative to corner
+           size = 4, color = "black")+lims(x=c(0,20),y=c(0,20))
+
+
+
+C<-ggplot(data=oth_val_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
+  geom_point(data=oth_val_highlight,aes(x=Fe,y=Fo,color=taxon))+
+  scale_color_manual(values=c('Hexatoma'='deepskyblue4',
+                              'Pisidiidae' = 'orange', #inc
+                              'Tanypodinae' = 'blue', #inc,
+                              'Leptophlebiidae'= 'chocolate4', #inc
+                              'Glossosoma' = 'dodgerblue', #dec
+                              'Drunella doddsii' = 'cyan3',
+                              'Malenka'= 'chocolate'))+
+  annotate("text",
+           x = -Inf, y = Inf, # Position at top-left corner
+           label = 'Validation',
+           hjust = 0, vjust = 1, # Justify text relative to corner
+           size = 4, color = "black")+
+  theme(legend.position = "bottom")
+D<-ggplot(data=xeric_val_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
+  geom_point(data=xeric_val_highlight,aes(x=Fe,y=Fo,color=taxon))+
+  scale_color_manual(values=c('Hexatoma'='deepskyblue4',
+                              'Pisidiidae' = 'orange', #inc
+                              'Tanypodinae' = 'blue', #inc,
+                              'Leptophlebiidae'= 'chocolate4', #inc
+                              'Glossosoma' = 'dodgerblue', #dec
+                              'Drunella doddsii' = 'cyan3',
+                              'Malenka'= 'chocolate'))+
+  annotate("text",
+           x = -Inf, y = Inf, # Position at top-left corner
+           label = 'Validation',
+           hjust = 0, vjust = 1, # Justify text relative to corner
+           size = 4, color = "black")+
+  theme(legend.position = "none")+
+  lims(x=c(0,20),y=c(0,20))
+#getting a shared legend for this large panel is hard.
+#use a function
+get_only_legend <- function(plot) {
+
+  # get tabular interpretation of plot
+  plot_table <- ggplot_gtable(ggplot_build(plot))
+
+  #  Mark only legend in plot
+  legend_plot <- which(sapply(plot_table$grobs, function(x) x$name) == "guide-box")
+
+  # extract legend
+  legend_tiles <- plot_table$grobs[[legend_plot]]
+
+  # return legend
+  return(legend_tiles)
+}
+tax_legend=get_only_legend(C)
+#redefine C with no legend
+C<-ggplot(data=oth_val_plotdat,aes(y=Fo,x=Fe))+geom_point()+geom_abline(intercept = 0,slope = 1,col='red')+
+  geom_point(data=oth_val_highlight,aes(x=Fe,y=Fo,color=taxon))+
+  scale_color_manual(values=c('Hexatoma'='deepskyblue4',
+                              'Pisidiidae' = 'orange', #inc
+                              'Tanypodinae' = 'blue', #inc,
+                              'Leptophlebiidae'= 'chocolate4', #inc
+                              'Glossosoma' = 'dodgerblue', #dec
+                              'Drunella doddsii' = 'cyan3',
+                              'Malenka'= 'chocolate'))+
+  annotate("text",
+           x = -Inf, y = Inf, # Position at top-left corner
+           label = 'Validation',
+           hjust = 0, vjust = 1, # Justify text relative to corner
+           size = 4, color = "black")+
+  theme(legend.position = "none")
+#define the plot, but don't plot it
+cmbin_plot=gridExtra::grid.arrange(A,B,C,D,ncol=2)
+#plot the final graph with shared legend
+gridExtra::grid.arrange(cmbin_plot,tax_legend,heights=c(10,1))
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_Fe_RandV_Ecos_n20.png')
+val_OE=OE_calc(val_Pcs,
+        val_bugs,
+        threshold=0)
+mean(val_OE$OtoE)
+sd(val_OE$OtoE)
+#val and ref O/Es
+val_xer_OE=OE_calc(xeric_V_pcs,
+                   xeric_V,
+                   threshold = 0)
+val_oth_OE=OE_calc(Oth_V_pcs,
+                   Oth_V,
+                   threshold = 0)
+boxplot(ref_OEs_other$OtoE,at=2,xlim=c(1,6),col='purple4')
+boxplot(val_oth_OE$OtoE,at=3,add=T,col='green4')
+boxplot(XerOE$OtoE,at=4,add=T,col='purple4')
+boxplot(val_xer_OE$OtoE,at=5,add=T,col='green4')
+mtext(text = c("Other", "Xeric"), side = 1, line = 1, at = c(2.5, 4.5), cex = 1)
+mtext(text=c('Ref.','Val.','Ref.','Val.'),side=1,line=2, at=c(2,3,4,5),cex=0.7)
+legend('topright',
+       leg=c('Reference','Validation'),
+       pch=rep(22,2),
+       pt.bg=c('purple4','green4'),
+       bty='n',
+       cex=0.8)
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Ref_vs_Val_OEs_0.png')
