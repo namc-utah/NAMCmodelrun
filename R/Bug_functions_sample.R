@@ -240,10 +240,9 @@ CSCI_bug <- function(sampleIds){
 CO_bug_export<-function(sampleIds){
   bugRaw =
     NAMCr::query(
-    "sampleTaxaTranslationRarefied",
+    "sampleTaxaTranslation",
     sampleIds=sampleIds,
-    translationId=8,
-    fixedCount=300
+    translationId=8
   )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
 
   bugLives = NAMCr::query(
@@ -289,10 +288,9 @@ bugRaw<-bugRaw[!duplicated(bugRaw$burner),]
 CO_v5_bug_export<-function(sampleIds){
   bugRaw =
     NAMCr::query(
-      "sampleTaxaTranslationRarefied",
+      "sampleTaxaTranslation",
       sampleIds=sampleIds,
       translationId=92,
-      fixedCount=300
     )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
 
   bugLives = NAMCr::query(
