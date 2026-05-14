@@ -1,6 +1,16 @@
 #univariate random forest/WestWide model ! Using model object, the actual ref sites.
 #compare the Fo and Fe to the probabilistic sites' Fo and Fe. Maybe a better discrimination
 #between site type and more trend in increaser/decreasers?
+Xeric_P=c(171583, 171664, 171668, 171669, 171777, 173398, 173404,
+          173407, 173408, 173409, 178667, 178671, 178676, 184764,
+          184768, 185060, 185063, 185699, 185702, 187162, 187182,
+          187607,187662, 187779, 187780, 187849, 190728, 190762,
+          190916, 191507,
+          #these are the reference sites used in the westwide model
+          "87087", "HAWK-216", "HAWK-225", "HAWK-226", "HAWK-227", "HAWK-228", "HAWK-241",
+          "HAWK-86",  "HAWK-89", "HAWK-92",  "WE-1036",  "WE-1047",  "WE-1055",  "WE-1079",
+          "WE-1085",  "WE-21",    "WE-47",    "WE-866",  "WE-889",   "WE-905",
+          'R6REM-5','WE-317')
 library(tidyr)
 library(dplyr)
 savp = function(W,H,fn) {
@@ -9,7 +19,7 @@ savp = function(W,H,fn) {
 }
 #read in ref data
 ben_dat=read.csv("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//WestWide_Ref_PA_260209.csv")
-
+newOes=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//REf_noNemTanyOEs.csv')
 names(ben_dat)[1]<-'SiteCode'
 row.names(ben_dat)=ben_dat$SiteCode;ben_dat=ben_dat[,-1]
 ben_dat_raw=ben_dat
@@ -53,14 +63,14 @@ raw_OEx=OE_calc(results_data = Pcs_raw[
                ],threshold = 0.5)
 sd(raw_OE$OtoE)
 mean(raw_OE$OtoE)
-raw_OEx=OE_calc(results_data = Pcs_raw[
-  (row.names(Pcs_raw) %in% Xeric_P),
+raw_OE=OE_calc(results_data = Pcs_raw[
+  !(row.names(Pcs_raw) %in% Xeric_P),
   #!(names(Pcs_raw) %in% c("Carabidae", "Curculionidae"))
 ],
 PA=ben_dat_raw[
-  (row.names(ben_dat_raw) %in% Xeric_P),
+  !(row.names(ben_dat_raw) %in% Xeric_P),
   #!(names(ben_dat_raw) %in% c("Carabidae", "Curculionidae"))
-],threshold = 0.5)
+],threshold = 0)
 #calculating Fo and Fe
 Fos=colSums(ben_dat)
 Fos_trim=colSums(ben_dat_trim)
@@ -121,16 +131,7 @@ rownames(Prob_pcs)<-Prob_pcs$sampleId;Prob_pcs=Prob_pcs[,-c(1,2)]
 #write.csv(Pr_PA, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_Prob_Os.csv')
 
 
-Xeric_P=c(171583, 171664, 171668, 171669, 171777, 173398, 173404,
-          173407, 173408, 173409, 178667, 178671, 178676, 184764,
-          184768, 185060, 185063, 185699, 185702, 187162, 187182,
-          187607,187662, 187779, 187780, 187849, 190728, 190762,
-          190916, 191507,
-          #these are the reference sites used in the westwide model
-          "87087", "HAWK-216", "HAWK-225", "HAWK-226", "HAWK-227", "HAWK-228", "HAWK-241",
-          "HAWK-86",  "HAWK-89", "HAWK-92",  "WE-1036",  "WE-1047",  "WE-1055",  "WE-1079",
-          "WE-1085",  "WE-21",    "WE-47",    "WE-866",  "WE-889",   "WE-905",
-          'R6REM-5','WE-317')
+
 
 ben_dat_oth=ben_dat[row.names(ben_dat) %in% Xeric_P==F,]
 Pcs_sum_oth=Pcs_sum[row.names(Pcs_sum) %in% Xeric_P==F,]
@@ -206,26 +207,28 @@ axis(side=1,at=c(2,3),labels = c('Prob','Train'))
 
 savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//Box_compare_FoFes_260210.png')
 
-boxplot(ratio,at=1,col='purple3',ylim=c(0,max(Pratio[is.finite(Pratio)])),xlim=c(0,3),
-        ylab='Fo/Fe ratio')
-boxplot(Pratio,at=2,col='yellow3',add=T)
-points(x=rep(2, length(sort(Pratio[is.finite(Pratio)],decreasing = T)[1:3])),y=(sort(Pratio[is.finite(Pratio)],decreasing = T)[1:3]),bg=c('blue','red','orange'),pch=21)
+boxplot(ratio, at = 1, ylim = c(0, 15), xlim = c(0, 3),
+        ylab = '', las = 1, frame = FALSE,cex.axis=2,cex=1.5)
+boxplot(Pratio, at = 2, add = TRUE, yaxt = 'n', frame = FALSE,cex=1.5)
+axis(side = 1, at = c(1, 2), labels = c('Reference', 'Probabilistic'),cex.axis=1.7)
 
-legend('topright',
-       leg=c('Reference',
-             'Probabilistic'),
-       pch=rep(22,2),
-       pt.bg=c('purple4',
-               'yellow3'),
-       bty='n',
-       cex=0.8)
-legend('topleft',
-       leg=c('Callibaties','Laccobius','Gyraulus'),
-       pch=c(21,21),
-       pt.bg=c('blue','red','orange'),
-       bty='n',
-       cex=0.8)
-#savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//regional_boxplot_compare_260210_colored.png')
+mtext("Fo/Fe", side = 2, line = 1.9, las = 3,cex=2)
+box(bty = 'l',lwd=3)
+# legend('topright',
+#        leg=c('Reference',
+#              'Probabilistic'),
+#        pch=rep(22,2),
+#        pt.bg=c('purple4',
+#                'yellow3'),
+#        bty='n',
+#        cex=0.8)
+# legend('topleft',
+#        leg=c('Callibaties','Laccobius','Gyraulus'),
+#        pch=c(21,21),
+#        pt.bg=c('blue','red','orange'),
+#        bty='n',
+#        cex=0.8)
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//regional_boxplot_compare_260513.png')
 graphics.off()
 boxplot(Oth_ratio,at=1,xlim=c(0,5),ylim=c(0,max(Px_ratio[is.finite(Px_ratio)])),col='purple3',ylab='Fo/Fe ratio')
 boxplot(Pratio_oth,at=2,add=T,col='yellow3')
@@ -473,13 +476,14 @@ gridExtra::grid.arrange(cmbin_plot,tax_legend,heights=c(10,1))
 
 savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//ecoregions_FoFe_sitecompare_260224_Colored.png')
 #get O/E scores for all sites / ecoregion subsets
+threshold=0
 ref_OEs=OE_calc(results_data = Pcs_sum,
                     PA=ben_dat,
                     threshold=threshold)
 ref_OEs_other=OE_calc(results_data = Pcs_sum_oth,
                       PA=ben_dat_oth,
                       threshold=threshold)
-pred_probs=pred_probs[match(names(PFos), names(pred_probs))]
+pred_probs=Prob_pcs[match(names(PFos), names(Prob_pcs))]
 Pr_PA=Pr_PA[match(names(PFos), names(Pr_PA))]
 test_OEs=OE_calc(results_data=Pes,
                      PA=ProbOs,
@@ -493,7 +497,7 @@ OthEco_OE=OE_calc(results_data = Pcs_sum_oth,
 
 POthOE=OE_calc(results_data = pred_probs_oth,
                PA=Pr_PA_oth,
-               threshold = threshold)
+               threshold = 0.5)
 PXOE=OE_calc(results_data = pred_probs_X,
              PA=Pr_PA_X,
              threshold = threshold)
@@ -522,17 +526,14 @@ legend('topright',
 savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//OtoE_boxes_ecoregions_260212.png')
 #savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//OtoE_boxes_Pc05_251106.png')
 ### This is just looking at O/E performance and metrics surrounding it
-boxplot(ref_OEs$OtoE,at=1,xlim=c(0,3),col='purple4',ylim=c(0,max(test_OEs$OtoE)))
-boxplot(test_OEs$OtoE,at=2,add=T,col='yellow3')
-legend('topright',
-       leg=c('Reference',
-             'Probabilistic'),
-       pch=rep(22,2),
-       pt.bg=c('purple4',
-               'yellow3'),
-       bty='n',
-       cex=0.8)
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//OtoE_boxes_Pc0_260212.png')
+boxplot(ref_OEs$OtoE,at=1,xlim=c(0,3),ylim=c(0,max(test_OEs$OtoE)),
+        ylab='',las=1,frame=F,cex.axis=2,cex=2)
+boxplot(test_OEs$OtoE,at=2,add=T, yaxt='n',frame=F,cex=2)
+mtext("O/E", side = 2, line = 1.9, las = 1,cex=1.5)
+axis(side=1,at=c(1,2),labels=c('Reference','Probabilistic'),cex.axis=1.5)
+box(bty = 'l',lwd=3)
+
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//OtoE_boxes_260513.png')
 
 boxplot(Pratio,at=2,col='yellow3',ylim=c(0,70),xlim=c(0,5))
 boxplot(Px_ratio,at=3,add=T,col='purple4')
@@ -633,3 +634,24 @@ for(i in 1:ncol(Pcs_sum_X)){
 }
 CI_dat
 clipr::write_clip(CI_dat)
+
+Pcs_nonem= Pcs_sum[,names(Pcs_sum)!='Nemata']
+ben_dat_nonem=ben_dat[,names(ben_dat)!='Nemata']
+oe_nonem=OE_calc(results_data = Pcs_nonem,
+                 PA=ben_dat_nonem,threshold = 0.5)
+
+probOE_nonem=OE_calc(results_data = Prob_pcs[,names(Prob_pcs)!='Nemata'],
+                     PA=test_dat[,names(test_dat)!='Nemata'],
+                     threshold = 0.5)
+
+POthOE_nonem=OE_calc(results_data = pred_probs_oth[,names(pred_probs_oth)!='Nemata'],
+               PA=Pr_PA_oth[,names(Pr_PA_oth)!='Nemata'],
+               threshold = 0.5)
+PXOE_nonem=OE_calc(results_data = pred_probs_X[,names(pred_probs_X)!='Nemata'],
+             PA=Pr_PA_X[,names(Pr_PA_X)!='Nemata'],
+             threshold = 0.5)
+mean(POthOE_nonem$OtoE)
+
+boxplot(POthOE$OtoE,at=2,xlim=c(1,4))
+boxplot(POthOE_nonem$OtoE,at=3,add=T)
+axis(side=1,at=c(2,3),labels=c('Nemata','No Nemata'))

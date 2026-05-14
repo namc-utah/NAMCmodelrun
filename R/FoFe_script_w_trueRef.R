@@ -26,6 +26,7 @@ savp = function(W,H,fn) {
   dev.copy(dev=png,file=fn,wi=W,he=H,un="in",res=650)
   dev.off()
 }
+maxxed_OTUs=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//Maximized_OTUmatrix_trimmed_more.csv')
 val_bugs=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//WW_validation_data.csv')
 row.names(val_bugs)<-val_bugs$Site;val_bugs=val_bugs[,-c(1,2)]
 val_preds=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//val_preds.csv')
@@ -85,7 +86,10 @@ FailedO<-colSums(FailedO)
 FailedE=FailedE[match(names(FailedO), names(FailedE))]
 failedFoFe=FailedO/FailedE
 
-
+valO=colSums(val_bugs)
+valE=colSums(val_Pcs)
+valE=valE[match(names(valO), names(valE))]
+valFoFe=valO/valE
 Ref_Results=data.frame(taxon=names(Os),
                        Fo=refO,
                        Fe=refE,
@@ -102,6 +106,10 @@ F_Results=data.frame(taxon=names(FailedO),
                      Fo=FailedO,
                      Fe=FailedE,
                      ratio=failedFoFe)
+V_Results=data.frame(taxon=names(valO),
+                     Fo=valO,
+                     Fe=valE)
+
 P_Results$taxon[P_Results$taxon=='Drunella_coloradensis_flavilinea']<-'Drunella coloradensis/flavilinea'
 F_Results$taxon[F_Results$taxon=='Drunella_coloradensis_flavilinea']<-'Drunella coloradensis/flavilinea'
 P_Results$taxon[P_Results$taxon=='DRUNELLA_DODDSI']<-'Drunella doddsii'
@@ -143,36 +151,48 @@ my_colors <- setNames(
 #   c('red', 'purple', 'orange', 'dodgerblue','blue','yellow2'),
 #   extreme_diffs$taxon[1:6]
 # )
-P=ggplot(data=Ref_Results,aes(y=Fo,x=Fe))+geom_point()+
-  geom_abline(intercept = 0,slope = 1,col='red')+
+P=ggplot(data=Ref_Results,aes(y=Fo,x=Fe))+geom_point(size=5)+
+  geom_abline(intercept = 0,slope = 1,lwd=1)+
   annotate("text",
            x = -Inf, y = Inf, # Position at top-left corner
            label = 'Reference',
-           hjust = 0, vjust = 1, # Justify text relative to corner
-           size = 5, color = "black")+
-  lims(x=c(0,350),y=c(0,max(P_Results$Fo)))
-Fa=ggplot(data=F_Results,aes(y=Fo,x=Fe,label=taxon))+geom_point()+
+           hjust = -0.1, vjust = 1, # Justify text relative to corner
+           size = 12, color = "black")+
+  lims(x=c(0,50),y=c(0,max(50)))+
+  theme_classic()+
+  theme(
+  axis.text.x = element_text(size =30),
+  axis.text.y = element_text(size = 30),
+  axis.title = element_text(size=30))
+  #axis.line=element_line(linewidth=1))
+Fa=ggplot(data=V_Results,aes(y=Fo,x=Fe))+geom_point(size=5)+
   #geom_point(data=F_Results[F_Results$Regional_Response=='Neutral',],color='grey50')+
   #geom_text_repel(box.padding = 0.5, max.overlaps = Inf) +
   #geom_point(data = F_Results[F_Results$Regional_Response=='Decreaser',],color='dodgerblue')+
   #geom_point(data = F_Results[F_Results$Regional_Response=='Increaser',],color='orange2')+
-  geom_abline(intercept = 0,slope = 1,col='red')+
-  geom_point(data=F_Results[F_Results$taxon %in% extreme_diffs,],aes(x=Fe,y=Fo,colour = taxon))+
-  scale_color_manual(values=my_colors)+
+  geom_abline(intercept = 0,slope = 1,lwd=1)+
+  #geom_point(data=F_Results[F_Results$taxon %in% extreme_diffs,],aes(x=Fe,y=Fo,colour = taxon))+
+  #scale_color_manual(values=my_colors)+
   coord_cartesian(clip = "off") +
   # geom_text_repel(
   #                  point.size=NA)+
 
   annotate("text",
            x = -Inf, y = Inf, # Position at top-left corner
-           label = 'Failed',
-           hjust = 0, vjust = 1, # Justify text relative to corner
-           size = 5, color = "black")+
-  theme(legend.position = "bottom")
+           label = 'Validation',
+           hjust = -0.1, vjust = 1, # Justify text relative to corner
+           size = 12, color = "black")+
+  theme(legend.position = "bottom")+
+  theme_classic()+
+  theme(
+  axis.text.x = element_text(size = 30),
+  axis.text.y = element_text(size = 30),
+  axis.title = element_text(size=30),
+  axis.line=element_line(linewidth=1))
 
 gridExtra::grid.arrange(P,Fa,ncol=1)
 
-savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_vs_Fe_Failed_colored_260224.png')
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Fo_vs_Fe_Val_260514.png')
 
 write.csv(All_Results,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_WW_260223.csv')
 
@@ -562,7 +582,7 @@ write.csv(ratios_w_traits,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Rese
 }
 
 #read in table that came from the trait section
-finaltable3<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Regional_responses_and_traits_260210.csv')
+finaltable3<-maxxed_OTUs#read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Regional_responses_and_traits_260210.csv')
 #final_table3<-read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Spatial_scales_and_traits_MRF_251114.csv')
 
 a<-ggplot(All_Results[All_Results$status=='Reference',],aes(x=Fe,y=Fo))+geom_point()+geom_abline(color='red',linetype=2)+ggtitle('Reference')+labs(y='Fo',x='Fe')
@@ -604,15 +624,15 @@ savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//
 #Dissimilarity matrix, for they will result in NAs in the final product.
 
 
-
-traits_only=finaltable3[,c(1,7:ncol(finaltable3))]
+traits_only=finaltable3
+#traits_only=finaltable3[,c(1,7:ncol(finaltable3))]
 #traits_only <- final_table3[,c(2,13:ncol(final_table3))]
 
 
 
-traits_only<-traits_only[!duplicated(traits_only$taxon),]
-row.names(traits_only)<-traits_only$taxon
-traits_only<-traits_only[,-1]
+traits_only<-traits_only[!duplicated(traits_only$OTU),]
+row.names(traits_only)<-traits_only$OTU
+traits_only=traits_only[,-1]
 
 
 traits_only2<-as.data.frame(lapply(traits_only,factor))
@@ -652,9 +672,9 @@ traits_only2<-traits_only2[,names(traits_only2) %in% c('Develop_fast_season',
                                                        )==F]
 
 #calculate gower distance on just traits
-traits_only3<- lapply(traits_only2[,2:ncol(traits_only2)], \(x) as.integer(as.factor(x)) - 1L)
+traits_only3<- lapply(traits_only2[,1:ncol(traits_only2)], \(x) as.integer(as.factor(x)) - 1L)
 traits_only3<-as.data.frame(do.call(cbind,traits_only3))
-traits_only3[is.na(traits_only3)]<-0
+#traits_only3[is.na(traits_only3)]<-0
 # traits_imputed <- traits_only3 %>%
 #   mutate(across(where(is.integer), ~replace_na(.,0,)))
 # traits_imputed_num <- traits_only2 %>%
@@ -668,12 +688,13 @@ traits_only3[is.na(traits_only3)]<-0
 # traits_imputed_num=lapply(traits_imputed, \(x) as.integer(as.factor(x)) - 1L)
 # traits_num=as.data.frame(do.call(cbind,traits_imputed_num))
 Gower_dist<-FD::gowdis(traits_only3)
-
+NMDS_trait_dist=vegan::vegdist(traits_only3,'bray',binary=T)
+dim(as.matrix(NMDS_trait_dist))
 library(vegan)
 library(gawdis)
 #this is the top variable identification, modified from Bello et al. 2020
 #this gets the PCoA
-pcoaaxes=dudi.pco(cailliez(Gower_dist), scannf = F,nf=267) #all axes
+pcoaaxes=dudi.pco(cailliez(NMDS_trait_dist), scannf = F,nf=109) #all axes
 #and its distance
 gowdis.PCoA<-dist(pcoaaxes$li)
 
@@ -686,102 +707,237 @@ for(i in 1:dim(traits_only3)[2]){
 names(cors.pcoa)<-names(traits_only3)
 ranked_mantel=sort(cors.pcoa,decreasing = T)
 top5=ranked_mantel[1:5]
-top5
+names(top5)
 
 #convert the Gower distance into a matrix for readability
 Gower_mat<-as.matrix(Gower_dist)
 #assign the taxa names
 row.names(Gower_mat)<-row.names(traits_only3)
 #perform PCoA
-PCOA<-ape::pcoa(Gower_mat)
+NMDS_trait=vegan::metaMDS(NMDS_trait_dist)
+#PCOA<-ape::pcoa(Gower_mat)
 #scree plot. Axes 1 and 2 explain ~50% of variation
-eigenvalues=PCOA$values$Eigenvalues
-prop_var=eigenvalues/sum(eigenvalues)*100
-cum_var=cumsum(prop_var)
-barplot(prop_var[1:40],
-        names.arg = 1:40,
-        main = "PCoA Scree Plot: Variance Explained per Axis",
-        xlab = "PCoA Axis",
-        ylab = "Variance Explained (%)",
-        col = "steelblue",
-        las = 2)
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//PCoA_Scree.png')
-#cmd scale traits for layering?
-gower_cmd=cmdscale(Gower_dist,45,eig=T)
-
-gower_scores=data.frame(PCOA$vectors)
+# eigenvalues=PCOA$values$Eigenvalues
+# prop_var=eigenvalues/sum(eigenvalues)*100
+# cum_var=cumsum(prop_var)
+# barplot(prop_var[1:40],
+#         names.arg = 1:40,
+#         main = "PCoA Scree Plot: Variance Explained per Axis",
+#         xlab = "PCoA Axis",
+#         ylab = "Variance Explained (%)",
+#         col = "steelblue",
+#         las = 2)
+# savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//PCoA_Scree.png')
+# #cmd scale traits for layering?
+# gower_cmd=cmdscale(Gower_dist,eig=T)
+NMDS_trait_scores=as.data.frame(vegan::scores(NMDS_trait))
+#gower_scores=data.frame(PCOA$vectors)
 #gower_scores=data.frame(Pco1=gower_cmd[,1],Pco2=gower_cmd[,2])
-gower_scores$taxon=row.names(Gower_dist)
-row.names(gower_scores)=row.names(traits_only3)
+row.names(NMDS_trait_scores)=row.names(traits_only3)
+#gower_scores$taxon=row.names(Gower_dist)
+#row.names(gower_scores)=row.names(traits_only3)
 
-fit=envfit(gower_scores[,c(1,2)],traits_only3,na.rm=T)
+fit=envfit(NMDS_trait_scores[,c(1,2)],traits_only3,na.rm=T)
 trait_vect<-as.data.frame(fit$vectors$arrows)
 trait_vec=as.data.frame(scores(fit, display = 'vectors'))
 trait_vect$trait <- rownames(trait_vect)
-colnames(trait_vect)[1:2] <- c("PCo1", "PCo2")
+colnames(trait_vect)[1:2] <- c("NMDS1", "NMDS2")
 mult=vegan::ordiArrowMul(trait_vec,display='species')
-arrow_multiplier <- 0.75 * max(abs(gower_scores[,c(1,2)])) / max(abs(trait_vect[,1:2]))
-trait_vect[,1:2] <- trait_vect[,1:2] * arrow_multiplier
-trait_vect=trait_vect[trait_vect$trait %in% names(top5),]
-trait_vect[,1:2]<-trait_vect[,1:2]*-1
+# arrow_multiplier <- 0.75 * max(abs(gower_scores[,c(1,2)])) / max(abs(trait_vect[,1:2]))
+# trait_vect[,1:2] <- trait_vect[,1:2] * arrow_multiplier
+Fisher_Traits =c('Develop_slow_season',
+                 'Max_body_size_abbrev_Large',
+                 'Feed_prim_abbrev_CG',
+                 'Resp_abbrev_Gills',
+                 'Habit_prim_Climber',
+                 'Female_disp_abbrev_High',
+                 'Habit_prim_Burrower',
+                 'Habit_prim_Sprawler',
+                 'Occurance_drift_rare')
 
-PCOA_Scores<-as.data.frame(PCOA$vectors)
+
+Fishtrait_vect=trait_vect[trait_vect$trait %in% Fisher_Traits,]
+trait_vect=trait_vect[trait_vect$trait %in% names(top5),]
+trait_vect$trait=row.names(trait_vect)
+Fishtrait_vect$trait=c('Collector\nGatherer',
+                       'Female Dispersal',
+                       'Burrower',
+                       'Climber',
+                       'Sprawler',
+                       'Large Body',
+                       'Gills',
+                       'Slow\nDevelopment',
+                       'Rare Drifter'
+
+)
+
+Fishtrait_vect
+#PCOA_Scores<-as.data.frame(PCOA$vectors)
 #assign taxa names
 top_trait_arrows=trait_vect$trait
-PCOA_Scores$taxon<-row.names(traits_only)
+#PCOA_Scores$taxon<-row.names(traits_only)
 #renaming vectors for easier interpretation
 
-trait_vect$trait=c('Fast develop',
-                   'Adults enter/exit',
-                   'Drift',
-                   'Desicc. Resist.',
-                   'Streamlined')
-
+ trait_vect$trait=c('Poor Synch.\nEmerge',
+                            'Swimmer',
+                       'Multivoltine/\nBivoltine',
+                       'Lifespan_very_short',
+                       'Slow\nDevelopment')
+NMDS_trait_scores$taxon=row.names(traits_only2)
 
 
 
 #join the responses with the PCoA scores
-Responses_and_scores=plyr::join(All_Results,PCOA_Scores,by='taxon','left')
+#Responses_and_scores=plyr::join(All_Results,PCOA_Scores,by='taxon','left')
+Responses_and_scores=plyr::join(All_Results,NMDS_trait_scores,by='taxon','left')
 All_responses_and_scores=plyr::join(All_ratios,PCOA_Scores,by='taxon','left')
 #plotting the responses by site type
 #be sure to adjust axes as needed
 Responses_and_scores$status2=factor(Responses_and_scores$status,levels=c('Reference','Probabilistic'))
-ggplot(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.finite(Responses_and_scores$ratio) & Responses_and_scores$Fo>0,],
-       aes(x=Axis.1, y=Axis.2,color=Regional_Response))+
+if(0){ggplot(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.finite(Responses_and_scores$ratio) & Responses_and_scores$Fo>0,],
+       aes(x=NMDS1, y=NMDS2,color=Regional_Response))+
   geom_point(size=3,alpha=0.7)+
+  labs(x='NMDS1', y='NMDS2')+
   stat_ellipse(level=0.8)+
   geom_segment(data=trait_vect,
-               aes(x=0,y=0,xend=PCo1,yend=PCo5),
+               aes(x=0,y=0,xend=NMDS1,yend=NMDS2),
                arrow=arrow(length=unit(0.25,'cm')),
                linewidth=1,
                alpha=0.5,inherit.aes = F)+
   # geom_text(data = trait_vect,
   #          aes(x = PCo1, y = PCo2, label = trait),
   #         hjust = 0.4, vjust = .9, color="black", size = 3.5) +
-  geom_label(
+  geom_text(
     data = trait_vect,
-    aes(x = PCo1, y = PCo2, label = trait),
-    hjust = ifelse(names(trait_vect)[1]=='PCo2',0.2, .75),
-    vjust = 1,
-    size = 3,
-    fill = "white",      # background color
-    color = "red",       # text color
-    label.size = 0.2,    # border thickness; set to 0 to remove outline
+    aes(
+      x = NMDS1,
+      y = NMDS2,
+      label = trait,
+      # Move the conditional logic here:
+      vjust = ifelse(trait == 'Poor Synch. Emerge', 2,ifelse(
+        trait =='Swimmer',-2, 0)),
+      hjust= ifelse(trait == 'Crawler', -0.4,
+                    ifelse(trait=='Predator',1.2,
+                           ifelse(trait %in% c('Swimmer','Poor Synch. Emerge'),
+                                        0.9,0)))
+    ),
+    size = 5,
+    color = "black",
     inherit.aes = FALSE
   )+
     # geom_text(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.finite(Responses_and_scores$ratio),],
     #          aes(x=Axis.2,y=Axis.3,label=taxon),
     #           color='black',
     #           hjust=0,vjust=0, size=1)+
-  scale_color_manual(values=c("Increaser"="orange",
-                              "Decreaser"="dodgerblue3",
-                              "Neutral"='red',
-                              "Not expected"='black'))+
-  facet_wrap('status2')+guides(color=guide_legend(title='Response'))+
-  theme(legend.position = "top")
+  scale_color_manual(values=c("Increaser"="red",
+                              "Decreaser"="blue",
+                              "Neutral"='grey5',
+                              "Not expected"='black')) +
+  facet_wrap(~status2, scales = "free_y") + # Shows Y axis on both
+  guides(color = guide_legend(title = 'Response')) +
+  theme_classic() + # Call the base theme first
+  theme(
+    legend.position = "top",
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title = element_text(size = 10),
+    strip.text = element_text(size = 14)
+  )+
+  theme(
+    legend.position = "top",
+    # Facet Titles
+    strip.text = element_text(size = 14),
+    # Axis Labels and Titles
+    axis.text = element_text(size = 13),
+    axis.title = element_text(size = 13),
+    # Legend Labels and Title
+    legend.title = element_text(size = 13),
+    legend.text = element_text(size = 13)
+  )
+}
+nudge_x_vector <- ifelse(trait_vect$trait == 'Slow\nDevelopment', 0.5,
+                         ifelse(trait_vect$trait == 'Multivoltine/\nBivoltine', -0.3,
+                                ifelse(trait_vect$trait=='Poor Synch.\nEmerge',-0.3,
+                                       ifelse(trait_vect$trait=='Swimmer',0.4,
+                                       0))))
+nudge_y_vector <- ifelse(trait_vect$trait == 'Shape\nStreamline', 0.4,
+                         ifelse(trait_vect$trait == 'Multivoltine/\nBivoltine', -1,
+                                ifelse(trait_vect$trait=='Poor Synch.\nEmerge',0.4,
+                                       ifelse(trait_vect$trait == 'Univoltine',-0.3,
+                                              ifelse(trait_vect$trait=='Swimmer',-0.15,0)))))
+Fishnudge_x_vector <- ifelse(Fishtrait_vect$trait == 'Slow\nDevelopment', -0.5,
+                         ifelse(Fishtrait_vect$trait == 'Female Dispersal', -0.3,
+                                ifelse(Fishtrait_vect$trait=='Large Body',-0.4,
+                                       ifelse(Fishtrait_vect$trait=='Climber',0.5,
+                                              ifelse(Fishtrait_vect$trait=='Collector\nGatherer',0.3,
+                                                     ifelse(Fishtrait_vect$trait=='Burrower',-0.3,
+                                                            ifelse(Fishtrait_vect$trait=='Rare Drifter',-0.5,0)))))))
+Fishnudge_y_vector <- ifelse(Fishtrait_vect$trait == 'Sprawler', -0.1,
+                         ifelse(Fishtrait_vect$trait == 'Female Dispersal', 0.5,
+                                ifelse(Fishtrait_vect$trait=='Collector\nGatherer',-0.5,0)))
+
+ggplot(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.finite(Responses_and_scores$ratio) & Responses_and_scores$Fo>0,],
+       aes(x=NMDS1, y=NMDS2,color=Regional_Response))+
+  geom_point(size=3,alpha=0.7)+
+  labs(x='NMDS1', y='NMDS2')+
+  stat_ellipse(level=0.8)+
+  geom_segment(data=trait_vect,
+               aes(x=0,y=0,xend=NMDS1,yend=NMDS2),
+               arrow=arrow(length=unit(0.25,'cm')),
+               linewidth=1,
+               alpha=0.9,inherit.aes = F)+
+
+  # DYNAMIC REPEL LABELS (Replaces your old geom_text)
+    # geom_text_repel(
+    #  data = trait_vect,
+    #   aes(
+    #     x = NMDS1,
+    #     y = NMDS2,
+    #     label = trait
+    #   ), # Baseline push for specific names
+    #   #nudge_x = nudge_x_vector,
+    #   #nudge_y = nudge_y_vector, # Baseline push for specific names
+    #   size = 5,
+    #   color = "black",
+    #   inherit.aes = FALSE,
+    #   box.padding = 0.9,
+    # point.padding = 0.3,
+    #  max.overlaps = Inf
+    # ) +
+
+  scale_color_manual(values=c("Increaser"="red",
+                              "Decreaser"="blue",
+                              "Neutral"='grey5',
+                              "Not expected"='black')) +
+  facet_wrap(~status2, scales = "free_y") +
+  guides(color = guide_legend(title = 'Response')) +
+  theme_classic() +
+  theme(
+    # Legend Layout
+    legend.position = "top",
+    legend.title = element_text(size = 13),
+    legend.text = element_text(size = 13),
+
+    # Hide Axis Ticks and Numbers
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+
+    # Nudge Axis Titles Away from Axes (t=top, r=right, b=bottom, l=left)
+    axis.title.x = element_text(size = 13, margin = margin(t = 15)),
+    axis.title.y = element_text(size = 13, margin = margin(r = 15)),
+
+    # Remove Facet Wrap Background Boxes
+    strip.background = element_blank(),
+    strip.text = element_text(size = 14), # Kept font size 14, added bold for readability
+
+    # Increase Space Between the Two Facet Plots
+    panel.spacing = unit(2, "lines")
+  )
 #guides(color = guide_legend(nrow = 1))
 
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_traitspace_260219_Axes2_3_flipped.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_traitspace_NMDS_260514_nolabs.png')
 
 
 #same but for prob sites.
@@ -966,13 +1122,13 @@ ProbOs_long=as.data.frame(t(ProbOs))
 ProbOs_long$taxon=names(ProbOs)
 ProbOs_long$status='Probabilistic'
 O_long$status='Reference'
-traits_only3$taxon=row.names(traits_only2)
+traits_only3$taxon=row.names(traits_only)
 O_long=plyr::join(O_long,traits_only3)#[,names(traits_only) %in% c(names(top5),'taxon')])
 ProbOs_long=plyr::join(ProbOs_long,traits_only3)#[,names(traits_only) %in% c('taxon',names(top5))])
 site_cols=colnames(O_long)[1:656]#(ncol(O_long)-8)]
-traitcols=colnames(O_long)[659:ncol(O_long)]#(ncol(O_long)-4):ncol(O_long)]
+traitcols=colnames(O_long)[659:(ncol(O_long))]#(ncol(O_long)-4):ncol(O_long)]
 Psite_cols=colnames(ProbOs_long)[1:349]#1:(ncol(ProbOs_long)-8)]
-Ptraitcols=colnames(ProbOs_long)[352:ncol(ProbOs_long)]#(ncol(ProbOs_long)-4):ncol(ProbOs_long)]
+Ptraitcols=colnames(ProbOs_long)[352:(ncol(ProbOs_long))]#(ncol(ProbOs_long)-4):ncol(ProbOs_long)]
 O_long=as.data.frame(O_long %>%
                        tidyr::pivot_longer(
                          cols = tidyselect::all_of(site_cols),
@@ -1030,7 +1186,7 @@ compute_design_means <- function(data, site_cols, trait_cols) {
       )
     )
 }
-omeans=compute_design_means(O_long,site_cols,trait_cols)
+omeans=compute_design_means(O_long,site_cols,traitcols)
 pmeans=compute_design_means(ProbOs_long,Psite_cols,Ptraitcols)
 omeans
 pmeans
@@ -1052,11 +1208,16 @@ combined_means <- dplyr::bind_rows(
 
 O_long$status='Reference'
 P_long$status='Probabilistic'
+
+wm_traits=rbind(O_long,P_long)
+wm_Traits=wm_traits[,names(wm_traits) %in% c(paste0(names(top5),'_mean'),
+                                            paste0(Fisher_Traits, '_mean'))]
+
 wm_traits=rbind(omeans,pmeans)
-wm_traits[,names(wm_traits) %in% names(top5)]
-clipr::write_clip(wm_traits)
+wm_Traits=wm_traits[,names(wm_traits) %in% names(top5)]
+clipr::write_clip(wm_Traits)
 
-
+wm_traits[,names(wm_traits) %in% top5s]
 
 top5
 
