@@ -1,8 +1,8 @@
 #PcoA for sites using traits as variables
 #this chunk is readind in the data,
 #subseting, etc
-top5s=c("Emerge_synch_abbrev_Poorly",  "Habit_prim_Swimmer",          "Crawl_rate_high",
-        "Voltinism_abbrev_Univoltine", "Feed_prim_abbrev_PR")
+# top5s=c("Emerge_synch_abbrev_Poorly",  "Habit_prim_Swimmer",          "Crawl_rate_high",
+#         "Voltinism_abbrev_Univoltine", "Feed_prim_abbrev_PR")
 if(0){
 abun<-read.csv("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//abundances.csv")
 abun$sample_id<-as.character(abun$sample_id)
@@ -35,51 +35,15 @@ PA_all=PA
 ref_a<-PA[PA$status=='Reference',]
 
 library(tidyverse)
-#drop the OTU column from the trait table
-#trait_table<-trait_table[,-2]
-#make the trait table wide format (since the O/E table is wide)
-#
-# wide_traits<-as.data.frame(traits |>
-#                              pivot_wider(names_from = attribute_name, values_from = attribute_value,
-#                                          values_fn = list) |>
-#                              unnest(cols = everything() ))
-# wide_traits=wide_traits[!duplicated(wide_traits$OTU),]
-#add the OTU names to the dataset
 
-#set the top5 traits identified from the Gower matrix
-#
-#subset out traits we won't be using,
-#such as affinities, secondary feeding, etc.
-# wide_traits<- wide_traits %>%
-#   select(-matches(c("_af",'HBI','_sec_','_PH')))
-# #convert the T/F codes to 1 or 0 for numeric operations
-# taxa_traits_num<- lapply(wide_traits[,2:ncol(wide_traits)], function(x) {
-#   ifelse(x == "TRUE", 1, ifelse(x == "FALSE", 0, NA))
-# })
-
-#now just combine the lapplied object into one data frame
 taxa_traits_num=traits
-#set OTU so we can join
-#taxa_traits_num$OTU=wide_traits$OTU
 
-#optional#
-#get just the top 5 traits
-#taxa_traits_num<-taxa_traits_num[,names(taxa_traits_num) %in% c('OTU', top5s)]
-#look at just the taxa who appear at > 10 sites and have traits.
-#taxa_traits_num<-taxa_traits_num[taxa_traits_num$OTU %in% taxa_notraits_rare$taxon==F,]
-#subset sampleId for later, if needed
-#ref_a_samps<-ref_a$sample_id
-#ref_a<-ref_a[,-2]
-#join the traits to the respsective community data
 PA_long=PA %>%
   tibble::rownames_to_column(var='sample_id') %>%
   pivot_longer(cols=-c(sample_id,status),
                     names_to = 'OTU',values_to = 'PA')
 joined<-plyr::join(PA_long,taxa_traits_num,type='left')
 
-# ref_P_joined<-plyr::join(ref_PA,taxa_traits_num,type='left')
-# p_joined<-plyr::join(prob_a,taxa_traits_num,type='left')
-# p_P_joined<-plyr::join(prob_PA,taxa_traits_num,type='left')
 
 #set the trait columns
 #for dplyr to calculate the weighted traits
@@ -90,36 +54,6 @@ library(dplyr)
 
 #row.names(taxa_traits_num)<-taxa_traits_num$OTU;taxa_traits_num=taxa_traits_num[,names(taxa_traits_num) %in% 'OTU'==F]
 
-#weighting the traits by abundnace or PA
-#multiply the trait relative abundnace for each taxon
-#then sum it all for a community weighted mean
-site_traits_weighted <- joined %>%
-  # mutate(across(all_of(trait_cols), ~ .x * split_count)) %>%
-  group_by(sample_id) %>%
-  mutate(
-    rel_abund = split_count / sum(split_count, na.rm = TRUE)) %>%
-  dplyr::summarise(
-    # abundance-weighted trait per site
-    across(all_of(trait_cols), ~ sum(.x * rel_abund, na.rm = TRUE), .names = "abund_{.col}"),
-    .groups='drop')
-
-  # dplyr::summarise(across(all_of(trait_cols),
-  #                         ~ sum(.x, na.rm = TRUE) / sum(split_count, na.rm = TRUE)),
-  #                  .groups = "drop")
-# joined %>%
-#   mutate(across(where(is.numeric), ~.x*split_count))
-
-
-# trait_cols=5:ncol(ref_P_joined)
-# trait_cols=names(ref_P_joined)[trait_cols]
- site_PA_traits_weighted<-joined %>%
-  #mutate(across(all_of(trait_cols), ~ .x * (split_count))) %>%  # presence = 1/0
-  group_by(sample_id,status) %>%
-   dplyr::summarise(
-     # PA-weighted trait per site
-     across(all_of(trait_cols), ~ sum(.x * PA, na.rm = TRUE) / sum(PA, na.rm = TRUE), .names = "PA_{.col}"),
-     .groups = "drop"
-   )
 
  site_PA_traits=joined %>%
    group_by(sample_id, status) %>%
@@ -133,122 +67,20 @@ site_traits_weighted <- joined %>%
 
      .groups = "drop"
    )
- #   dplyr::summarise(across(all_of(trait_cols),
- #                           ~ sum(.x, na.rm = TRUE) / sum(split_count, na.rm = TRUE)),
- #                    .groups = "drop")
- # # joined %>%
-  # ref_P_joined%>%
-  # mutate(across(where(is.numeric), ~.x*split_count))
 
-#  odd_sites=site_PA_traits_weighted[!complete.cases(site_PA_traits_weighted),]
-# clipr::write_clip(PA_all[row.names(PA_all) %in% as.character(odd_sites$sample_id),])
-# site_trait_agg <- site_traits_weighted %>%
-#   group_by(sample_id) %>%
-#   dplyr::summarise(across(where(is.numeric), sum, na.rm = TRUE))
-#
-# site_PA_trait_agg <- site_PA_traits_weighted %>%
-#   group_by(sample_id) %>%
-#   dplyr::summarise(across(where(is.numeric), sum, na.rm = TRUE))
-# nrow(site_trait_agg)
 
-site_PA_traits_weighted<-as.data.frame(site_PA_traits_weighted)
+
 site_PA_traits<-as.data.frame(site_PA_traits)
 
 #assign a status to each set of sites
 
-site_PA_traits_weighted$status<-PA$status
 site_PA_traits$status<-PA$status
 
-#sit_gow<-cluster::daisy(All_site_trait_small,metric='gower')
-#site_PA_traits_weighted=na.omit(site_PA_traits_weighted)
-#sit_PA_gow<-cluster::daisy(site_PA_traits_weighted[,3:ncol(site_PA_traits_weighted)],metric='gower')
 
-#sit_PA_NMDS=vegan::vegdist(site_PA_traits_weighted[,3:ncol(site_PA_traits_weighted)],'bray',binary=F)
-#row.names(sit_PA_gow)=site_PA_traits_weighted$sample_id
+
 site_PA_NMDS=vegan::vegdist(site_PA_traits[,3:ncol(site_PA_traits)],'bray',binary=T)
-#compute PCOA scores
-# bc<-ape::pcoa(sit_gow)
-# BC_scores<-as.data.frame(bc$vectors[,1:2])
-# Pbc<-ape::pcoa(sit_PA_gow)
-#
-# pBC_scores<-as.data.frame(Pbc$vectors[,1:2])
-# pBC_scores$status=site_PA_traits_weighted$status
-# BC_scores$status=All_site_traits_weighted$status
-# pBC_scores$status=All_PA_site_traits_weighted$status
-# row.names(BC_scores)=All_site_traits_weighted$sample_id
-# row.names(pBC_scores)=All_site_traits_weighted$sample_id
-# #plot the results, color them by status, and draw 80% confidence ellipses
-# ggplot(BC_scores,aes(x=Axis.1,y=Axis.2,fill=status))+geom_point(pch=21)+
-#          scale_fill_manual(name='Status',
-#                             values=c('Reference' = 'purple4',
-#                                      'Probabilistic' = 'yellow'))+
-#   ggtitle('Site types in trait space\n(top 5 traits weighted by abundance)')+
-#   stat_ellipse(level=0.8,data = subset(BC_scores, status == "Reference"), color = "purple4", size = 1,type='t') +
-#   stat_ellipse(level=0.8,data = subset(BC_scores, status == "Probabilistic"), color = "yellow", size = 1,type='t')
-#
-#
-# savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//sites_abund_top5_traitspace.png')
-# ggplot(pBC_scores,aes(x=Axis.1,y=Axis.2,fill=status))+geom_point(pch=21)+
-#   scale_fill_manual(name='Status',
-#                     values=c('Reference' = 'purple4',
-#                              'Probabilistic' = 'yellow'))+
-#   ggtitle('Site types in trait space\n(top 5 traits weighted by presence)')+
-#   stat_ellipse(level=0.8,data = subset(pBC_scores, status == "Reference"), color = "purple4", size = 1,type='t') +
-#   stat_ellipse(level=0.8,data = subset(pBC_scores, status == "Probabilistic"), color = "yellow", size = 1,type='t')
-#
-# savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_PA_top5_traitspace.png')
-#
-#
-#
-# ref_counts=aggregate(split_count~sample_id,data=ref_a[ref_a$OTU %in% taxa_notraits_rare$taxon==F,],FUN=sum)
-# p_counts=aggregate(split_count~sample_id,data=prob_a[prob_a$OTU %in% taxa_notraits_rare$taxon==F,],FUN=sum)
-# ref_rich=aggregate(split_count~sample_id,data=ref_PA[ref_PA$OTU %in% taxa_notraits_rare$taxon==F,],FUN=sum)
-# p_rich=aggregate(split_count~sample_id,data=prob_PA[prob_PA$OTU %in% taxa_notraits_rare$taxon==F,],FUN=sum)
-# par(mfrow=c(2,1))
-# hist(ref_counts$split_count,xlab='',main='Reference')
-# hist(p_counts$split_count,main='Probabilistic',xlab='split count')
-#
-#
-#
-# graphics.off()
-# boxplot(ref_counts$split_count,at=1,xlim=c(0,3),col='yellow3',ylab='Split Count')
-# boxplot(p_counts$split_count,at=2,add=T,col='purple4')
-# axis(side=1,at=c(1,2),labels=c('Reference','Probabilistic'))
-# savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//sites_abund_boxes.png')
-#
-# boxplot(ref_rich$split_count,at=1,xlim=c(0,3),col='yellow3',ylab='Richness',ylim=c(0,max(p_rich$split_count)))
-# boxplot(p_rich$split_count,at=2,add=T,col='purple4')
-# axis(side=1,at=c(1,2),labels=c('Reference','Probabilistic'))
-# savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//sites_rich_boxes.png')
-#
-#
-#
-# ####NMDS plot####
-# bug_dat=rbind(ref_a,prob_a)
-# bug_agg=aggregate(split_count ~ sample_id + Status + OTU, data = bug_dat, sum)
-# bug_wide=reshape(bug_agg,
-#         idvar=c('sample_id','Status'),
-#         timevar='OTU',
-#         direction='wide',
-#         )
-# bug_wide[is.na(bug_wide)] <- 0
-# names(bug_wide) <- sub("^split_count\\.", "", names(bug_wide))
-#
-#
-# statuses_wide=bug_wide$Status;row.names(bug_wide)<-bug_wide$sample_id;bug_wide=bug_wide[,names(bug_wide) %in% c('sample_id','Status')==F]
-# bug_PA_wide=as.data.frame(ifelse(bug_wide > 0, 1, 0))
-# bug_log_wide<-log(bug_wide+1)
-#
-# PA3=PA[,names(PA)[1:(ncol(PA)-1)] %in% row.names(traits_only2)]
-#
-# #Gower_dist_abun<-cluster::daisy(bug_log_wide,metric='gower')
-# Gower_dist_abun=vegan::vegdist(bug_log_wide,'bray')
-#
-# #assign the site names
-# row.names(Gower_abun_mat)<-row.names(bug_log_wide)
-# Gower_abun_MDS=vegan::metaMDS(Gower_abun_mat)
-#
-# #Gower_dist_PA<-cluster::daisy(bug_PA_wide,metric='gower')#type=list(asymm=1:ncol(bug_PA_wide)))
+
+
 Vegdist_PA<-vegan::vegdist(PA[,-ncol(PA)],'bray',binary=T)
 #vegdist_PA=vegan::vegdist(PA_all[,-ncol(PA_all)],'bray',binary=T)
 Veg_PA_mat<-as.matrix(Vegdist_PA)
@@ -282,15 +114,13 @@ NMDS_cal_preds=NMDS_cal_preds[NMDS_cal_preds$sampleId %in% row.names(PA),]
 env_dat=rbind(NMDS_cal_preds[,c('sampleId','ElevCat','Precip8110Ws','Tmean8110Ws','WsAreaSqKm','COMID')],NMDS_prob_preds[,c('sampleId','ElevCat','Precip8110Ws','Tmean8110Ws','WsAreaSqKm','COMID')])
 AgUrb_dat=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//all_site_UrbAg.csv')
 env_dat=plyr::join(env_dat,AgUrb_dat[,c('COMID','PCtCrop','AvgUrb')],by='COMID','left')
-#env_dat=env_dat[env_dat$sampleId %in% site_PA_traits_weighted$sample_id,]
+
 env_dat=env_dat[env_dat$sampleId %in% row.names(PA),]
 
-#env_dat3=env_dat[env_dat$sampleId %in% row.names(PA3),]
+
 env_dat3=env_dat[env_dat$sampleId %in% row.names(PA_scores),]
 row.names(PA_scores)==env_dat3$sampleId
 
-clipr::write_clip(env_dat3[env_dat3$sampleId %in% row.names(ProbOs),])
-row.names(PA_scores2)
 
 #env_dat4=env_dat3[env_dat3$sampleId %in% row.names(PA_scores),]
 set.seed(99)
@@ -339,7 +169,7 @@ env_vect <- env_vect %>%
   )
 
 
-## Traits on OTU space
+## Traits in OTU space
 
 all_site_PA_traits=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//all_site_trait_PAs.csv')
 all_site_PA_traits=all_site_PA_traits[,1:26]
@@ -478,25 +308,22 @@ ggplot(PA_scores[PA_scores$NMDS2 < 2 & PA_scores$NMDS1 < 30,], aes(x=NMDS1, y=NM
 
 savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_OTUspace_NMDS_Fishtraits260518.png')
 
-
-ordisurf(PA_scores[,c(1,2)], env_dat$PCtCrop,k=4,
-         pch=21,bg=ifelse(PA$status=='Reference','purple4','yellow'),
-         col='black',
-         main='PctCrop',
-         lwd=3)
-legend('topleft',
-       pch=rep(21,2),
-       pt.bg=c('purple4','yellow'),
-       bty='n',
-       leg=c('Reference',
-             'Probabilistic'),
-       cex=0.8)
+#
+# ordisurf(PA_scores[,c(1,2)], env_dat$PCtCrop,k=4,
+#          pch=21,bg=ifelse(PA$status=='Reference','purple4','yellow'),
+#          col='black',
+#          main='PctCrop',
+#          lwd=3)
+# legend('topleft',
+#        pch=rep(21,2),
+#        pt.bg=c('purple4','yellow'),
+#        bty='n',
+#        leg=c('Reference',
+#              'Probabilistic'),
+#        cex=0.8)
 
 savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//PA_ordi_Crop.png')
-sit_PA_MDS=vegan::vegdist(site_PA_traits_weighted[,3:ncol(site_PA_traits_weighted)],method='bray',binary=F)
-set.seed(99)
-site_PA_trait_weighted_MDS=vegan::metaMDS(sit_PA_NMDS)
-site_PA_tait_Weighted_Scores=as.data.frame(scores(site_PA_trait_weighted_MDS))
+
 set.seed(99)
 site_PA_traitsMDS=vegan::metaMDS(site_PA_traits[,3:ncol(site_PA_traits)],binary=T)
 site_PA_traitscores=as.data.frame(scores(site_PA_traitsMDS)$sites)
@@ -504,89 +331,89 @@ site_PA_traitscores=as.data.frame(scores(site_PA_traitsMDS)$sites)
 #gower_scores=data.frame(Pco1=gower_cmd[,1],Pco2=gower_cmd[,2])
 site_PA_tait_Weighted_Scores$sample_id=site_PA_traits_weighted$sample_id
 set.seed(99)
-env_fut=envfit(ord=site_PA_tait_Weighted_Scores[,c(1,2)],env=site_PA_traits_weighted[,3:ncol(site_PA_traits_weighted)],eig=T)
-ptrait_vect<-as.data.frame(env_fut$vectors$arrows)
-ptrait_vect$trait=row.names(ptrait_vect)
-Fishtrait_vect=ptrait_vect[substr(ptrait_vect$trait,4,nchar(ptrait_vect$trait)) %in% Fisher_Traits,]
-ptrait_vect=ptrait_vect[substr(ptrait_vect$trait,4,nchar(ptrait_vect$trait)) %in% names(top5),]
-#ptrait_vect$trait=row.names(ptrait_vect)
-Fishtrait_vect$trait=c('Collector\nGatherer',
-                       'Female Dispersal',
-                       'Burrower',
-                       'Climber',
-                       'Sprawler',
-                       'Large Body',
-                       'Slow\nDevelopment',
-                       'Rare Drifter'
-
-)
-
-Fishtrait_vect
-ptrait_vec=as.data.frame(scores(env_fut,display='vectors'))
-ptrait_vect$trait <- rownames(ptrait_vect)
-colnames(ptrait_vect)[1:2] <- c("NMDS1", "NMDS2")
-ptrait_vect=ptrait_vect[ptrait_vect$trait %in% paste0('PA_',names(top5)),]
-#ptrait_vect[,1:2]<-ptrait_vect[,1:2]*-1
-ptrait_vect$trait=c('Poor Synch.\nEmerge',
-                    'Clinger',
-                    'Slow\nDevelopment',
-                    'Short life',
-                    'Streamlined')
-
-p_sites_and_coords=plyr::join(site_PA_traits_weighted,site_PA_tait_Weighted_Scores)
-
-
-
-point_max <- max(abs(site_PA_tait_Weighted_Scores[,1:2]))
-arrow_max <- max(abs(site_PA_tait_Weighted_Scores[,1:2]))
-arrow_multiplier <- (point_max / arrow_max) * 0.8 # 0.8 keeps them inside the points
-
-# Apply scaling
-ptrait_vect$NMDS1 <- ptrait_vect$NMDS1 * arrow_multiplier
-ptrait_vect$NMDS2<- ptrait_vect$NMDS2 * arrow_multiplier
-names(p_sites_and_coords)[2]<-'Status'
-
-nudge_x_vector <- ifelse(trait_vect$trait == 'Slow\nDevelopment', 0.3,
-                         ifelse(trait_vect$trait == 'Multivoltine/\nBivoltine', -0.4,
-                                ifelse(trait_vect$trait=='Poor Synch.\nEmerge',-0.1,
-                                       ifelse(trait_vect$trait=='Swimmer',-0.4,
-                                              0))))
-nudge_y_vector <- ifelse(trait_vect$trait == 'Slow\nDevelopment', 0.2,
-                         ifelse(trait_vect$trait == 'Multivoltine/\nBivoltine', -0.7,
-                                ifelse(trait_vect$trait=='Poor Synch.\nEmerge',0.4,
-                                       ifelse(trait_vect$trait == 'Univoltine',-0.1,
-                                              ifelse(trait_vect$trait=='Swimmer',-0.2,0)))))
-Fishnudge_x_vector <- ifelse(Fishtrait_vect$trait == 'Slow\nDevelopment', 0.5,
-                             ifelse(Fishtrait_vect$trait == 'Female Dispersal', -0.5,
-                                    ifelse(Fishtrait_vect$trait=='Large Body',0.4,
-                                           ifelse(Fishtrait_vect$trait=='Climber',0.5,
-                                                  ifelse(Fishtrait_vect$trait=='Collector\nGatherer',-0.2,
-                                                         ifelse(Fishtrait_vect$trait=='Burrower',-0.3,
-                                                                ifelse(Fishtrait_vect$trait=='Rare Drifter',0.5,0)))))))
-Fishnudge_y_vector <- ifelse(Fishtrait_vect$trait == 'Sprawler', -0.1,
-                             ifelse(Fishtrait_vect$trait == 'Female Dispersal', -0.2,
-                                    ifelse(Fishtrait_vect$trait=='Collector\nGatherer',0.9,
-                                           ifelse(Fishtrait_vect$trait=='Gills',-0.5,
-                                                  ifelse(Fishtrait_vect$trait=='Slow\nDevelopment',0.5,
-                                                         ifelse(Fishtrait_vect$trait=='Burrower',0.5,0))))))
-
-
-# --- 2. Plotting with corrected scales ---
-ggplot(p_sites_and_coords, aes(x=NMDS1, y=NMDS2, fill=Status)) +
-  geom_point(pch=21,size=3) +
-  stat_ellipse(level=0.8,data = subset(p_sites_and_coords, Status == "Reference"), color = "blue", size = 1,type='t') +
-  stat_ellipse(level=0.8,data = subset(p_sites_and_coords, Status == "Probabilistic"), color = "orange3", size = 1,type='t')+# Added alpha for fill
-  # FIX: Change fill to color to match aes(color=status)
-  scale_fill_manual(name='Status',
-                     values=c('Reference' = 'blue',
-                              'Probabilistic' = 'orange3')) +
-  geom_segment(data=Fishtrait_vect,
-               aes(x=0, y=0, xend=NMDS1, yend=NMDS2),
-               arrow=arrow(length=unit(0.25, 'cm')),
-               linewidth=1,
-               inherit.aes = FALSE,
-               color="black") +
-
+#
+# ptrait_vect<-as.data.frame(env_fut$vectors$arrows)
+# ptrait_vect$trait=row.names(ptrait_vect)
+# Fishtrait_vect=ptrait_vect[substr(ptrait_vect$trait,4,nchar(ptrait_vect$trait)) %in% Fisher_Traits,]
+# ptrait_vect=ptrait_vect[substr(ptrait_vect$trait,4,nchar(ptrait_vect$trait)) %in% names(top5),]
+# #ptrait_vect$trait=row.names(ptrait_vect)
+# Fishtrait_vect$trait=c('Collector\nGatherer',
+#                        'Female Dispersal',
+#                        'Burrower',
+#                        'Climber',
+#                        'Sprawler',
+#                        'Large Body',
+#                        'Slow\nDevelopment',
+#                        'Rare Drifter'
+#
+# )
+#
+# Fishtrait_vect
+# ptrait_vec=as.data.frame(scores(env_fut,display='vectors'))
+# ptrait_vect$trait <- rownames(ptrait_vect)
+# colnames(ptrait_vect)[1:2] <- c("NMDS1", "NMDS2")
+# ptrait_vect=ptrait_vect[ptrait_vect$trait %in% paste0('PA_',names(top5)),]
+# #ptrait_vect[,1:2]<-ptrait_vect[,1:2]*-1
+# ptrait_vect$trait=c('Poor Synch.\nEmerge',
+#                     'Clinger',
+#                     'Slow\nDevelopment',
+#                     'Short life',
+#                     'Streamlined')
+#
+# p_sites_and_coords=plyr::join(site_PA_traits_weighted,site_PA_tait_Weighted_Scores)
+#
+#
+#
+# point_max <- max(abs(site_PA_tait_Weighted_Scores[,1:2]))
+# arrow_max <- max(abs(site_PA_tait_Weighted_Scores[,1:2]))
+# arrow_multiplier <- (point_max / arrow_max) * 0.8 # 0.8 keeps them inside the points
+#
+# # Apply scaling
+# ptrait_vect$NMDS1 <- ptrait_vect$NMDS1 * arrow_multiplier
+# ptrait_vect$NMDS2<- ptrait_vect$NMDS2 * arrow_multiplier
+# names(p_sites_and_coords)[2]<-'Status'
+#
+# nudge_x_vector <- ifelse(trait_vect$trait == 'Slow\nDevelopment', 0.3,
+#                          ifelse(trait_vect$trait == 'Multivoltine/\nBivoltine', -0.4,
+#                                 ifelse(trait_vect$trait=='Poor Synch.\nEmerge',-0.1,
+#                                        ifelse(trait_vect$trait=='Swimmer',-0.4,
+#                                               0))))
+# nudge_y_vector <- ifelse(trait_vect$trait == 'Slow\nDevelopment', 0.2,
+#                          ifelse(trait_vect$trait == 'Multivoltine/\nBivoltine', -0.7,
+#                                 ifelse(trait_vect$trait=='Poor Synch.\nEmerge',0.4,
+#                                        ifelse(trait_vect$trait == 'Univoltine',-0.1,
+#                                               ifelse(trait_vect$trait=='Swimmer',-0.2,0)))))
+# Fishnudge_x_vector <- ifelse(Fishtrait_vect$trait == 'Slow\nDevelopment', 0.5,
+#                              ifelse(Fishtrait_vect$trait == 'Female Dispersal', -0.5,
+#                                     ifelse(Fishtrait_vect$trait=='Large Body',0.4,
+#                                            ifelse(Fishtrait_vect$trait=='Climber',0.5,
+#                                                   ifelse(Fishtrait_vect$trait=='Collector\nGatherer',-0.2,
+#                                                          ifelse(Fishtrait_vect$trait=='Burrower',-0.3,
+#                                                                 ifelse(Fishtrait_vect$trait=='Rare Drifter',0.5,0)))))))
+# Fishnudge_y_vector <- ifelse(Fishtrait_vect$trait == 'Sprawler', -0.1,
+#                              ifelse(Fishtrait_vect$trait == 'Female Dispersal', -0.2,
+#                                     ifelse(Fishtrait_vect$trait=='Collector\nGatherer',0.9,
+#                                            ifelse(Fishtrait_vect$trait=='Gills',-0.5,
+#                                                   ifelse(Fishtrait_vect$trait=='Slow\nDevelopment',0.5,
+#                                                          ifelse(Fishtrait_vect$trait=='Burrower',0.5,0))))))
+#
+#
+# # --- 2. Plotting with corrected scales ---
+# ggplot(p_sites_and_coords, aes(x=NMDS1, y=NMDS2, fill=Status)) +
+#   geom_point(pch=21,size=3) +
+#   stat_ellipse(level=0.8,data = subset(p_sites_and_coords, Status == "Reference"), color = "blue", size = 1,type='t') +
+#   stat_ellipse(level=0.8,data = subset(p_sites_and_coords, Status == "Probabilistic"), color = "orange3", size = 1,type='t')+# Added alpha for fill
+#   # FIX: Change fill to color to match aes(color=status)
+#   scale_fill_manual(name='Status',
+#                      values=c('Reference' = 'blue',
+#                               'Probabilistic' = 'orange3')) +
+#   geom_segment(data=Fishtrait_vect,
+#                aes(x=0, y=0, xend=NMDS1, yend=NMDS2),
+#                arrow=arrow(length=unit(0.25, 'cm')),
+#                linewidth=1,
+#                inherit.aes = FALSE,
+#                color="black") +
+#
   #  geom_text_repel(
   #    data =Fishtrait_vect,
   #    aes(
@@ -606,157 +433,142 @@ ggplot(p_sites_and_coords, aes(x=NMDS1, y=NMDS2, fill=Status)) +
   #    min.segment.length = 0, # Always draw lines to labels if they move far
   #    max.overlaps = Inf    # Forces all labels to show
   # )+# Set a fixed color so it doesn't look for 'status'
-  theme_classic()+
-  labs(x='NMDS1',y='NMDS2')+
-  theme(#axis.text.x = element_text(size = 14),
-        axis.ticks = element_blank(),
-        axis.text=element_blank(),
-      #  axis.text.y = element_text(size = 14),
-        axis.title = element_text(size = 25),
-        legend.position = 'inside',
-        legend.position.inside = c(0.15,0.9),
-      axis.title.x = element_text(margin=margin(t=20)),
-      axis.title.y  = element_text(margin=margin(r=20)),
-      legend.text = element_text(size = 22),
-      legend.title = element_text(size = 22))#sures 1 unit on X = 1 unit on Y
-savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_traitspace_PA_ellipse_Fishtraits_axes1_2_260515_nolabs.png')
-
-
-
-
-
-#curious to see what taxa appear in each quadrant of an ordination?
-top5traits=traits[traits$attribute_name %in% names(top5),]
-okay=top5traits %>%
-  pivot_wider(id_cols = OTU,
-              names_from = attribute_name,
-              values_from = attribute_value,
-              )
-
-
-
-
-
-
-set.seed(99)
-PA_trait_fit=envfit(ord=site_PA_traitscores[,c(1,2)],env=site_PA_traits[,3:ncol(site_PA_traits)],eig=T)
-site_PA_traitscores$sample_id=site_PA_traits$sample_id
-
-
-
-
-PA_trait_vect<-as.data.frame(env_fut$vectors$arrows)
-PA_trait_vect$trait=row.names(PA_trait_vect)
-Fishtrait_vect=PA_trait_vect[substr(PA_trait_vect$trait,4,nchar(PA_trait_vect$trait)) %in% Fisher_Traits,]
-PA_trait_vect=PA_trait_vect[substr(PA_trait_vect$trait,4,nchar(PA_trait_vect$trait)) %in% names(top5),]
-#PA_trait_vect$trait=row.names(PA_trait_vect)
-Fishtrait_vect$trait=c('Collector\nGatherer',
-                       'Female Dispersal',
-                       'Burrower',
-                       'Climber',
-                       'Sprawler',
-                       'Large Body',
-                       'Slow\nDevelopment',
-                       'Rare Drifter'
-
-)
-
-Fishtrait_vect
-ptrait_vec=as.data.frame(scores(env_fut,display='vectors'))
-PA_trait_vect$trait <- rownames(PA_trait_vect)
-colnames(PA_trait_vect)[1:2] <- c("NMDS1", "NMDS2")
-PA_trait_vect=PA_trait_vect[PA_trait_vect$trait %in% paste0('PA_',names(top5)),]
-#PA_trait_vect[,1:2]<-PA_trait_vect[,1:2]*-1
-PA_trait_vect$trait=c('Poor Synch.\nEmerge',
-                    'Clinger',
-                    'Slow\nDevelopment',
-                    'Short life',
-                    'Streamlined')
-
-pa_sites_and_coords=plyr::join(site_PA_traits,site_PA_traitscores)
-names(pa_sites_and_coords)[2]<-'Status'
-
-
-point_max <- max(abs(site_PA_tait_Weighted_Scores[,1:2]))
-arrow_max <- max(abs(site_PA_tait_Weighted_Scores[,1:2]))
-arrow_multiplier <- (point_max / arrow_max) * 0.8 # 0.8 keeps them inside the points
-
-# Apply scaling
-PA_trait_vect$NMDS1 <- PA_trait_vect$NMDS1 * arrow_multiplier
-PA_trait_vect$NMDS2<- PA_trait_vect$NMDS2 * arrow_multiplier
-names(p_sites_and_coords)[2]<-'Status'
-
-nudge_x_vector <- ifelse(trait_vect$trait == 'Slow\nDevelopment', 0.3,
-                         ifelse(trait_vect$trait == 'Multivoltine/\nBivoltine', -0.4,
-                                ifelse(trait_vect$trait=='Poor Synch.\nEmerge',-0.1,
-                                       ifelse(trait_vect$trait=='Swimmer',-0.4,
-                                              0))))
-nudge_y_vector <- ifelse(trait_vect$trait == 'Slow\nDevelopment', 0.2,
-                         ifelse(trait_vect$trait == 'Multivoltine/\nBivoltine', -0.7,
-                                ifelse(trait_vect$trait=='Poor Synch.\nEmerge',0.4,
-                                       ifelse(trait_vect$trait == 'Univoltine',-0.1,
-                                              ifelse(trait_vect$trait=='Swimmer',-0.2,0)))))
-Fishnudge_x_vector <- ifelse(Fishtrait_vect$trait == 'Slow\nDevelopment', 0.5,
-                             ifelse(Fishtrait_vect$trait == 'Female Dispersal', -0.5,
-                                    ifelse(Fishtrait_vect$trait=='Large Body',0.4,
-                                           ifelse(Fishtrait_vect$trait=='Climber',0.5,
-                                                  ifelse(Fishtrait_vect$trait=='Collector\nGatherer',-0.2,
-                                                         ifelse(Fishtrait_vect$trait=='Burrower',-0.3,
-                                                                ifelse(Fishtrait_vect$trait=='Rare Drifter',0.5,0)))))))
-Fishnudge_y_vector <- ifelse(Fishtrait_vect$trait == 'Sprawler', -0.1,
-                             ifelse(Fishtrait_vect$trait == 'Female Dispersal', -0.2,
-                                    ifelse(Fishtrait_vect$trait=='Collector\nGatherer',0.9,
-                                           ifelse(Fishtrait_vect$trait=='Gills',-0.5,
-                                                  ifelse(Fishtrait_vect$trait=='Slow\nDevelopment',0.5,
-                                                         ifelse(Fishtrait_vect$trait=='Burrower',0.5,0))))))
-
-
-# --- 2. Plotting with corrected scales ---
-ggplot(pa_sites_and_coords, aes(x=NMDS1, y=NMDS2, fill=Status)) +
-  geom_point(pch=21,size=3) +
-  stat_ellipse(level=0.8,data = subset(p_sites_and_coords, Status == "Reference"), color = "blue", size = 1,type='t') +
-  stat_ellipse(level=0.8,data = subset(p_sites_and_coords, Status == "Probabilistic"), color = "orange3", size = 1,type='t')+# Added alpha for fill
-  # FIX: Change fill to color to match aes(color=status)
-  scale_fill_manual(name='Status',
-                    values=c('Reference' = 'blue',
-                             'Probabilistic' = 'orange3')) +
-  geom_segment(data=PA_trait_vect,
-               aes(x=0, y=0, xend=NMDS1, yend=NMDS2),
-               arrow=arrow(length=unit(0.25, 'cm')),
-               linewidth=1,
-               inherit.aes = FALSE,
-               color="black") +
-
-  #  geom_text_repel(
-  #    data =PA_trait_vect,
-  #    aes(
-  #      x = NMDS1,
-  #      y = NMDS2,
-  #      label = trait
-  #    ),
-  #    # Use your logic to "nudge" the starting position
-  # #   nudge_y = Fishnudge_y_vector,
-  # #   nudge_x = Fishnudge_x_vector,
-  #   #                  ifelse(Fishtrait_vect$trait == 'Swimmer', 0.5, ifelse(Fishtrait_vect$vect=='Poor Synch. Emerge',0.8,0))),
-  #   segment.color = "black", # Hides the segments entirely
-  #    size = 6,
-  #    inherit.aes = FALSE,
-  #    box.padding = 0.2,    # Extra "breathing room" around labels
-  #    point.padding = 0.1,  # Distance from the data point
-  #    min.segment.length = 0, # Always draw lines to labels if they move far
-  #    max.overlaps = Inf    # Forces all labels to show
-  # )+# Set a fixed color so it doesn't look for 'status'
-  theme_classic()+
-  labs(x='NMDS1',y='NMDS2')+
-  theme(#axis.text.x = element_text(size = 14),
-    axis.ticks = element_blank(),
-    axis.text=element_blank(),
-    #  axis.text.y = element_text(size = 14),
-    axis.title = element_text(size = 25),
-    legend.position = 'inside',
-    legend.position.inside = c(0.15,0.9),
-    axis.title.x = element_text(margin=margin(t=20)),
-    axis.title.y  = element_text(margin=margin(r=20)),
-    legend.text = element_text(size = 22),
-    legend.title = element_text(size = 22))#sures 1 unit on X = 1 unit on Y
-savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_traitspace_PresAbs_ellipse_traits_axes1_2_260515_nolabs.png')
+  # theme_classic()+
+  # labs(x='NMDS1',y='NMDS2')+
+  # theme(#axis.text.x = element_text(size = 14),
+  #       axis.ticks = element_blank(),
+  #       axis.text=element_blank(),
+  #     #  axis.text.y = element_text(size = 14),
+  #       axis.title = element_text(size = 25),
+  #       legend.position = 'inside',
+  #       legend.position.inside = c(0.15,0.9),
+  #     axis.title.x = element_text(margin=margin(t=20)),
+  #     axis.title.y  = element_text(margin=margin(r=20)),
+  #     legend.text = element_text(size = 22),
+  #     legend.title = element_text(size = 22))#sures 1 unit on X = 1 unit on Y
+# savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_traitspace_PA_ellipse_Fishtraits_axes1_2_260515_nolabs.png')
+#
+#
+#
+# set.seed(99)
+# PA_trait_fit=envfit(ord=site_PA_traitscores[,c(1,2)],env=site_PA_traits[,3:ncol(site_PA_traits)],eig=T)
+# site_PA_traitscores$sample_id=site_PA_traits$sample_id
+#
+#
+#
+#
+# PA_trait_vect<-as.data.frame(env_fut$vectors$arrows)
+# PA_trait_vect$trait=row.names(PA_trait_vect)
+# Fishtrait_vect=PA_trait_vect[substr(PA_trait_vect$trait,4,nchar(PA_trait_vect$trait)) %in% Fisher_Traits,]
+# PA_trait_vect=PA_trait_vect[substr(PA_trait_vect$trait,4,nchar(PA_trait_vect$trait)) %in% names(top5),]
+# #PA_trait_vect$trait=row.names(PA_trait_vect)
+# Fishtrait_vect$trait=c('Collector\nGatherer',
+#                        'Female Dispersal',
+#                        'Burrower',
+#                        'Climber',
+#                        'Sprawler',
+#                        'Large Body',
+#                        'Slow\nDevelopment',
+#                        'Rare Drifter'
+#
+# )
+#
+# Fishtrait_vect
+# ptrait_vec=as.data.frame(scores(env_fut,display='vectors'))
+# PA_trait_vect$trait <- rownames(PA_trait_vect)
+# colnames(PA_trait_vect)[1:2] <- c("NMDS1", "NMDS2")
+# PA_trait_vect=PA_trait_vect[PA_trait_vect$trait %in% paste0('PA_',names(top5)),]
+# #PA_trait_vect[,1:2]<-PA_trait_vect[,1:2]*-1
+# PA_trait_vect$trait=c('Poor Synch.\nEmerge',
+#                     'Clinger',
+#                     'Slow\nDevelopment',
+#                     'Short life',
+#                     'Streamlined')
+#
+# pa_sites_and_coords=plyr::join(site_PA_traits,site_PA_traitscores)
+# names(pa_sites_and_coords)[2]<-'Status'
+#
+#
+# point_max <- max(abs(site_PA_tait_Weighted_Scores[,1:2]))
+# arrow_max <- max(abs(site_PA_tait_Weighted_Scores[,1:2]))
+# arrow_multiplier <- (point_max / arrow_max) * 0.8 # 0.8 keeps them inside the points
+#
+# # Apply scaling
+# PA_trait_vect$NMDS1 <- PA_trait_vect$NMDS1 * arrow_multiplier
+# PA_trait_vect$NMDS2<- PA_trait_vect$NMDS2 * arrow_multiplier
+# names(p_sites_and_coords)[2]<-'Status'
+#
+# nudge_x_vector <- ifelse(trait_vect$trait == 'Slow\nDevelopment', 0.3,
+#                          ifelse(trait_vect$trait == 'Multivoltine/\nBivoltine', -0.4,
+#                                 ifelse(trait_vect$trait=='Poor Synch.\nEmerge',-0.1,
+#                                        ifelse(trait_vect$trait=='Swimmer',-0.4,
+#                                               0))))
+# nudge_y_vector <- ifelse(trait_vect$trait == 'Slow\nDevelopment', 0.2,
+#                          ifelse(trait_vect$trait == 'Multivoltine/\nBivoltine', -0.7,
+#                                 ifelse(trait_vect$trait=='Poor Synch.\nEmerge',0.4,
+#                                        ifelse(trait_vect$trait == 'Univoltine',-0.1,
+#                                               ifelse(trait_vect$trait=='Swimmer',-0.2,0)))))
+# Fishnudge_x_vector <- ifelse(Fishtrait_vect$trait == 'Slow\nDevelopment', 0.5,
+#                              ifelse(Fishtrait_vect$trait == 'Female Dispersal', -0.5,
+#                                     ifelse(Fishtrait_vect$trait=='Large Body',0.4,
+#                                            ifelse(Fishtrait_vect$trait=='Climber',0.5,
+#                                                   ifelse(Fishtrait_vect$trait=='Collector\nGatherer',-0.2,
+#                                                          ifelse(Fishtrait_vect$trait=='Burrower',-0.3,
+#                                                                 ifelse(Fishtrait_vect$trait=='Rare Drifter',0.5,0)))))))
+# Fishnudge_y_vector <- ifelse(Fishtrait_vect$trait == 'Sprawler', -0.1,
+#                              ifelse(Fishtrait_vect$trait == 'Female Dispersal', -0.2,
+#                                     ifelse(Fishtrait_vect$trait=='Collector\nGatherer',0.9,
+#                                            ifelse(Fishtrait_vect$trait=='Gills',-0.5,
+#                                                   ifelse(Fishtrait_vect$trait=='Slow\nDevelopment',0.5,
+#                                                          ifelse(Fishtrait_vect$trait=='Burrower',0.5,0))))))
+#
+#
+# # --- 2. Plotting with corrected scales ---
+# ggplot(pa_sites_and_coords, aes(x=NMDS1, y=NMDS2, fill=Status)) +
+#   geom_point(pch=21,size=3) +
+#   stat_ellipse(level=0.8,data = subset(p_sites_and_coords, Status == "Reference"), color = "blue", size = 1,type='t') +
+#   stat_ellipse(level=0.8,data = subset(p_sites_and_coords, Status == "Probabilistic"), color = "orange3", size = 1,type='t')+# Added alpha for fill
+#   # FIX: Change fill to color to match aes(color=status)
+#   scale_fill_manual(name='Status',
+#                     values=c('Reference' = 'blue',
+#                              'Probabilistic' = 'orange3')) +
+#   geom_segment(data=PA_trait_vect,
+#                aes(x=0, y=0, xend=NMDS1, yend=NMDS2),
+#                arrow=arrow(length=unit(0.25, 'cm')),
+#                linewidth=1,
+#                inherit.aes = FALSE,
+#                color="black") +
+#
+#   #  geom_text_repel(
+#   #    data =PA_trait_vect,
+#   #    aes(
+#   #      x = NMDS1,
+#   #      y = NMDS2,
+#   #      label = trait
+#   #    ),
+#   #    # Use your logic to "nudge" the starting position
+#   # #   nudge_y = Fishnudge_y_vector,
+#   # #   nudge_x = Fishnudge_x_vector,
+#   #   #                  ifelse(Fishtrait_vect$trait == 'Swimmer', 0.5, ifelse(Fishtrait_vect$vect=='Poor Synch. Emerge',0.8,0))),
+#   #   segment.color = "black", # Hides the segments entirely
+#   #    size = 6,
+#   #    inherit.aes = FALSE,
+#   #    box.padding = 0.2,    # Extra "breathing room" around labels
+#   #    point.padding = 0.1,  # Distance from the data point
+#   #    min.segment.length = 0, # Always draw lines to labels if they move far
+#   #    max.overlaps = Inf    # Forces all labels to show
+#   # )+# Set a fixed color so it doesn't look for 'status'
+#   theme_classic()+
+#   labs(x='NMDS1',y='NMDS2')+
+#   theme(#axis.text.x = element_text(size = 14),
+#     axis.ticks = element_blank(),
+#     axis.text=element_blank(),
+#     #  axis.text.y = element_text(size = 14),
+#     axis.title = element_text(size = 25),
+#     legend.position = 'inside',
+#     legend.position.inside = c(0.15,0.9),
+#     axis.title.x = element_text(margin=margin(t=20)),
+#     axis.title.y  = element_text(margin=margin(r=20)),
+#     legend.text = element_text(size = 22),
+#     legend.title = element_text(size = 22))#sures 1 unit on X = 1 unit on Y
+# savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_traitspace_PresAbs_ellipse_traits_axes1_2_260515_nolabs.png')

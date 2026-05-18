@@ -23,10 +23,10 @@ first_cols <- names(P_for_traits)[1:349]
 target_cols <- names(P_for_traits)[350:ncol(P_for_traits)]
 P_for_traits=P_for_traits[,names(P_for_traits) %in% sites_w_no_bugs==F]
 valid_target_cols <- target_cols[target_cols %in% names(trait_table)]
-P_long2=P_for_traits[, c(first_cols, valid_target_cols)]
+P_long2=P_for_traits
 #P_long2=P_for_traits[,which(names(P_for_traits)[352:(ncol(P_for_traits))] %in% names(trait_table))]
 P_long2$status='Prob'
-P_long2=P_long2[,names(P_long2) %in% odd_sites_samps==F]
+P_long2=P_long2[,names(P_long2) %in% sites_w_no_bugs ==F]
 #O_long2=O_for_traits[,names(O_for_traits)[659:(ncol(O_for_traits))] %in% names(trait_table)]
 
 
@@ -44,12 +44,10 @@ P_w_traits_full=P_w_traits_full[P_w_traits_full$Regional_Response!='Neutral' & !
 P_Inc=P_w_traits_full[P_w_traits_full$Regional_Response=='Increaser',]
 P_Dec=P_w_traits_full[P_w_traits_full$Regional_Response!='Increaser',]
 
-P_Inc=P_Inc[,c(350,352:491)]
-P_Dec=P_Dec[,c(351,353:491)]
+
 
 P_everything=rbind(P_Inc,P_Dec)
-P_everything[P_everything==T]<-'1'
-P_everything[P_everything==F]<-'0'
+
 names(P_everything)[names(P_everything)=='taxon']<-'OTU'
 
 final_traits=names(trait_table[,2:ncol(trait_table)])
@@ -102,92 +100,6 @@ long_df <- P_everything %>%
 
 
 #Fisher
-
-fisher_results <- long_df %>%
-
-  dplyr::filter(Trait %in% categorical_cols) %>%
-  dplyr::mutate(Present = Value == 1) %>%
-  dplyr::group_by(Trait) %>%
-
-  dplyr::summarise(
-
-    PercentInc = {
-      inc <- Present[Regional_Response == "Increaser"]
-      inc <- inc[!is.na(inc)]
-      if(length(inc) == 0) NA_real_ else mean(inc) * 100
-    },
-
-    PercentDec = {
-      dec <- Present[Regional_Response == "Decreaser"]
-      dec <- dec[!is.na(dec)]
-      if(length(dec) == 0) NA_real_ else mean(dec) * 100
-    },
-
-    odds_ratio = {
-      inc <- Present[Regional_Response == "Increaser"]
-      dec <- Present[Regional_Response == "Decreaser"]
-
-      inc <- inc[!is.na(inc)]
-      dec <- dec[!is.na(dec)]
-
-      if(length(inc) == 0 || length(dec) == 0) {
-        NA_real_
-      } else {
-
-        tbl <- matrix(
-          c(
-            sum(inc), length(inc) - sum(inc),
-            sum(dec), length(dec) - sum(dec)
-          ),
-          nrow = 2,
-          byrow = TRUE
-        )
-
-        tryCatch(
-          unname(fisher.test(tbl)$estimate),
-          error = function(e) NA_real_
-        )
-      }
-    },
-
-    p_value = {
-      inc <- Present[Regional_Response == "Increaser"]
-      dec <- Present[Regional_Response == "Decreaser"]
-
-      inc <- inc[!is.na(inc)]
-      dec <- dec[!is.na(dec)]
-
-      if(length(inc) == 0 || length(dec) == 0) {
-        NA_real_
-      } else {
-
-        tbl <- matrix(
-          c(
-            sum(inc), length(inc) - sum(inc),
-            sum(dec), length(dec) - sum(dec)
-          ),
-          nrow = 2,
-          byrow = TRUE
-        )
-
-        tryCatch(
-          fisher.test(tbl)$p.value,
-          error = function(e) NA_real_
-        )
-      }
-    },
-    n_Increaser = {
-      inc <- Present[Regional_Response == "Increaser"]
-      sum(!is.na(inc))
-    },
-
-    n_Decreaser = {
-      dec <- Present[Regional_Response == "Decreaser"]
-      sum(!is.na(dec))
-    },
-    .groups = "drop"
-  )
-
 
 fisher_results2 <- long_df %>%
 
@@ -321,13 +233,12 @@ fisher_results2 <- long_df %>%
 clipr::write_clip(as.data.frame(fisher_results2))
 
 
-site_traits= P_long2 %>% dplyr::left_join(long_df %>% dplyr::select(taxon,all_of(final_traits)),
-                                                  by='taxon')
+
 
 
 Prob_site_cols=names(P_everything)[1:338]
-Prob_Trait_cols=names(P_everything)[340:375]#ncol(P_everything)]
-Prob_site_cols=Prob_site_cols[Prob_site_cols]
+Prob_Trait_cols=names(P_everything)[340:(ncol(P_everything)-1)]#ncol(P_everything)]
+Prob_site_cols=P_everything[Prob_site_cols]
 long_sites <- P_everything %>%
 
   tidyr::pivot_longer(

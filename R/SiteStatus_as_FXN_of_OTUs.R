@@ -1,4 +1,6 @@
 ## Site status as a fxn of OTUs
+#already has the failed sites
+#and 0 abundnace sites removed
 site_PA_mat=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//SiteStatus_models//sites_PA_matrix.csv')
 site_PA_mat=site_PA_mat[site_PA_mat$sampleId %in% c('HAWK-33','WE-131','WE-209')==F,]
 row.names(site_PA_mat)=site_PA_mat$sampleId;site_PA_mat=site_PA_mat[,-1]
@@ -152,7 +154,7 @@ for (resp in respvar) {
   # -----------------------------
   # 1. Create output folder
   # -----------------------------
-  base_dir <- file.path(path.expand("~"), "New_for_SFS", "SiteStatus_FXN_ofOTUS_Classification")
+  base_dir <- file.path(path.expand("~"), "New_for_SFS", "SiteStatus_FXN_ofOTUS_Classification_top5")
   outdir <- file.path(base_dir, resp)
   dir.create(outdir, recursive = TRUE, showWarnings = T)
   #outdir <- paste0("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//RF_results//",resp)
