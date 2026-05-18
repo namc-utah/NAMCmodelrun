@@ -206,14 +206,25 @@ axis(side=1,at=c(2,3),labels = c('Prob','Train'))
 
 
 savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//Box_compare_FoFes_260210.png')
+op <- par(mar = c(7, 7, 2, 2),
+          mgp = c(3, 2.5, 0))
 
-boxplot(ratio, at = 1, ylim = c(0, 15), xlim = c(0, 3),
-        ylab = '', las = 1, frame = FALSE,cex.axis=2,cex=1.5)
-boxplot(Pratio, at = 2, add = TRUE, yaxt = 'n', frame = FALSE,cex=1.5)
-axis(side = 1, at = c(1, 2), labels = c('Reference', 'Probabilistic'),cex.axis=1.7)
+boxplot(ratio, at = 1, ylim = c(0, 15), xlim = c(0.5, 5),
+        ylab = '', las = 1, frame = FALSE, cex.axis = 3, cex = 1.5,boxwex=1.5)
 
-mtext("Fo/Fe", side = 2, line = 1.9, las = 3,cex=2)
-box(bty = 'l',lwd=3)
+boxplot(Pratio, at = 4, add = TRUE, yaxt = 'n', frame = FALSE, cex = 1.5,boxwex=1.5)
+
+# 3. Add the X-axis labels (they will automatically inherit the new mgp padding)
+axis(side = 1, at = c(1, 4), labels = c('Reference', 'Probabilistic'), cex.axis = 2.8)
+
+# 4. Add Y-axis title
+mtext("Fo/Fe", side = 2, line = 5, las = 3, cex = 3)
+
+box(bty = 'l', lwd = 3)
+
+# Reset parameters to original settings
+par(op)
+
 # legend('topright',
 #        leg=c('Reference',
 #              'Probabilistic'),
@@ -284,9 +295,9 @@ OE_calc=function(results_data, PA,threshold){
   return(OE.dat)
 }
 
-OEs=OE_calc(results_data = Pcs,
+OEs=OE_calc(results_data = Pcs_sum,
         PA=ben_dat,
-        threshold = 0.5)
+        threshold = 0)
 row.names(OEs)=row.names(Pcs)
 All_Xer=c(186872,187130,187162,187182,
           187183,187222,187250,187275,
@@ -526,14 +537,26 @@ legend('topright',
 savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//OtoE_boxes_ecoregions_260212.png')
 #savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//OtoE_boxes_Pc05_251106.png')
 ### This is just looking at O/E performance and metrics surrounding it
-boxplot(ref_OEs$OtoE,at=1,xlim=c(0,3),ylim=c(0,max(test_OEs$OtoE)),
-        ylab='',las=1,frame=F,cex.axis=2,cex=2)
-boxplot(test_OEs$OtoE,at=2,add=T, yaxt='n',frame=F,cex=2)
-mtext("O/E", side = 2, line = 1.9, las = 1,cex=1.5)
-axis(side=1,at=c(1,2),labels=c('Reference','Probabilistic'),cex.axis=1.5)
-box(bty = 'l',lwd=3)
+op <- par(mar = c(7, 7, 2, 2),
+          mgp = c(3, 2.5, 0))
 
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//OtoE_boxes_260513.png')
+boxplot(ref_OEs$OtoE, at = 1, ylim = c(0, 1.5), xlim = c(0.5, 5),
+        ylab = '', las = 1, frame = FALSE, cex.axis = 3, cex = 1.5,boxwex=1.5)
+
+boxplot(test_OEs$OtoE, at = 4, add = TRUE, yaxt = 'n', frame = FALSE, cex = 1.5,boxwex=1.5)
+
+# 3. Add the X-axis labels (they will automatically inherit the new mgp padding)
+axis(side = 1, at = c(1, 4), labels = c('Reference', 'Probabilistic'), cex.axis = 2.8)
+
+# 4. Add Y-axis title
+mtext("O/E", side = 2, line = 5, las = 3, cex = 3)
+
+box(bty = 'l', lwd = 3)
+
+# Reset parameters to original settings
+par(op)
+
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//MRF_OE//Updated_Ref//OtoE_boxes_260514.png')
 
 boxplot(Pratio,at=2,col='yellow3',ylim=c(0,70),xlim=c(0,5))
 boxplot(Px_ratio,at=3,add=T,col='purple4')
