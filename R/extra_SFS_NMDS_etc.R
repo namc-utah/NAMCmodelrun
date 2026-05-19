@@ -4,7 +4,39 @@
 #this came from the FoFe_script... file
 trait_table=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//Maximized_OTUmatrix_trimmed_more_withvariance.csv')
 names(trait_table)[1]<-'taxon'
-rbind(O_long,ProbOs_long)
+O_long=as.data.frame(t(Os))
+O_long$taxon=names(Os)
+traits_only=finaltable3
+#traits_only=traits_only[traits_only$OTU %in% c('Farula','Stactobiella')==F,]
+#traits_only=finaltable3[,c(1,7:ncol(finaltable3))]
+#traits_only <- final_table3[,c(2,13:ncol(final_table3))]
+
+
+
+traits_only<-traits_only[!duplicated(traits_only$OTU),]
+row.names(traits_only)<-traits_only$OTU
+traits_only=traits_only[,-1]
+
+
+traits_only2<-as.data.frame(lapply(traits_only,factor))
+#traits_only2<-as.data.frame(lapply(traits_only[,2:ncol(traits_only)],factor))
+traits_num<-as.data.frame(lapply(traits_only,as.numeric))
+row.names(traits_only2)<-row.names(traits_only)
+traits_only3<- lapply(traits_only2[,1:ncol(traits_only2)], \(x) as.integer(as.factor(x)) - 1L)
+traits_only3<-as.data.frame(do.call(cbind,traits_only3))
+ProbOs=ProbOs[row.names(ProbOs) %in% failed_sites$sampleId==F,]
+ProbOs_long=as.data.frame(t(ProbOs))
+ProbOs_long$taxon=names(ProbOs)
+ProbOs_long$status='Probabilistic'
+O_long$status='Reference'
+traits_only3$taxon=row.names(traits_only)
+O_long=plyr::join(O_long,traits_only3)#[,names(traits_only) %in% c(names(top5),'taxon')])
+ProbOs_long=plyr::join(ProbOs_long,traits_only3)#[,names(traits_only) %in% c('taxon',names(top5))])
+site_cols=colnames(O_long)[1:656]#(ncol(O_long)-8)]
+traitcols=colnames(O_long)[659:(ncol(O_long))]#(ncol(O_long)-4):ncol(O_long)]
+Psite_cols=colnames(ProbOs_long)[1:349]#1:(ncol(ProbOs_long)-8)]
+Ptraitcols=colnames(ProbOs_long)[352:(ncol(ProbOs_long))]#(ncol(ProbOs_long)-4):ncol(ProbOs_long)]
+ProbOs_long=ProbOs_long=ProbOs_long[names(ProbOs_long) %in% sites_w_no_bugs==F,]
 O_for_traits=O_long
 
 first_cols <- names(O_for_traits)[1:656]
@@ -1410,3 +1442,146 @@ summ_mat=apply(Psite_trait_pct[,1:25], 2, function(x) {
     Max = max(x, na.rm = TRUE))
 })
 clipr::write_clip(summ_mat)
+
+### sites in trait space for prob only...
+Psites_traits=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//SiteStatus_models//PA_all_traits_probabilistic.csv')
+Psites_traits=Psites_traits[Psites_traits$sampleId %in% sites_w_no_bugs==F,]
+
+Psites_traitsforNMDS=Psites_traits[,1:25]
+
+Psites_traitsforNMDS_dist=vegan::vegdist(Psites_traitsforNMDS,'bray',binary=T)
+set.seed(99)
+Psites_traitsNMDS=vegan::metaMDS(Psites_traitsforNMDS)
+env_vars=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//ordination_sites_envs.csv')
+Penv_vars=env_vars[env_vars$sampleId %in% Psites_traits$sampleId,]
+#already aligned!
+Penv_vars$sampleId==Psites_traits$sampleId
+set.seed(99)
+Penv_fit=vegan::envfit(Psites_traitsforNMDS,scale(Penv_vars[,!names(Penv_vars)%in% c('COMID','sampleId')]))
+
+Psites_traitsNMDS_scores=as.data.frame(vegan::scores(Psites_traitsNMDS)$sites)
+
+Penv_vect<-as.data.frame(Penv_fit$vectors$arrows)
+Penv_vec=as.data.frame(scores(Penv_fit, display = 'vectors'))
+Penv_vect$env <- rownames(Penv_vect)
+colnames(Penv_vect)[1:2] <- c("NMDS1", "NMDS2")
+
+#Countscores2=Countscores[Countscores$NMDS1<35 & Countscores$NMDS2 < 2,]
+
+arrow_multiplier <- 0.5 * max(abs(Psites_traitsNMDS_scores[,c(1,2)])) / max(abs(Penv_vect[,1:2]))
+Penv_vect[,1:2] <- Penv_vect[,1:2] * arrow_multiplier
+Penv_vect$env=c('Catchment Elev',
+               'Mean Precip',
+               'Mean Temp','Basin Area',
+               '% Crops',
+               '% Urban')
+
+
+
+ggplot(Psites_traitsNMDS_scores,aes(x=NMDS1,y=NMDS2))+geom_point(pch=21,size=3,fill='orange3')+
+  geom_segment(data=Penv_vect,
+               aes(x=0,y=0,xend=NMDS1,yend=NMDS2),#                arrow=arrow(length=unit(0.25,'cm')),
+               linewidth=1,
+               alpha=0.9,inherit.aes = F, arrow=arrow(length=unit(.25,"centimeters")))+
+  # geom_text_repel(
+  #   data = Penv_vect,
+  #   aes(
+  #     x = NMDS1,
+  #     y = NMDS2,
+  #     label = env
+  #   ),
+  #   size = 6,
+  #   inherit.aes = FALSE,
+  #   box.padding = 0.1,
+  #   point.padding = 0.1,
+  #   min.segment.length = 0,
+  #   max.overlaps = Inf
+  # )+
+  theme_classic()+
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.title = element_text(size = 25),
+    axis.title.x = element_text(margin=ggplot2::margin(t=20)),
+    axis.title.y  = element_text(margin=ggplot2::margin(r=20)),
+    strip.text = element_text(size = 14),
+    legend.text = element_text(size = 20),
+    legend.title = element_text(size = 20),
+    legend.key.size = unit(1, "lines"),
+    axis.ticks=element_blank(),
+    legend.position = 'inside',
+    legend.position.inside = c(0.9,0.13)
+  )#+stat_ellipse(level=0.8,type='t')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//Prob_traitspace_envs_260519_nolabs.png')
+
+
+
+Rsites_traits=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//SiteStatus_models//PA_all_traits_ref.csv')
+
+
+Rsites_traitsforNMDS=Rsites_traits[,1:25]
+
+Rsites_traitsforNMDS_dist=vegan::vegdist(Rsites_traitsforNMDS,'bray',binary=T)
+set.seed(99)
+Rsites_traitsNMDS=vegan::metaMDS(Rsites_traitsforNMDS)
+env_vars=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//ordination_sites_envs.csv')
+Renv_vars=env_vars[env_vars$sampleId %in% Rsites_traits$sampleId,]
+#already aligned!
+Renv_vars$sampleId==Rsites_traits$sampleId
+set.seed(99)
+Renv_fit=vegan::envfit(Rsites_traitsforNMDS,scale(Renv_vars[,!names(Renv_vars)%in% c('COMID','sampleId')]))
+
+Rsites_traitsNMDS_scores=as.data.frame(vegan::scores(Rsites_traitsNMDS)$sites)
+
+Renv_vect<-as.data.frame(Renv_fit$vectors$arrows)
+Renv_vec=as.data.frame(scores(Renv_fit, display = 'vectors'))
+Renv_vect$env <- rownames(Renv_vect)
+colnames(Renv_vect)[1:2] <- c("NMDS1", "NMDS2")
+
+#Countscores2=Countscores[Countscores$NMDS1<35 & Countscores$NMDS2 < 2,]
+
+arrow_multiplier <- 0.3 * max(abs(Rsites_traitsNMDS_scores[,c(1,2)])) / max(abs(Renv_vect[,1:2]))
+Renv_vect[,1:2] <- Renv_vect[,1:2] * arrow_multiplier
+Renv_vect$env=c('Catchment Elev',
+                'Mean Precip',
+                'Mean Temp','Basin Area',
+                '% Crops',
+                '% Urban')
+
+
+
+ggplot(Rsites_traitsNMDS_scores[Rsites_traitsNMDS_scores$NMDS1> -1,],aes(x=NMDS1,y=NMDS2))+geom_point(pch=21,size=3,fill='blue')+
+  geom_segment(data=Renv_vect,
+               aes(x=0,y=0,xend=NMDS1,yend=NMDS2),#                arrow=arrow(length=unit(0.25,'cm')),
+               linewidth=1,
+               alpha=0.9,inherit.aes = F, arrow=arrow(length=unit(.25,"centimeters")))+
+  # geom_text_repel(
+  #   data = Renv_vect,
+  #   aes(
+  #     x = NMDS1,
+  #     y = NMDS2,
+  #     label = env
+  #   ),
+  #   size = 6,
+  #   inherit.aes = FALSE,
+  #   box.padding = 0.1,
+  #   point.padding = 0.1,
+  #   min.segment.length = 0,
+  #   max.overlaps = Inf
+  # )+
+  theme_classic()+
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.title = element_text(size = 25),
+    axis.title.x = element_text(margin=ggplot2::margin(t=20)),
+    axis.title.y  = element_text(margin=ggplot2::margin(r=20)),
+    strip.text = element_text(size = 14),
+    legend.text = element_text(size = 20),
+    legend.title = element_text(size = 20),
+    legend.key.size = unit(1, "lines"),
+    axis.ticks=element_blank(),
+    legend.position = 'inside',
+    legend.position.inside = c(0.9,0.13)
+  )#+stat_ellipse(level=0.8,type='t')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//Ref_traitspace_envs_260519_nolabs.png')
