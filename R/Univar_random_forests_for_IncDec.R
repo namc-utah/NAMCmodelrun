@@ -25,8 +25,6 @@ for (resp in response_varsPA) {
   base_dir <- file.path(path.expand("~"), "New_for_SFS", "RF_results",'Prob_PA')
   outdir <- file.path(base_dir, resp)
   dir.create(outdir, recursive = TRUE, showWarnings = T)
-  outdir <- paste0("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//RF_results//",resp)
-  dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
 
   # -----------------------------
   # 2. Build formula + model
@@ -751,12 +749,17 @@ I_P_response=PA_P_response_wtraits[,c('Percent_I',predictor_vars)]
 
 predictor_vars=names(I_P_response)[2:ncol(I_P_response)]
 response_varsPA=names(I_P_response)[1]
+predictor_vars=c('Precip8110',
+                 'MAST_mean08091314',
+                 'WsAreaSqKm',
+                 'MSST_mean08091314',
+                 'LONG')
 for (resp in response_varsPA) {
 
   # -----------------------------
   # 1. Create output folder
   # -----------------------------
-  base_dir <- file.path(path.expand("~"), "New_for_SFS", "RF_results","Pct_Increase")
+  base_dir <- file.path(path.expand("~"), "New_for_SFS", "RF_results","Pct_Increase_top5")
   outdir <- file.path(base_dir, resp)
   dir.create(outdir, recursive = TRUE, showWarnings = T)
   #outdir <- paste0("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//RF_results//",resp)
@@ -774,6 +777,9 @@ for (resp in response_varsPA) {
     importance = TRUE
   )
 
+ # rf_model$importance
+  sqrt(rf_model$mse[length(rf_model$mse)])
+  rf_model$rsq[length(rf_model$rsq)]
   # -----------------------------
   # 3. Variable importance plot
   # -----------------------------
@@ -857,12 +863,14 @@ I_abun_response=abun_P_response_wtraits[,c('Percent_I',predictor_vars)]
 
 predictor_vars=names(I_P_response)[2:ncol(I_P_response)]
 response_varsPA=names(I_P_response)[1]
+predictor_vars=c('LONG','WsAreaSqKm','MSST_mean08091314',
+                 'Precip8110','MWST_mean08091314')
 for (resp in response_varsPA) {
 
   # -----------------------------
   # 1. Create output folder
   # -----------------------------
-  base_dir <- file.path(path.expand("~"), "New_for_SFS", "RF_results","Pct_Indiv_Increase")
+  base_dir <- file.path(path.expand("~"), "New_for_SFS", "RF_results","Pct_Indiv_Increase_top5")
   outdir <- file.path(base_dir, resp)
   dir.create(outdir, recursive = TRUE, showWarnings = T)
   #outdir <- paste0("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//RF_results//",resp)
@@ -879,7 +887,9 @@ for (resp in response_varsPA) {
     data = I_abun_response,
     importance = TRUE
   )
-
+  #varImpPlot(rf_model)
+   sqrt(rf_model$mse[length(rf_model$mse)])
+   rf_model$rsq[length(rf_model$rsq)]
   # -----------------------------
   # 3. Variable importance plot
   # -----------------------------
@@ -959,12 +969,14 @@ D_P_response=PA_P_response_wtraits[,c('Percent_D',predictor_vars)]
 
 predictor_vars=names(D_P_response)[2:ncol(D_P_response)]
 response_varsPA=names(D_P_response)[1]
+predictor_vars=c('Precip8110','MAST_mean08091314',
+                 'ElevCat','LONG','WsAreaSqKm')
 for (resp in response_varsPA) {
 
   # -----------------------------
   # 1. Create output folder
   # -----------------------------
-  base_dir <- file.path(path.expand("~"), "New_for_SFS", "RF_results","Pct_Decrease")
+  base_dir <- file.path(path.expand("~"), "New_for_SFS", "RF_results","Pct_Decrease_top5")
   outdir <- file.path(base_dir, resp)
   dir.create(outdir, recursive = TRUE, showWarnings = T)
   #outdir <- paste0("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//RF_results//",resp)
@@ -981,7 +993,9 @@ for (resp in response_varsPA) {
     data = D_P_response,
     importance = TRUE
   )
-
+  #varImpPlot(rf_model)
+   #sqrt(rf_model$mse[length(rf_model$mse)])
+   #rf_model$rsq[length(rf_model$rsq)]
   # -----------------------------
   # 3. Variable importance plot
   # -----------------------------
@@ -1060,12 +1074,14 @@ D_abun_response=abun_P_response_wtraits[,c('Percent_D',predictor_vars)]
 
 predictor_vars=names(D_abun_response)[2:ncol(D_abun_response)]
 response_varsPA=names(D_abun_response)[1]
+predictor_vars=c('Precip8110','Tmean8110Ws','MSST_mean08091314',
+                 'LONG','MAST_mean08091314')
 for (resp in response_varsPA) {
 
   # -----------------------------
   # 1. Create output folder
   # -----------------------------
-  base_dir <- file.path(path.expand("~"), "New_for_SFS", "RF_results","Pct_Indiv_Decrease")
+  base_dir <- file.path(path.expand("~"), "New_for_SFS", "RF_results","Pct_Indiv_Decrease_top5")
   outdir <- file.path(base_dir, resp)
   dir.create(outdir, recursive = TRUE, showWarnings = T)
   #outdir <- paste0("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//RF_results//",resp)
@@ -1082,7 +1098,9 @@ for (resp in response_varsPA) {
     data = D_abun_response,
     importance = TRUE
   )
-
+  #varImpPlot(rf_model)
+  sqrt(rf_model$mse[length(rf_model$mse)])
+  rf_model$rsq[length(rf_model$rsq)]
   # -----------------------------
   # 3. Variable importance plot
   # -----------------------------
@@ -1155,4 +1173,724 @@ for (resp in response_varsPA) {
 }
 
 
+#P/A of a trait state at sites as fxn of the environment
+#top 5 only!
 
+# -----------------------------
+# Store OOB results
+# -----------------------------
+
+response_varsPA=names(PA_sites_prob)[1:25]
+predictor_vars <- names(PA_sites_prob)[c(27:40,43,47)]
+oob_results_list <- list()
+
+for (resp in response_varsPA) {
+
+  # -----------------------------
+  # 1. Create output folder
+  # -----------------------------
+  base_dir <- file.path(path.expand("~"), "New_for_SFS", "RF_results", "Prob_PA_top5s")
+  outdir <- file.path(base_dir, resp)
+  dir.create(outdir, recursive = TRUE, showWarnings = TRUE)
+
+  # -----------------------------
+  # 2. Fit full RF model
+  # -----------------------------
+  full_form <- as.formula(
+    paste(resp, "~", paste(predictor_vars, collapse = " + "))
+  )
+
+  rf_model_full <- randomForest(
+    full_form,
+    data = PA_sites_prob,
+    importance = TRUE
+  )
+
+  # -----------------------------
+  # 3. Extract top 5 predictors
+  # -----------------------------
+  vi_full <- data.frame(
+    variable = rownames(importance(rf_model_full)),
+    importance = importance(rf_model_full)[, "MeanDecreaseGini"]
+  )
+
+  vi_full <- vi_full[order(vi_full$importance, decreasing = TRUE), ]
+
+  top5_predictors <- vi_full$variable[1:5]
+
+  print(paste(resp, "Top 5 predictors:"))
+  print(top5_predictors)
+
+  # -----------------------------
+  # 4. Fit reduced RF model
+  # -----------------------------
+  reduced_form <- as.formula(
+    paste(resp, "~", paste(top5_predictors, collapse = " + "))
+  )
+
+  rf_model_top5 <- randomForest(
+    reduced_form,
+    data = PA_sites_prob,
+    importance = TRUE
+  )
+
+  # -----------------------------
+  # 5. Extract OOB error
+  # -----------------------------
+  final_oob <- rf_model_top5$err.rate[
+    nrow(rf_model_top5$err.rate),
+    "OOB"
+  ]
+
+  oob_results_list[[resp]] <- data.frame(
+    Response_Variable = resp,
+    OOB_Error = final_oob,
+    Top5_Predictors = paste(top5_predictors, collapse = ", "),
+    stringsAsFactors = FALSE
+  )
+
+  print(paste(resp, "OOB =", round(final_oob, 4)))
+
+  # -----------------------------
+  # 6. Variable importance plot
+  # -----------------------------
+  vi_top5 <- data.frame(
+    variable = rownames(importance(rf_model_top5)),
+    importance = importance(rf_model_top5)[, "MeanDecreaseGini"]
+  )
+
+  vi_plot <- ggplot(
+    vi_top5,
+    aes(x = reorder(variable, importance), y = importance)
+  ) +
+    geom_point(size = 5) +
+    coord_flip() +
+    theme_classic(base_size = 16) +
+    labs(
+      title = paste("Top 5 Variable Importance -", resp),
+      x = NULL,
+      y = "Mean Decrease Gini"
+    ) +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 18),
+      panel.grid.major.y = element_line(
+        color = "gray50",
+        linetype = "dotted"
+      ),
+      panel.grid.minor = element_blank(),
+      panel.grid.major.x = element_blank()
+    )
+
+  ggsave(
+    filename = file.path(outdir, "VarImp_top5.png"),
+    plot = vi_plot,
+    width = 10,
+    height = 8
+  )
+
+  # -----------------------------
+  # 7. PDPs for TOP 5 MODEL ONLY
+  # -----------------------------
+  thetop5=row.names(rf_model_top5$importance)
+  for (v in 1:length(thetop5)) {
+
+    pd <- randomForest::partialPlot(
+      rf_model_top5,
+      pred.data = PA_sites_prob,
+      x.var = thetop5[v],
+      plot = F
+    )
+
+    df <- data.frame(
+      x = pd$x,
+      y = pd$y
+    )
+
+    p <- ggplot(df, aes(x = x, y = y)) +
+      geom_line(linewidth = 1.2) +
+      theme_classic(base_size = 16) +
+      labs(
+        title = thetop5[v],
+        x = thetop5[v],
+        y = "Partial Effect"
+      ) +
+      theme(
+        plot.title = element_text(hjust = 0.5, size = 20),
+        axis.title = element_text(size = 20),
+        axis.text = element_text(size = 20),
+        strip.text = element_text(size = 24),
+        strip.background = element_blank(),
+        legend.text = element_text(size = 20)
+      )
+
+    ggsave(
+      filename = file.path(outdir, paste0("PDP_", thetop5[v], "_top5.png")),
+      plot = p,
+      width = 10,
+      height = 8
+    )
+  }
+}
+
+# -----------------------------
+# 8. Combine OOB results
+# -----------------------------
+final_oob_df <- do.call(rbind, oob_results_list)
+
+rownames(final_oob_df) <- NULL
+
+
+response_varsPA=names(PA_sites_R)[1:25]
+predictor_vars <- names(PA_sites_R)[c(26:39,42,46)]
+for (resp in response_varsPA) {
+
+  # -----------------------------
+  # 1. Create output folder
+  # -----------------------------
+  base_dir <- file.path(path.expand("~"), "New_for_SFS", "RF_results", "Ref_PA_top5s")
+  outdir <- file.path(base_dir, resp)
+  dir.create(outdir, recursive = TRUE, showWarnings = TRUE)
+
+  # -----------------------------
+  # 2. Fit full RF model
+  # -----------------------------
+  full_form <- as.formula(
+    paste(resp, "~", paste(predictor_vars, collapse = " + "))
+  )
+
+  rf_model_full <- randomForest(
+    full_form,
+    data = PA_sites_R,
+    importance = TRUE
+  )
+
+  # -----------------------------
+  # 3. Extract top 5 predictors
+  # -----------------------------
+  vi_full <- data.frame(
+    variable = rownames(importance(rf_model_full)),
+    importance = importance(rf_model_full)[, "MeanDecreaseGini"]
+  )
+
+  vi_full <- vi_full[order(vi_full$importance, decreasing = TRUE), ]
+
+  top5_predictors <- vi_full$variable[1:5]
+
+  print(paste(resp, "Top 5 predictors:"))
+  print(top5_predictors)
+
+  # -----------------------------
+  # 4. Fit reduced RF model
+  # -----------------------------
+  reduced_form <- as.formula(
+    paste(resp, "~", paste(top5_predictors, collapse = " + "))
+  )
+
+  rf_model_top5 <- randomForest(
+    reduced_form,
+    data = PA_sites_R,
+    importance = TRUE
+  )
+
+  # -----------------------------
+  # 5. Extract OOB error
+  # -----------------------------
+  final_oob <- rf_model_top5$err.rate[
+    nrow(rf_model_top5$err.rate),
+    "OOB"
+  ]
+
+  oob_results_list[[resp]] <- data.frame(
+    Response_Variable = resp,
+    OOB_Error = final_oob,
+    Top5_Predictors = paste(top5_predictors, collapse = ", "),
+    stringsAsFactors = FALSE
+  )
+
+  print(paste(resp, "OOB =", round(final_oob, 4)))
+
+  # -----------------------------
+  # 6. Variable importance plot
+  # -----------------------------
+  vi_top5 <- data.frame(
+    variable = rownames(importance(rf_model_top5)),
+    importance = importance(rf_model_top5)[, "MeanDecreaseGini"]
+  )
+
+  vi_plot <- ggplot(
+    vi_top5,
+    aes(x = reorder(variable, importance), y = importance)
+  ) +
+    geom_point(size = 5) +
+    coord_flip() +
+    theme_classic(base_size = 16) +
+    labs(
+      title = paste("Top 5 Variable Importance -", resp),
+      x = NULL,
+      y = "Mean Decrease Gini"
+    ) +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 18),
+      panel.grid.major.y = element_line(
+        color = "gray50",
+        linetype = "dotted"
+      ),
+      panel.grid.minor = element_blank(),
+      panel.grid.major.x = element_blank()
+    )
+
+  ggsave(
+    filename = file.path(outdir, "VarImp_top5.png"),
+    plot = vi_plot,
+    width = 10,
+    height = 8
+  )
+
+  # -----------------------------
+  # 7. PDPs for TOP 5 MODEL ONLY
+  # -----------------------------
+  thetop5=row.names(rf_model_top5$importance)
+  for (v in 1:length(thetop5)) {
+
+    pd <- randomForest::partialPlot(
+      rf_model_top5,
+      pred.data = PA_sites_R,
+      x.var = thetop5[v],
+      plot = F
+    )
+
+    df <- data.frame(
+      x = pd$x,
+      y = pd$y
+    )
+
+    p <- ggplot(df, aes(x = x, y = y)) +
+      geom_line(linewidth = 1.2) +
+      theme_classic(base_size = 16) +
+      labs(
+        title = thetop5[v],
+        x = thetop5[v],
+        y = "Partial Effect"
+      ) +
+      theme(
+        plot.title = element_text(hjust = 0.5, size = 20),
+        axis.title = element_text(size = 20),
+        axis.text = element_text(size = 20),
+        strip.text = element_text(size = 24),
+        strip.background = element_blank(),
+        legend.text = element_text(size = 20)
+      )
+
+    ggsave(
+      filename = file.path(outdir, paste0("PDP_", thetop5[v], "_top5.png")),
+      plot = p,
+      width = 10,
+      height = 8
+    )
+  }
+}
+
+# -----------------------------
+# 8. Combine OOB results
+# -----------------------------
+final_oob_df <- do.call(rbind, oob_results_list)
+
+rownames(final_oob_df) <- NULL
+
+clipr::write_clip(final_oob_df)
+
+
+##now for regression top5s
+
+
+# -----------------------------
+# Store model metrics
+# -----------------------------
+model_results_list <- list()
+response_varsPA=names(Pct_sites_prob)[1:25]
+predictor_vars <- names(Pct_sites_prob)[c(27:40, 43, 47)]
+for (resp in response_varsPA) {
+
+  # -----------------------------
+  # 1. Create output folder
+  # -----------------------------
+  base_dir <- file.path(
+    path.expand("~"),
+    "New_for_SFS",
+    "RF_results",
+    "Prob_Pct_top5s"
+  )
+
+  outdir <- file.path(base_dir, resp)
+
+  dir.create(
+    outdir,
+    recursive = TRUE,
+    showWarnings = TRUE
+  )
+
+  # -----------------------------
+  # 2. Fit full RF model
+  # -----------------------------
+  full_form <- as.formula(
+    paste(resp, "~", paste(predictor_vars, collapse = " + "))
+  )
+
+  rf_model_full <- randomForest(
+    full_form,
+    data = Pct_sites_prob,
+    importance = TRUE
+  )
+
+  # -----------------------------
+  # 3. Extract top 5 predictors
+  # -----------------------------
+  vi_full <- data.frame(
+    variable = rownames(importance(rf_model_full)),
+    importance = importance(rf_model_full)[, "%IncMSE"]
+  )
+
+  vi_full <- vi_full[
+    order(vi_full$importance, decreasing = TRUE),
+  ]
+
+  top5_predictors <- vi_full$variable[1:5]
+
+  print(paste(resp, "Top 5 predictors:"))
+  print(top5_predictors)
+
+  # -----------------------------
+  # 4. Fit reduced RF model
+  # -----------------------------
+  reduced_form <- as.formula(
+    paste(resp, "~", paste(top5_predictors, collapse = " + "))
+  )
+
+  rf_model_top5 <- randomForest(
+    reduced_form,
+    data = Pct_sites_prob,
+    importance = TRUE
+  )
+
+  # -----------------------------
+  # 5. Extract RMSE + pseudo R2
+  # -----------------------------
+
+  # Final OOB MSE
+  final_mse <- tail(rf_model_top5$mse, 1)
+
+  # RMSE
+  final_rmse <- sqrt(final_mse)
+
+  # Pseudo R2
+  final_r2 <- tail(rf_model_top5$rsq, 1)
+
+  model_results_list[[resp]] <- data.frame(
+    Response_Variable = resp,
+    RMSE = final_rmse,
+    Pseudo_R2 = final_r2,
+    Top5_Predictors = paste(top5_predictors, collapse = ", "),
+    stringsAsFactors = FALSE
+  )
+
+  print(
+    paste(
+      resp,
+      "RMSE =",
+      round(final_rmse, 4),
+      "| Pseudo R2 =",
+      round(final_r2, 4)
+    )
+  )
+
+  # -----------------------------
+  # 6. Variable importance plot
+  # -----------------------------
+  vi_top5 <- data.frame(
+    variable = rownames(importance(rf_model_top5)),
+    importance = importance(rf_model_top5)[, "%IncMSE"]
+  )
+
+  vi_plot <- ggplot(
+    vi_top5,
+    aes(x = reorder(variable, importance), y = importance)
+  ) +
+    geom_point(size = 5) +
+    coord_flip() +
+    theme_classic(base_size = 16) +
+    labs(
+      title = paste("Top 5 Variable Importance -", resp),
+      x = NULL,
+      y = "Mean Decrease Gini"
+    ) +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 18),
+      panel.grid.major.y = element_line(
+        color = "gray50",
+        linetype = "dotted"
+      ),
+      panel.grid.minor = element_blank(),
+      panel.grid.major.x = element_blank()
+    )
+
+  ggsave(
+    filename = file.path(outdir, "VarImp_top5.png"),
+    plot = vi_plot,
+    width = 10,
+    height = 8
+  )
+
+  # -----------------------------
+  # 7. PDPs for TOP 5 MODEL ONLY
+  # -----------------------------
+  thetop5 <- rownames(rf_model_top5$importance)
+
+  for (v in 1:length(thetop5)) {
+
+    pd <- randomForest::partialPlot(
+      rf_model_top5,
+      pred.data = Pct_sites_prob,
+      x.var = thetop5[v],
+      plot = FALSE
+    )
+
+    df <- data.frame(
+      x = pd$x,
+      y = pd$y
+    )
+
+    p <- ggplot(df, aes(x = x, y = y)) +
+      geom_line(linewidth = 1.2) +
+      theme_classic(base_size = 16) +
+      labs(
+        title = thetop5[v],
+        x = thetop5[v],
+        y = "Partial Effect"
+      ) +
+      theme(
+        plot.title = element_text(hjust = 0.5, size = 20),
+        axis.title = element_text(size = 20),
+        axis.text = element_text(size = 20),
+        strip.text = element_text(size = 24),
+        strip.background = element_blank(),
+        legend.text = element_text(size = 20)
+      )
+
+    ggsave(
+      filename = file.path(outdir, paste0("PDP_", v, "_top5.png")),
+      plot = p,
+      width = 10,
+      height = 8
+    )
+  }
+}
+
+# -----------------------------
+# 8. Combine model metrics
+# -----------------------------
+final_model_metrics_df <- do.call(
+  rbind,
+  model_results_list
+)
+
+rownames(final_model_metrics_df) <- NULL
+
+print(final_model_metrics_df)
+
+clipr::write_clip(final_model_metrics_df
+                  )
+
+
+model_results_list <- list()
+response_varsPA=names(Pct_sites_R)[1:25]
+predictor_vars <- names(Pct_sites_R)[c(26:39, 42, 46)]
+for (resp in response_varsPA) {
+
+  # -----------------------------
+  # 1. Create output folder
+  # -----------------------------
+  base_dir <- file.path(
+    path.expand("~"),
+    "New_for_SFS",
+    "RF_results",
+    "Ref_Pct_top5s"
+  )
+
+  outdir <- file.path(base_dir, resp)
+
+  dir.create(
+    outdir,
+    recursive = TRUE,
+    showWarnings = TRUE
+  )
+
+  # -----------------------------
+  # 2. Fit full RF model
+  # -----------------------------
+  full_form <- as.formula(
+    paste(resp, "~", paste(predictor_vars, collapse = " + "))
+  )
+
+  rf_model_full <- randomForest(
+    full_form,
+    data = Pct_sites_R,
+    importance = TRUE
+  )
+
+  # -----------------------------
+  # 3. Extract top 5 predictors
+  # -----------------------------
+  vi_full <- data.frame(
+    variable = rownames(importance(rf_model_full)),
+    importance = importance(rf_model_full)[, "%IncMSE"]
+  )
+
+  vi_full <- vi_full[
+    order(vi_full$importance, decreasing = TRUE),
+  ]
+
+  top5_predictors <- vi_full$variable[1:5]
+
+  print(paste(resp, "Top 5 predictors:"))
+  print(top5_predictors)
+
+  # -----------------------------
+  # 4. Fit reduced RF model
+  # -----------------------------
+  reduced_form <- as.formula(
+    paste(resp, "~", paste(top5_predictors, collapse = " + "))
+  )
+
+  rf_model_top5 <- randomForest(
+    reduced_form,
+    data = Pct_sites_R,
+    importance = TRUE
+  )
+
+  # -----------------------------
+  # 5. Extract RMSE + pseudo R2
+  # -----------------------------
+
+  # Final OOB MSE
+  final_mse <- tail(rf_model_top5$mse, 1)
+
+  # RMSE
+  final_rmse <- sqrt(final_mse)
+
+  # Pseudo R2
+  final_r2 <- tail(rf_model_top5$rsq, 1)
+
+  model_results_list[[resp]] <- data.frame(
+    Response_Variable = resp,
+    RMSE = final_rmse,
+    Pseudo_R2 = final_r2,
+    Top5_Predictors = paste(top5_predictors, collapse = ", "),
+    stringsAsFactors = FALSE
+  )
+
+  print(
+    paste(
+      resp,
+      "RMSE =",
+      round(final_rmse, 4),
+      "| Pseudo R2 =",
+      round(final_r2, 4)
+    )
+  )
+
+  # -----------------------------
+  # 6. Variable importance plot
+  # -----------------------------
+  vi_top5 <- data.frame(
+    variable = rownames(importance(rf_model_top5)),
+    importance = importance(rf_model_top5)[, "%IncMSE"]
+  )
+
+  vi_plot <- ggplot(
+    vi_top5,
+    aes(x = reorder(variable, importance), y = importance)
+  ) +
+    geom_point(size = 5) +
+    coord_flip() +
+    theme_classic(base_size = 16) +
+    labs(
+      title = paste("Top 5 Variable Importance -", resp),
+      x = NULL,
+      y = "Mean Decrease Gini"
+    ) +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 18),
+      panel.grid.major.y = element_line(
+        color = "gray50",
+        linetype = "dotted"
+      ),
+      panel.grid.minor = element_blank(),
+      panel.grid.major.x = element_blank()
+    )
+
+  ggsave(
+    filename = file.path(outdir, "VarImp_top5.png"),
+    plot = vi_plot,
+    width = 10,
+    height = 8
+  )
+
+  # -----------------------------
+  # 7. PDPs for TOP 5 MODEL ONLY
+  # -----------------------------
+  thetop5 <- rownames(rf_model_top5$importance)
+
+  for (v in 1:length(thetop5)) {
+
+    pd <- randomForest::partialPlot(
+      rf_model_top5,
+      pred.data = Pct_sites_R,
+      x.var = thetop5[v],
+      plot = FALSE
+    )
+
+    df <- data.frame(
+      x = pd$x,
+      y = pd$y
+    )
+
+    p <- ggplot(df, aes(x = x, y = y)) +
+      geom_line(linewidth = 1.2) +
+      theme_classic(base_size = 16) +
+      labs(
+        title = thetop5[v],
+        x = thetop5[v],
+        y = "Partial Effect"
+      ) +
+      theme(
+        plot.title = element_text(hjust = 0.5, size = 20),
+        axis.title = element_text(size = 20),
+        axis.text = element_text(size = 20),
+        strip.text = element_text(size = 24),
+        strip.background = element_blank(),
+        legend.text = element_text(size = 20)
+      )
+
+    ggsave(
+      filename = file.path(outdir, paste0("PDP_", v, "_top5.png")),
+      plot = p,
+      width = 10,
+      height = 8
+    )
+  }
+}
+
+# -----------------------------
+# 8. Combine model metrics
+# -----------------------------
+final_model_metrics_df <- do.call(
+  rbind,
+  model_results_list
+)
+
+rownames(final_model_metrics_df) <- NULL
+
+print(final_model_metrics_df)
+
+clipr::write_clip(final_model_metrics_df
+)
