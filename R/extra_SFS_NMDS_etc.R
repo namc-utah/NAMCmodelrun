@@ -321,7 +321,7 @@ Psite_taxa=ProbOs
 Osite_taxa=Os
 maxxed_OTUs3=maxxed_OTUs2
 maxxed_OTUs3=maxxed_OTUs3[!duplicated(maxxed_OTUs3$taxon),]
-#row.names(maxxed_OTUs3)=maxxed_OTUs3$taxon;maxxed_OTUs3=maxxed_OTUs3[,-1]
+row.names(maxxed_OTUs3)=maxxed_OTUs3$taxon;maxxed_OTUs3=maxxed_OTUs3[,-1]
 common_taxa = intersect(colnames(Psite_taxa),
                         row.names(maxxed_OTUs3))
 
@@ -339,9 +339,6 @@ Psite_rich=rowSums(Psite_taxa)
 Psite_trait_pct=as.data.frame(sweep(Psite_trait_counts,1,Psite_rich,"/")*100)
 Psite_trait_pct$sampleId=row.names(Psite_trait_pct)
 Psite_trait_pa$sampleId=row.names(Psite_trait_pa)
-
-
-
 
 #O_pres_RF=plyr::join(Osite_trait_matrix,Ref_preds,by='Site')
 P_Pres_RF=plyr::join(Psite_trait_matrix,Prob_preds,by='Site')
@@ -392,7 +389,6 @@ library(randomForestSRC)
 library(randomForestSRC)  # for multivariate random forest
 
 Psite_trait_PCtIndivs=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//SiteStatus_models//Prob_Pct_indivs_wtrait_and_envs.csv')
-psitetrat
 # ---------------------------
 # set the random seed and isolate predictor names
 set.seed(42)

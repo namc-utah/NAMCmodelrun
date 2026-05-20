@@ -267,11 +267,15 @@ trait_table=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research 
 Pct_indiv_sites_prob=Pct_indiv_sites_prob[Pct_indiv_sites_prob$OTU %in% trait_table$OTU,]
 
 trait_table=trait_table[!duplicated(trait_table$OTU),]
-
+#join the abundances to the trait table by OTU
 abun_traits=Pct_indiv_sites_prob %>%
   left_join(trait_table,by='OTU')
+#keep OTU and the trait names so we can summarize by sampleID
+#and OTU to get the abundances and trait states we need.
 trait_cols_abun=names(trait_table[,2:ncol(trait_table)])
-
+#for each sample,
+#find the taxa whose trait state is 1, sum them divide bthe total,
+#and multiply by 100.
 pct_indivs_w_Trait_summary <- abun_traits %>%
   dplyr::group_by(sample_id) %>%
   dplyr::summarise(
