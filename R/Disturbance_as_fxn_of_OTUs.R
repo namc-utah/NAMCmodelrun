@@ -1,34 +1,35 @@
-#Land use (human disturbance)
-#as a fxn of traits
+#Disturbance as fxn of OTUs
 
 disturbs=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//Disturbance_by_site.csv')
 
+trait_table=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//Maximized_OTUmatrix_trimmed_more_withvariance.csv')
 
-PA_traits_prob=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//SiteStatus_models//PA_all_traits_probabilistic.csv')
-PA_traits_R=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//SiteStatus_models//PA_all_traits_ref.csv')
-all_traits=rbind(PA_traits_prob,PA_traits_R)
-all_traits=all_traits[all_traits$sampleId %in% sites_w_no_bugs==F,]
+site_taxa_matrix=read.csv("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//SiteStatus_models//sites_PA_matrix.csv")
+site_taxa_matrix=site_taxa_matrix[site_taxa_matrix$sampleId %in% disturbs$sampleId,]
 
-PA_sites_prob_w_d=plyr::join(all_traits,disturbs,by='sampleId','left')
-PA_sites_prob_w_d=PA_sites_prob_w_d[!duplicated(PA_sites_prob_w_d$sampleId),]
-PA_sites_prob_w_d=PA_sites_prob_w_d[,names(PA_sites_prob_w_d) !='sampleId']
+PA_prob_w_d=plyr::join(disturbs,site_taxa_matrix,by='sampleId','left')
+PA_prob_w_d=PA_prob_w_d[!duplicated(PA_prob_w_d$sampleId),]
+PA_prob_w_d=PA_prob_w_d[,names(PA_prob_w_d) !='sampleId']
 
-PA_sites_prob_w_d$Disturbance =as.factor(PA_sites_prob_w_d$Disturbance)
+PA_prob_w_d$Disturbance =as.factor(PA_prob_w_d$Disturbance)
 
-predictor_vars=names(PA_sites_prob_w_d)[1:25]
+PA_prob_w_d=PA_prob_w_d[,names(PA_prob_w_d) %in% c('Disturbance',trait_table$OTU)]
+#taxa which do not occur at any site, R or P.
+PA_prob_w_d=PA_prob_w_d[,names(PA_prob_w_d) %in% c('Farula','Stactobiella')==F]
+predictor_vars=names(PA_prob_w_d)[2:ncol(PA_prob_w_d)]
 
-respvar="Disturbance"
-predictor_vars=c('Crawl_rate_high',
-                  'Rheophily_abbrev_depo',
-                  'Thermal_pref_Cold_cool_eurythermal_0_15_C',
-                  'Armoring_good',
-                  'Habit_prim_Clinger')
+respvar=names(PA_prob_w_d)[1]
+predictor_vars=c('Ephemerella',
+                 'Epeorus',
+                 'RHYACOPHILA',
+                 'Rhithrogena',
+                 'Micrasema')
 for (j in respvar) {
 
   # -----------------------------
   # 1. Create output folder
   # -----------------------------
-  base_dir <- file.path(path.expand("~"), "New_for_SFS", "Disturbance_all_sites_top5")
+  base_dir <- file.path(path.expand("~"), "New_for_SFS", "Disturbance_all_sites_OTUs_top5")
   outdir <- file.path(base_dir, j)
   dir.create(outdir, recursive = TRUE, showWarnings = T)
   #outdir <- paste0("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//RF_results//",resp)
@@ -42,8 +43,9 @@ for (j in respvar) {
   set.seed(42)
   rf_model <- randomForest(
     form,
-    data = PA_sites_prob_w_d,
+    data = PA_prob_w_d,
     importance = TRUE)
+  rf_model
   # -----------------------------
   # 3. Variable importance plot
   # -----------------------------
@@ -81,7 +83,7 @@ for (j in respvar) {
 
     pd <- randomForest::partialPlot(
       rf_model,
-      pred.data = PA_sites_prob_w_d,
+      pred.data = PA_prob_w_d,
       x.var = paste(v),
       plot = FALSE
     )
@@ -116,3 +118,6 @@ for (j in respvar) {
 }
 
 
+rf_model
+rf_mod_imp=as.data.frame(rf_model$importance)
+rf_mod_imp[order(rf_mod_imp$MeanDecreaseGini, decreasing = T),]
