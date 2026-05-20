@@ -80,20 +80,21 @@ site_PA_traits$status<-PA$status
 
 site_PA_NMDS=vegan::vegdist(site_PA_traits[,3:ncol(site_PA_traits)],'bray',binary=T)
 
+PA_for_NMDS_trimmed=PA[row.names(PA) %in% c(sites_w_no_bugs,Onebug)==F,]
+Vegdist_PA<-vegan::vegdist(PA_for_NMDS_trimmed[,-ncol(PA_for_NMDS_trimmed)],'bray',binary=T)
 
-Vegdist_PA<-vegan::vegdist(PA[,-ncol(PA)],'bray',binary=T)
 #vegdist_PA=vegan::vegdist(PA_all[,-ncol(PA_all)],'bray',binary=T)
 Veg_PA_mat<-as.matrix(Vegdist_PA)
 #assign the site names
-row.names(Veg_PA_mat)<-row.names(PA)
+row.names(Veg_PA_mat)<-row.names(PA_for_NMDS_trimmed)
 #row.names(Veg_PA_mat)<-row.names(PA_all)
 set.seed(99)
 PA_MDS=vegan::metaMDS(Vegdist_PA,k=3)
 #abun_scores=as.data.frame(vegan::scores(Gower_abun_MDS))
 PA_scores=as.data.frame(vegan::scores(PA_MDS))
-row.names(PA_scores)<-row.names(PA)
+row.names(PA_scores)<-row.names(PA_for_NMDS_trimmed)
 #PA_scores$Status=PA_all$status
-PA_scores$Status=PA$status
+PA_scores$Status=PA_for_NMDS_trimmed$status
 
 NMDS_cal_preds=read.csv("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Cal_predictors.csv")
 NMDS_prob_preds=read.csv("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//Prob_predictors_prednew.csv")
@@ -101,7 +102,7 @@ prob_comids=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research 
 #NMDS_prob_preds$sampleId=row.names(NMDS_prob_preds)
 
 NMDS_prob_preds=NMDS_prob_preds[NMDS_prob_preds$sampleId %in% failed_sites$sampleId==F,]
-NMDS_prob_preds=NMDS_prob_preds[NMDS_prob_preds$sampleId %in% row.names(PA),]
+NMDS_prob_preds=NMDS_prob_preds[NMDS_prob_preds$sampleId %in% row.names(PA_for_NMDS_trimmed),]
 NMDS_prob_preds=plyr::join(NMDS_prob_preds,prob_comids,by='sampleId')
 
 #row.names(NMDS_prob_preds)<-NMDS_prob_preds$sampleId
@@ -139,7 +140,7 @@ colnames(env_vect)[1:2] <- c("NMDS1", "NMDS2")
 #PA_scores2=PA_scores[PA_scores$NMDS1<34 & PA_scores$NMDS2 < 2,]
 #env_vect[,1:2] <- env_vect[,1:2] /
  # sqrt(rowSums(env_vect[,1:2]^2))
-env_vect[,1:2] <- env_vect[,1:2]*1.5
+env_vect[,1:2] <- env_vect[,1:2]*2.5
 #env_vect[,1:2] <- env_vect[,1:2] * mult
 env_vect$env=c('Catchment Elev',
                'Mean Precip',
@@ -174,6 +175,7 @@ env_vect <- env_vect %>%
 all_site_PA_traits=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//all_site_trait_PAs.csv')
 all_site_PA_traits=all_site_PA_traits[,1:26]
 row.names(all_site_PA_traits)<-all_site_PA_traits$sampleId
+all_site_PA_traits=all_site_PA_traits[row.names(all_site_PA_traits) %in% row.names(PA_scores),]
 all_site_PA_traits=all_site_PA_traits[,-ncol(all_site_PA_traits)]
 row.names(all_site_PA_traits)==row.names(PA_scores)
 
@@ -227,7 +229,8 @@ env_vect$env=c('Strong Flyer',
 #PA_scores2=PA_scores[PA_scores$NMDS1<34 & PA_scores$NMDS2 < 2,]
 #env_vect[,1:2] <- env_vect[,1:2] /
 # sqrt(rowSums(env_vect[,1:2]^2))
-env_vect[,1:2] <- env_vect[,1:2]*1.5
+env_vect[,1:2] <- env_vect[,1:2]*2.5
+Fishtrait_vect[,1:2] <- Fishtrait_vect[,1:2]*2.5
 #env_vect[,1:2] <- env_vect[,1:2] * mult
 # env_vect$env=c('Catchment Elev',
 #                'Mean Precip',
@@ -264,7 +267,7 @@ env_vect[,1:2] <- env_vect[,1:2]*1.5
 # savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//sites_OTUspace_abun_ellipse.png')
 #windows(10,8)
 
-ggplot(PA_scores[PA_scores$NMDS2 < 2 & PA_scores$NMDS1 < 30,], aes(x=NMDS1, y=NMDS2, fill=Status)) +
+ggplot(PA_scores, aes(x=NMDS1, y=NMDS2, fill=Status)) +
   geom_point(pch=21, size=3) +
   scale_fill_manual(name='Status',
                     values=c('Reference' = 'blue',
@@ -274,16 +277,16 @@ ggplot(PA_scores[PA_scores$NMDS2 < 2 & PA_scores$NMDS1 < 30,], aes(x=NMDS1, y=NM
                linewidth=1,
                alpha=0.9, inherit.aes = FALSE,
                arrow=arrow(length=unit(.25, "centimeters"))) +
-  geom_text_repel(
-    data = Fishtrait_vect,
-    aes(x = NMDS1, y = NMDS2, label = trait),
-    size = 6,
-    inherit.aes = FALSE,
-    box.padding = 0.2,
-    point.padding = 0.1,
-    min.segment.length = 0,
-    max.overlaps = Inf
-  ) +
+  # geom_text_repel(
+  #   data = Fishtrait_vect,
+  #   aes(x = NMDS1, y = NMDS2, label = trait),
+  #   size = 6,
+  #   inherit.aes = FALSE,
+  #   box.padding = 0.2,
+  #   point.padding = 0.1,
+  #   min.segment.length = 0,
+  #   max.overlaps = Inf
+  # ) +
   stat_ellipse(level=0.8, data = subset(PA_scores, Status == "Reference"), color = "blue", size = 1, type='t') +
   stat_ellipse(level=0.8, data = subset(PA_scores, Status == "Probabilistic"), color = "orange3", size = 1) +
   theme_classic() +
@@ -302,11 +305,11 @@ ggplot(PA_scores[PA_scores$NMDS2 < 2 & PA_scores$NMDS1 < 30,], aes(x=NMDS1, y=NM
     legend.key.size = unit(1, "lines"),
     axis.ticks = element_blank(),
     legend.position = 'inside',
-    legend.position.inside = c(0.85, 0.2)
+    legend.position.inside = c(0.17, 0.85)
   )
 
 
-savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_OTUspace_NMDS_Fishtraits260518.png')
+savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//sites_OTUspace_NMDS_Fish260520_nolabs.png')
 
 #
 # ordisurf(PA_scores[,c(1,2)], env_dat$PCtCrop,k=4,

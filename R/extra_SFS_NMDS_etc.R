@@ -2,6 +2,9 @@
 #traits and %I and %D
 
 #this came from the FoFe_script... file
+Onebug=c( 171669, 171683, 172936, 173407, 173409, 176589,
+          178611, 185001, 185071, 186925,
+          187155, 187312, 187584, 190590, 190597, 190797)
 trait_table=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//Maximized_OTUmatrix_trimmed_more_withvariance.csv')
 names(trait_table)[1]<-'taxon'
 O_long=as.data.frame(t(Os))
@@ -1036,9 +1039,10 @@ PA_traits_ForNMDS2$status='Reference'
 
 
 PA_traits_ForNMDS_all=rbind(PA_traits_ForNMDS1,PA_traits_ForNMDS2)
-PA_traits_ForNMDS_all=PA_traits_ForNMDS_all[,c(1:25,48)]
+PA_traits_ForNMDS_all=PA_traits_ForNMDS_all[PA_traits_ForNMDS_all$sampleId %in% Onebug==F,]
+PA_traits_ForNMDS_all=PA_traits_ForNMDS_all[,c(1:25,27)]
 PA_traits_ForNMDS_all =PA_traits_ForNMDS_all[rowSums(PA_traits_ForNMDS_all[,-ncol(PA_traits_ForNMDS_all)])>0,]
-
+env_dat3=env_dat3[env_dat3$sampleId %in% row.names(PA_traits_ForNMDS_all),]
 PA_traits_ForNMDS_all=PA_traits_ForNMDS_all[match(env_dat3$sampleId, row.names(PA_traits_ForNMDS_all)),]
 NMDS_PA_sor=vegan::vegdist(PA_traits_ForNMDS_all[,1:25],method='bray',binary=T)
 set.seed(99)
@@ -1115,8 +1119,8 @@ ggplot(NMDS_PA_scores,aes(x=NMDS1,y=NMDS2,fill=status))+geom_point(pch=21,size=3
     axis.text.x = element_blank(),
     axis.text.y = element_blank(),
     axis.title = element_text(size = 25),
-    axis.title.x = element_text(margin=margin(t=20)),
-    axis.title.y  = element_text(margin=margin(r=20)),
+    axis.title.x = element_text(margin=ggplot2::margin(t=20)),
+    axis.title.y  = element_text(margin=ggplot2::margin(r=20)),
     strip.text = element_text(size = 14),
     legend.text = element_text(size = 20),
     legend.title = element_text(size = 20),
@@ -1125,7 +1129,7 @@ ggplot(NMDS_PA_scores,aes(x=NMDS1,y=NMDS2,fill=status))+geom_point(pch=21,size=3
     legend.position = 'inside',
     legend.position.inside = c(0.88,0.15)
   )#+stat_ellipse(level=0.8,type='t')
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//PA_trait_NMDS_260515_nolabs.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//PA_trait_NMDS_260520_nolabs.png')
 
 
 ####
@@ -1216,7 +1220,7 @@ savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//A
 
 PCT_traits_ForNMDS1=Psite_trait_pct
 PCT_traits_ForNMDS1$status='Probabilistic'
-PCT_traits_ForNMDS1=PCT_traits_ForNMDS1[,names(PCT_traits_ForNMDS1)!='sampleId']
+#PCT_traits_ForNMDS1=PCT_traits_ForNMDS1[,names(PCT_traits_ForNMDS1)!='sampleId']
 #row.names(PCT_traits_ForNMDS1)=#row.names(Psite_trait_counts)
 PCT_traits_ForNMDS2=Osite_trait_pct
 row.names(PCT_traits_ForNMDS2)=row.names(Osite_trait_counts)
@@ -1225,11 +1229,14 @@ PCT_traits_ForNMDS2$status='Reference'
 
 
 PCT_traits_ForNMDS_all=rbind(PCT_traits_ForNMDS1,PCT_traits_ForNMDS2)
+PCT_traits_ForNMDS_all=PCT_traits_ForNMDS_all[PCT_traits_ForNMDS_all$sampleId %in% c(Onebug,sites_w_no_bugs)==F,]
 #PCT_traits_ForNMDS_all=PCT_traits_ForNMDS_all[,c(1:37,60)]
 PCT_traits_ForNMDS_all=PCT_traits_ForNMDS_all[,names(PCT_traits_ForNMDS_all)%in% c('status',final_traits)]
-PCT_traits_ForNMDS_all =PCT_traits_ForNMDS_all[rowSums(PCT_traits_ForNMDS_all[,-ncol(PCT_traits_ForNMDS_all)])>0,]
-
+#PCT_traits_ForNMDS_all =PCT_traits_ForNMDS_all[rowSums(PCT_traits_ForNMDS_all[,-ncol(PCT_traits_ForNMDS_all)])>0,]
+env_dat3=env_dat3[env_dat3$sampleId %in% row.names(PCT_traits_ForNMDS_all),]
 PCT_traits_ForNMDS_all=PCT_traits_ForNMDS_all[match(env_dat3$sampleId, row.names(PCT_traits_ForNMDS_all)),]
+row.names(PCT_traits_ForNMDS_all)==env_dat3$sampleId
+
 NMDS_PCT_sor=vegan::vegdist(PCT_traits_ForNMDS_all[,1:25],method='bray',binary=F)
 set.seed(99)
 NMDS_PCT_MDS=vegan::metaMDS(NMDS_PCT_sor)
@@ -1280,22 +1287,22 @@ ggplot(NMDS_PCTscores,aes(x=NMDS1,y=NMDS2,fill=status))+geom_point(pch=21,size=3
                aes(x=0,y=0,xend=NMDS1,yend=NMDS2),#                arrow=arrow(length=unit(0.25,'cm')),
                linewidth=1,
                alpha=0.9,inherit.aes = F, arrow=arrow(length=unit(.25,"centimeters")))+
-   geom_text_repel(
-     data = env_vect,
-     aes(
-       x = NMDS1,
-       y = NMDS2,
-       label = env
-     ),
-     nudge_x = env_vect$nudge_x,
-     nudge_y = env_vect$nudge_y,
-     size = 6,
-     inherit.aes = FALSE,
-     box.padding = 0.2,
-     point.padding = 0.1,
-     min.segment.length = 0,
-     max.overlaps = Inf
-   )+
+   # geom_text_repel(
+   #   data = env_vect,
+   #   aes(
+   #     x = NMDS1,
+   #     y = NMDS2,
+   #     label = env
+   #   ),
+   #   nudge_x = env_vect$nudge_x,
+   #   nudge_y = env_vect$nudge_y,
+   #   size = 6,
+   #   inherit.aes = FALSE,
+   #   box.padding = 0.2,
+   #   point.padding = 0.1,
+   #   min.segment.length = 0,
+   #   max.overlaps = Inf
+   # )+
   stat_ellipse(level=0.8,data = subset(NMDS_PCTscores, status == "Reference"), color = "blue", size = 1,type='t') +
   stat_ellipse(level=0.8,data = subset(NMDS_PCTscores, status == "Probabilistic"), color = "orange3", size = 1)+
   theme_classic()+
@@ -1303,8 +1310,8 @@ ggplot(NMDS_PCTscores,aes(x=NMDS1,y=NMDS2,fill=status))+geom_point(pch=21,size=3
     axis.text.x = element_blank(),
     axis.text.y=element_blank(),
     axis.title = element_text(size = 25),
-    axis.title.x = element_text(margin=margin(t=20)),
-    axis.title.y  = element_text(margin=margin(r=20)),
+    axis.title.x = element_text(margin=ggplot2::margin(t=20)),
+    axis.title.y  = element_text(margin=ggplot2::margin(r=20)),
     strip.text = element_text(size = 14),
     legend.text = element_text(size = 20),
     legend.title = element_text(size = 20),
@@ -1313,7 +1320,7 @@ ggplot(NMDS_PCTscores,aes(x=NMDS1,y=NMDS2,fill=status))+geom_point(pch=21,size=3
     legend.position = 'inside',
     legend.position.inside = c(.15,0.15)
   )#+stat_ellipse(level=0.8,type='t')
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//PCT_trait_NMDS_nolabs_260514.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//PCT_trait_NMDS_260520_nolabs.png')
 Count_traits_ForNMDS1=as.data.frame(Psite_trait_counts)
 Count_traits_ForNMDS1$status='Probabilistic'
 row.names(Count_traits_ForNMDS1)=row.names(Psite_trait_counts)
@@ -1324,9 +1331,13 @@ Count_traits_ForNMDS2$status='Reference'
 
 
 Count_traits_ForNMDS_all=rbind(Count_traits_ForNMDS1,Count_traits_ForNMDS2)
-Count_traits_ForNMDS_all =Count_traits_ForNMDS_all[rowSums(Count_traits_ForNMDS_all[,-ncol(Count_traits_ForNMDS_all)])>0,]
+Count_traits_ForNMDS_all=Count_traits_ForNMDS_all[row.names(Count_traits_ForNMDS_all) %in% c(sites_w_no_bugs,Onebug)==F,]
+#Count_traits_ForNMDS_all =Count_traits_ForNMDS_all[rowSums(Count_traits_ForNMDS_all[,-ncol(Count_traits_ForNMDS_all)])>0,]
+env_dat3=env_dat3[env_dat3$sampleId %in% row.names(Count_traits_ForNMDS_all), ]
 
+env_dat3$sampleId==row.names(Count_traits_ForNMDS_all)
 Count_traits_ForNMDS_all=Count_traits_ForNMDS_all[match(env_dat3$sampleId, row.names(Count_traits_ForNMDS_all)),]
+env_dat3$sampleId==row.names(Count_traits_ForNMDS_all)
 NMDS_Count_sor=vegan::vegdist(Count_traits_ForNMDS_all[,1:25],method='bray',binary=F)
 set.seed(99)
 NMDS_Count_MDS=vegan::metaMDS(NMDS_Count_sor)
@@ -1402,8 +1413,8 @@ ggplot(NMDS_Countscores,aes(x=NMDS1,y=NMDS2,fill=status))+geom_point(pch=21,size
     axis.text.x = element_blank(),
     axis.text.y = element_blank(),
     axis.title = element_text(size = 25),
-    axis.title.x = element_text(margin=margin(t=20)),
-    axis.title.y  = element_text(margin=margin(r=20)),
+    axis.title.x = element_text(margin=ggplot2::margin(t=20)),
+    axis.title.y  = element_text(margin=ggplot2::margin(r=20)),
     strip.text = element_text(size = 14),
     legend.text = element_text(size = 20),
     legend.title = element_text(size = 20),
@@ -1412,7 +1423,7 @@ ggplot(NMDS_Countscores,aes(x=NMDS1,y=NMDS2,fill=status))+geom_point(pch=21,size
     legend.position = 'inside',
     legend.position.inside = c(0.9,0.13)
   )#+stat_ellipse(level=0.8,type='t')
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//Count_trait_NMDS260515.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//Count_trait_NMDS260520_nolabs.png')
 
 
 summary(Osite_trait_pct[,1:37])
@@ -1441,7 +1452,7 @@ clipr::write_clip(summ_mat)
 
 ### sites in trait space for prob only...
 Psites_traits=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//SiteStatus_models//PA_all_traits_probabilistic.csv')
-Psites_traits=Psites_traits[Psites_traits$sampleId %in% sites_w_no_bugs==F,]
+Psites_traits=Psites_traits[Psites_traits$sampleId %in% c(sites_w_no_bugs,Onebug)==F,]
 
 Psites_traitsforNMDS=Psites_traits[,1:25]
 
@@ -1508,7 +1519,7 @@ ggplot(Psites_traitsNMDS_scores,aes(x=NMDS1,y=NMDS2))+geom_point(pch=21,size=3,f
     legend.position = 'inside',
     legend.position.inside = c(0.9,0.13)
   )#+stat_ellipse(level=0.8,type='t')
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//Prob_traitspace_envs_260519_nolabs.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//Prob_traitspace_envs_260520_nolabs.png')
 
 
 
@@ -1536,7 +1547,7 @@ colnames(Renv_vect)[1:2] <- c("NMDS1", "NMDS2")
 
 #Countscores2=Countscores[Countscores$NMDS1<35 & Countscores$NMDS2 < 2,]
 
-arrow_multiplier <- 0.3 * max(abs(Rsites_traitsNMDS_scores[,c(1,2)])) / max(abs(Renv_vect[,1:2]))
+arrow_multiplier <- 0.5 * max(abs(Rsites_traitsNMDS_scores[,c(1,2)])) / max(abs(Renv_vect[,1:2]))
 Renv_vect[,1:2] <- Renv_vect[,1:2] * arrow_multiplier
 Renv_vect$env=c('Catchment Elev',
                 'Mean Precip',
@@ -1546,7 +1557,7 @@ Renv_vect$env=c('Catchment Elev',
 
 
 
-ggplot(Rsites_traitsNMDS_scores[Rsites_traitsNMDS_scores$NMDS1> -1,],aes(x=NMDS1,y=NMDS2))+geom_point(pch=21,size=3,fill='blue')+
+ggplot(Rsites_traitsNMDS_scores,aes(x=NMDS1,y=NMDS2))+geom_point(pch=21,size=3,fill='blue')+
   geom_segment(data=Renv_vect,
                aes(x=0,y=0,xend=NMDS1,yend=NMDS2),#                arrow=arrow(length=unit(0.25,'cm')),
                linewidth=1,
@@ -1580,4 +1591,10 @@ ggplot(Rsites_traitsNMDS_scores[Rsites_traitsNMDS_scores$NMDS1> -1,],aes(x=NMDS1
     legend.position = 'inside',
     legend.position.inside = c(0.9,0.13)
   )#+stat_ellipse(level=0.8,type='t')
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//Ref_traitspace_envs_260519_nolabs.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//Ref_traitspace_envs_260520_nolabs.png')
+
+
+
+Onebug=c( 171669, 171683, 172936, 173407, 173409, 176589,
+          178611, 185001, 185071, 186925,
+           187155, 187312, 187584, 190590, 190597, 190797)
