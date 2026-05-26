@@ -38,7 +38,7 @@ for (j in respvar) {
   # 2. Build formula + model
   # -----------------------------
   form <- as.formula(
-    paste(j, "~", paste(predictor_vars, collapse = " + ")))
+    paste(respvar, "~", paste(predictor_vars, collapse = " + ")))
   set.seed(42)
   rf_model <- randomForest(
     form,

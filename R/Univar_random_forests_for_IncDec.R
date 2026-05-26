@@ -285,15 +285,16 @@ pct_indivs_w_Trait_summary <- abun_traits %>%
       .names = "Pct_{.col}"
     )
   )
-environmental_for_indivs=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//SiteStatus_models//Pct_all_traits_probabilistic.csv')
-environmental_for_indivs=environmental_for_indivs[,names(environmental_for_indivs)%in% c(predictor_vars,'sampleId')]
-names(environmental_for_indivs)[names(environmental_for_indivs)=='sampleId']<-'sample_id'
-pct_indivs_w_Trait_summary=plyr::join(pct_indivs_w_Trait_summary,environmental_for_indivs)
+#environmental_for_indivs=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//SiteStatus_models//Pct_all_traits_probabilistic.csv')
+#environmental_for_indivs=
+#environmental_for_indivs=environmental_for_indivs[,names(environmental_for_indivs)%in% c(predictor_vars,'sampleId')]
+#names(environmental_for_indivs)[names(environmental_for_indivs)=='sampleId']<-'sample_id'
+#pct_indivs_w_Trait_summary=plyr::join(pct_indivs_w_Trait_summary,environmental_for_indivs)
 
 library(randomForest)
 library(ggplot2)
-names(pct_indivs_w_Trait_summary)[2:26]<-gsub("^Pct_", "", names(pct_indivs_w_Trait_summary)[2:26])
-pct_indivs_w_Trait_summary=pct_indivs_w_Trait_summary[,names(pct_indivs_w_Trait_summary)!='sample_id']
+#names(pct_indivs_w_Trait_summary)[2:26]<-gsub("^Pct_", "", names(pct_indivs_w_Trait_summary)[2:26])
+#pct_indivs_w_Trait_summary=pct_indivs_w_Trait_summary[,names(pct_indivs_w_Trait_summary)!='sample_id']
 # predictors (everything except response)
 response_varsPA=names(pct_indivs_w_Trait_summary)[1:25]
 predictor_vars <- names(pct_indivs_w_Trait_summary)[c(26:39,42,46)]
@@ -1898,3 +1899,203 @@ print(final_model_metrics_df)
 
 clipr::write_clip(final_model_metrics_df
 )
+
+
+
+#Pct indivs with a trait state top5
+Pct_indivis_w_env=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//SiteStatus_models//Prob_Pct_indivs_wtrait_and_envs.csv')
+
+model_results_list <- list()
+response_varsPA=names(Pct_indivis_w_env)[1:25]
+predictor_vars <- names(Pct_sites_R)[c(26:39, 42, 46)]
+for (resp in response_varsPA) {
+
+  # -----------------------------
+  # 1. Create output folder
+  # -----------------------------
+  base_dir <- file.path(
+    path.expand("~"),
+    "New_for_SFS",
+    "RF_results",
+    "Pct_Indivs_w_Trait_State_top5"
+  )
+
+  outdir <- file.path(base_dir, resp)
+
+  dir.create(
+    outdir,
+    recursive = TRUE,
+    showWarnings = TRUE
+  )
+
+  # -----------------------------
+  # 2. Fit full RF model
+  # -----------------------------
+  full_form <- as.formula(
+    paste(resp, "~", paste(predictor_vars, collapse = " + "))
+  )
+
+  rf_model_full <- randomForest(
+    full_form,
+    data = Pct_indivis_w_env,
+    importance = TRUE
+  )
+
+  # -----------------------------
+  # 3. Extract top 5 predictors
+  # -----------------------------
+  vi_full <- data.frame(
+    variable = rownames(importance(rf_model_full)),
+    importance = importance(rf_model_full)[, "%IncMSE"]
+  )
+
+  vi_full <- vi_full[
+    order(vi_full$importance, decreasing = TRUE),
+  ]
+
+  top5_predictors <- vi_full$variable[1:5]
+
+  print(paste(resp, "Top 5 predictors:"))
+  print(top5_predictors)
+
+  # -----------------------------
+  # 4. Fit reduced RF model
+  # -----------------------------
+  reduced_form <- as.formula(
+    paste(resp, "~", paste(top5_predictors, collapse = " + "))
+  )
+
+  rf_model_top5 <- randomForest(
+    reduced_form,
+    data = Pct_indivis_w_env,
+    importance = TRUE
+  )
+
+  # -----------------------------
+  # 5. Extract RMSE + pseudo R2
+  # -----------------------------
+
+  # Final OOB MSE
+  final_mse <- tail(rf_model_top5$mse, 1)
+
+  # RMSE
+  final_rmse <- sqrt(final_mse)
+
+  # Pseudo R2
+  final_r2 <- tail(rf_model_top5$rsq, 1)
+
+  model_results_list[[resp]] <- data.frame(
+    Response_Variable = resp,
+    RMSE = final_rmse,
+    Pseudo_R2 = final_r2,
+    Top5_Predictors = paste(top5_predictors, collapse = ", "),
+    stringsAsFactors = FALSE
+  )
+
+  print(
+    paste(
+      resp,
+      "RMSE =",
+      round(final_rmse, 4),
+      "| Pseudo R2 =",
+      round(final_r2, 4)
+    )
+  )
+
+  # -----------------------------
+  # 6. Variable importance plot
+  # -----------------------------
+  vi_top5 <- data.frame(
+    variable = rownames(importance(rf_model_top5)),
+    importance = importance(rf_model_top5)[, "%IncMSE"]
+  )
+
+  vi_plot <- ggplot(
+    vi_top5,
+    aes(x = reorder(variable, importance), y = importance)
+  ) +
+    geom_point(size = 5) +
+    coord_flip() +
+    theme_classic(base_size = 16) +
+    labs(
+      title = paste("Top 5 Variable Importance -", resp),
+      x = NULL,
+      y = "Mean Decrease Gini"
+    ) +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 18),
+      panel.grid.major.y = element_line(
+        color = "gray50",
+        linetype = "dotted"
+      ),
+      panel.grid.minor = element_blank(),
+      panel.grid.major.x = element_blank()
+    )
+
+  ggsave(
+    filename = file.path(outdir, "VarImp_top5.png"),
+    plot = vi_plot,
+    width = 10,
+    height = 8
+  )
+
+  # -----------------------------
+  # 7. PDPs for TOP 5 MODEL ONLY
+  # -----------------------------
+  thetop5 <- rownames(rf_model_top5$importance)
+
+  for (v in 1:length(thetop5)) {
+
+    pd <- randomForest::partialPlot(
+      rf_model_top5,
+      pred.data = Pct_sites_R,
+      x.var = thetop5[v],
+      plot = FALSE
+    )
+
+    df <- data.frame(
+      x = pd$x,
+      y = pd$y
+    )
+
+    p <- ggplot(df, aes(x = x, y = y)) +
+      geom_line(linewidth = 1.2) +
+      theme_classic(base_size = 16) +
+      labs(
+        title = thetop5[v],
+        x = thetop5[v],
+        y = "Partial Effect"
+      ) +
+      theme(
+        plot.title = element_text(hjust = 0.5, size = 20),
+        axis.title = element_text(size = 20),
+        axis.text = element_text(size = 20),
+        strip.text = element_text(size = 24),
+        strip.background = element_blank(),
+        legend.text = element_text(size = 20)
+      )
+
+    ggsave(
+      filename = file.path(outdir, paste0("PDP_", v, "_top5.png")),
+      plot = p,
+      width = 10,
+      height = 8
+    )
+  }
+}
+
+# -----------------------------
+# 8. Combine model metrics
+# -----------------------------
+final_model_metrics_df <- do.call(
+  rbind,
+  model_results_list
+)
+
+rownames(final_model_metrics_df) <- NULL
+
+print(final_model_metrics_df)
+
+clipr::write_clip(final_model_metrics_df
+)
+

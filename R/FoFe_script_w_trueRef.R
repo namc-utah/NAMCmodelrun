@@ -26,7 +26,7 @@ savp = function(W,H,fn) {
   dev.copy(dev=png,file=fn,wi=W,he=H,un="in",res=650)
   dev.off()
 }
-maxxed_OTUs=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//Maximized_OTUmatrix_trimmed_more.csv')
+maxxed_OTUs=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//New_for_SFS//Maximized_OTUmatrix_trimmed_more_withvariance.csv')
 val_bugs=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//WW_validation_data.csv')
 row.names(val_bugs)<-val_bugs$Site;val_bugs=val_bugs[,-c(1,2)]
 val_preds=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//val_preds.csv')
@@ -97,7 +97,7 @@ Ref_Results=data.frame(taxon=names(Os),
 
 
 
-P_Results=data.frame(taxon=names(Os),
+P_Results=data.frame(taxon=names(ProbOs),
                      Fo=ProbO,
                      Fe=ProbE,
                      ratio = probFoFe)
@@ -625,6 +625,7 @@ savp(10,8, 'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//
 
 
 traits_only=finaltable3
+#traits_only=traits_only[traits_only$OTU %in% c('Farula','Stactobiella')==F,]
 #traits_only=finaltable3[,c(1,7:ncol(finaltable3))]
 #traits_only <- final_table3[,c(2,13:ncol(final_table3))]
 
@@ -687,33 +688,35 @@ traits_only3<-as.data.frame(do.call(cbind,traits_only3))
 # traits_imputed<-as.data.frame(lapply(traits_imputed,factor))
 # traits_imputed_num=lapply(traits_imputed, \(x) as.integer(as.factor(x)) - 1L)
 # traits_num=as.data.frame(do.call(cbind,traits_imputed_num))
-Gower_dist<-FD::gowdis(traits_only3)
+#Gower_dist<-FD::gowdis(traits_only3)
 NMDS_trait_dist=vegan::vegdist(traits_only3,'bray',binary=T)
-dim(as.matrix(NMDS_trait_dist))
-library(vegan)
-library(gawdis)
-#this is the top variable identification, modified from Bello et al. 2020
-#this gets the PCoA
-pcoaaxes=dudi.pco(cailliez(NMDS_trait_dist), scannf = F,nf=109) #all axes
-#and its distance
-gowdis.PCoA<-dist(pcoaaxes$li)
-
-#now we are comparing the gower distance to the of the trait to the PCoA
-cors.pcoa<-vector()
-for(i in 1:dim(traits_only3)[2]){
-  cors.pcoa[i]<-mantel(gowdis.PCoA, gowdis(traits_only3[,i,drop=F]))$statistic
-}
-
-names(cors.pcoa)<-names(traits_only3)
-ranked_mantel=sort(cors.pcoa,decreasing = T)
-top5=ranked_mantel[1:5]
-names(top5)
+#Gow_trait_dist=FD::gowdis(traits_only3)
+# dim(as.matrix(NMDS_trait_dist))
+# library(vegan)
+# library(gawdis)
+# #this is the top variable identification, modified from Bello et al. 2020
+# #this gets the PCoA
+# pcoaaxes=dudi.pco(cailliez(Gow_trait_dist), scannf = F,nf=107) #all axes
+# #and its distance
+# gowdis.PCoA<-dist(pcoaaxes$li)
+#
+# #now we are comparing the gower distance to the of the trait to the PCoA
+# cors.pcoa<-vector()
+# for(i in 1:dim(traits_only3)[2]){
+#   cors.pcoa[i]<-mantel(gowdis.PCoA, gowdis(traits_only3[,i,drop=F]))$statistic
+# }
+#
+# names(cors.pcoa)<-names(traits_only3)
+# ranked_mantel=sort(cors.pcoa,decreasing = T)
+# top52=ranked_mantel[1:5]
+# names(top52)
 
 #convert the Gower distance into a matrix for readability
-Gower_mat<-as.matrix(Gower_dist)
+#Gower_mat<-as.matrix(Gower_dist)
 #assign the taxa names
-row.names(Gower_mat)<-row.names(traits_only3)
+#row.names(Gower_mat)<-row.names(traits_only3)
 #perform PCoA
+set.seed(99)
 NMDS_trait=vegan::metaMDS(NMDS_trait_dist)
 #PCOA<-ape::pcoa(Gower_mat)
 #scree plot. Axes 1 and 2 explain ~50% of variation
@@ -736,7 +739,7 @@ NMDS_trait_scores=as.data.frame(vegan::scores(NMDS_trait))
 row.names(NMDS_trait_scores)=row.names(traits_only3)
 #gower_scores$taxon=row.names(Gower_dist)
 #row.names(gower_scores)=row.names(traits_only3)
-
+set.seed(99)
 fit=envfit(NMDS_trait_scores[,c(1,2)],traits_only3,na.rm=T)
 trait_vect<-as.data.frame(fit$vectors$arrows)
 trait_vec=as.data.frame(scores(fit, display = 'vectors'))
@@ -745,31 +748,32 @@ colnames(trait_vect)[1:2] <- c("NMDS1", "NMDS2")
 mult=vegan::ordiArrowMul(trait_vec,display='species')
 # arrow_multiplier <- 0.75 * max(abs(gower_scores[,c(1,2)])) / max(abs(trait_vect[,1:2]))
 # trait_vect[,1:2] <- trait_vect[,1:2] * arrow_multiplier
-Fisher_Traits =c('Develop_slow_season',
-                 'Max_body_size_abbrev_Large',
-                 'Feed_prim_abbrev_CG',
-                 'Resp_abbrev_Gills',
-                 'Habit_prim_Climber',
-                 'Female_disp_abbrev_High',
-                 'Habit_prim_Burrower',
-                 'Habit_prim_Sprawler',
-                 'Occurance_drift_rare')
+Fisher_Traits=c('Rheophily_abbrev_depo',
+                'Habit_prim_Burrower',
+                'Habit_prim_Climber',
+                'Habit_prim_Swimmer',
+                'Feed_prim_abbrev_CG',
+                'Lifespan_very_short',
+                'Emerge_synch_abbrev_Poorly',
+                'Habit_prim_Sprawler',
+                'Female_disp_abbrev_High')
 
 
 Fishtrait_vect=trait_vect[trait_vect$trait %in% Fisher_Traits,]
 trait_vect=trait_vect[trait_vect$trait %in% names(top5),]
 trait_vect$trait=row.names(trait_vect)
-Fishtrait_vect$trait=c('Collector\nGatherer',
+Fishtrait_vect$trait=c('Poor Synch. Emerge',
+                       'Collector\nGatherer',
                        'Female Dispersal',
                        'Burrower',
                        'Climber',
                        'Sprawler',
-                       'Large Body',
-                       'Gills',
-                       'Slow\nDevelopment',
-                       'Rare Drifter'
+                       'Swimmer',
+                       'Rheophilic',
+                       'Short Life'
 
 )
+
 
 Fishtrait_vect
 #PCOA_Scores<-as.data.frame(PCOA$vectors)
@@ -778,11 +782,11 @@ top_trait_arrows=trait_vect$trait
 #PCOA_Scores$taxon<-row.names(traits_only)
 #renaming vectors for easier interpretation
 
- trait_vect$trait=c('Poor Synch.\nEmerge',
-                            'Swimmer',
-                       'Multivoltine/\nBivoltine',
-                       'Lifespan_very_short',
-                       'Slow\nDevelopment')
+ trait_vect$trait=c('Strong Flyer',
+                            'Poor Synch.\nEmerge',
+                       'Swimmer',
+                       'Slow Development',
+                       'Crawler')
 NMDS_trait_scores$taxon=row.names(traits_only2)
 
 
@@ -868,7 +872,7 @@ nudge_y_vector <- ifelse(trait_vect$trait == 'Shape\nStreamline', 0.4,
                                               ifelse(trait_vect$trait=='Swimmer',-0.15,0)))))
 Fishnudge_x_vector <- ifelse(Fishtrait_vect$trait == 'Slow\nDevelopment', -0.5,
                          ifelse(Fishtrait_vect$trait == 'Female Dispersal', -0.3,
-                                ifelse(Fishtrait_vect$trait=='Large Body',-0.4,
+                                ifelse(Fishtrait_vect$trait=='Large Body',0.4,
                                        ifelse(Fishtrait_vect$trait=='Climber',0.5,
                                               ifelse(Fishtrait_vect$trait=='Collector\nGatherer',0.3,
                                                      ifelse(Fishtrait_vect$trait=='Burrower',-0.3,
@@ -876,35 +880,33 @@ Fishnudge_x_vector <- ifelse(Fishtrait_vect$trait == 'Slow\nDevelopment', -0.5,
 Fishnudge_y_vector <- ifelse(Fishtrait_vect$trait == 'Sprawler', -0.1,
                          ifelse(Fishtrait_vect$trait == 'Female Dispersal', 0.5,
                                 ifelse(Fishtrait_vect$trait=='Collector\nGatherer',-0.5,0)))
-
+### plot OTUs in trait space
 ggplot(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.finite(Responses_and_scores$ratio) & Responses_and_scores$Fo>0,],
        aes(x=NMDS1, y=NMDS2,color=Regional_Response))+
   geom_point(size=3,alpha=0.7)+
   labs(x='NMDS1', y='NMDS2')+
   stat_ellipse(level=0.8)+
-  geom_segment(data=trait_vect,
+  geom_segment(data=Fishtrait_vect,
                aes(x=0,y=0,xend=NMDS1,yend=NMDS2),
                arrow=arrow(length=unit(0.25,'cm')),
                linewidth=1,
                alpha=0.9,inherit.aes = F)+
-
-  # DYNAMIC REPEL LABELS (Replaces your old geom_text)
-    # geom_text_repel(
-    #  data = trait_vect,
-    #   aes(
-    #     x = NMDS1,
-    #     y = NMDS2,
-    #     label = trait
-    #   ), # Baseline push for specific names
-    #   #nudge_x = nudge_x_vector,
-    #   #nudge_y = nudge_y_vector, # Baseline push for specific names
-    #   size = 5,
-    #   color = "black",
-    #   inherit.aes = FALSE,
-    #   box.padding = 0.9,
-    # point.padding = 0.3,
-    #  max.overlaps = Inf
-    # ) +
+  # geom_text_repel(
+  #  data = Fishtrait_vect,
+  #   aes(
+  #     x = NMDS1,
+  #     y = NMDS2,
+  #     label = trait
+  #   ), # Baseline push for specific names
+  #   #nudge_x = Fishnudge_x_vector,
+  #   #nudge_y = Fishnudge_y_vector, # Baseline push for specific names
+  #   size = 5,
+  #   color = "black",
+  #   inherit.aes = FALSE,
+  #   box.padding = 0.9,
+  # point.padding = 0.3,
+  #  max.overlaps = Inf
+  # ) +
 
   scale_color_manual(values=c("Increaser"="red",
                               "Decreaser"="blue",
@@ -916,28 +918,28 @@ ggplot(data=Responses_and_scores[Responses_and_scores$status!='Failed' & is.fini
   theme(
     # Legend Layout
     legend.position = "top",
-    legend.title = element_text(size = 13),
-    legend.text = element_text(size = 13),
+    legend.title = element_text(size = 25),
+    legend.text = element_text(size = 25),
 
     # Hide Axis Ticks and Numbers
     axis.text.x = element_blank(),
     axis.text.y = element_blank(),
     axis.ticks = element_blank(),
 
-    # Nudge Axis Titles Away from Axes (t=top, r=right, b=bottom, l=left)
-    axis.title.x = element_text(size = 13, margin = margin(t = 15)),
-    axis.title.y = element_text(size = 13, margin = margin(r = 15)),
+    # FIXED HERE: Added ggplot2:: prefix to both margins
+    axis.title.x = element_text(size = 25, margin = ggplot2::margin(t = 15)),
+    axis.title.y = element_text(size = 25, margin = ggplot2::margin(r = 15)),
 
     # Remove Facet Wrap Background Boxes
     strip.background = element_blank(),
-    strip.text = element_text(size = 14), # Kept font size 14, added bold for readability
+    strip.text = element_text(size = 25),
 
     # Increase Space Between the Two Facet Plots
     panel.spacing = unit(2, "lines")
   )
 #guides(color = guide_legend(nrow = 1))
 
-savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_traitspace_NMDS_260514_nolabs.png')
+savp(10,8,'C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//Research Projects//AIM//IncreaserDecreaser_OE//Updated_w_modelObj//regional_responses_Fishtraitspace_NMDS_260518.png')
 
 
 #same but for prob sites.
@@ -1129,6 +1131,7 @@ site_cols=colnames(O_long)[1:656]#(ncol(O_long)-8)]
 traitcols=colnames(O_long)[659:(ncol(O_long))]#(ncol(O_long)-4):ncol(O_long)]
 Psite_cols=colnames(ProbOs_long)[1:349]#1:(ncol(ProbOs_long)-8)]
 Ptraitcols=colnames(ProbOs_long)[352:(ncol(ProbOs_long))]#(ncol(ProbOs_long)-4):ncol(ProbOs_long)]
+ProbOs_long=ProbOs_long=ProbOs_long[names(ProbOs_long) %in% sites_w_no_bugs==F,]
 O_long=as.data.frame(O_long %>%
                        tidyr::pivot_longer(
                          cols = tidyselect::all_of(site_cols),
@@ -1210,8 +1213,8 @@ O_long$status='Reference'
 P_long$status='Probabilistic'
 
 wm_traits=rbind(O_long,P_long)
-wm_Traits=wm_traits[,names(wm_traits) %in% c(paste0(names(top5),'_mean'),
-                                            paste0(Fisher_Traits, '_mean'))]
+wm_Traits=wm_traits[,names(wm_traits) %in% paste0(Fisher_Traits, '_mean'),]#%in% c(paste0(names(top5),'_mean'),
+                                            #paste0(Fisher_Traits, '_mean'))]
 
 wm_traits=rbind(omeans,pmeans)
 wm_Traits=wm_traits[,names(wm_traits) %in% names(top5)]
@@ -1244,6 +1247,10 @@ names(val_bugs)[names(val_bugs)=='ABEDUS']='Abedus'
 val_bugs=val_bugs[,names(val_bugs) %in% c('Carabidae','Curculionidae')==F]
 val_Pcs=val_Pcs[,names(val_Pcs) %in% c('Carabidae','Curculionidae')==F]
 names(val_Pcs)[names(val_Pcs)=='ABEDUS']='Abedus'
+val_OES= OE_calc(results_data = val_Pcs,
+        PA=val_bugs,threshold=threshold)
+
+
 
 valFos=colSums(val_bugs)
 valFes=colSums(val_Pcs)
