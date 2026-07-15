@@ -179,6 +179,102 @@ MMI_metrics<-function(sampleIds,translationId,fixedCount,modelId){
   return(bugnew)
 }
 
+#' OR MMI  bug data export
+#'
+#' @param sampleIds
+#'
+#' @return raw bug data translated by OR translation and with column names formatted for BioMonTools metric function
+#' @export
+#'
+#' @examples
+OR_MMI_bug_export <- function(sampleIds){
+  # get needed data from the APIs
+  bugRaw = NAMCr::query(
+    "sampleTaxa",
+    sampleIds = sampleIds
+  )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
+
+  bugsTranslation = NAMCr::query(
+    "sampleTaxaTranslation",
+    translationId = 9,####edit
+    sampleIds = sampleIds
+  )
+  sites = NAMCr::query(
+    "samples",
+    include = c("sampleId", 'siteName'),
+    sampleIds = sampleIds
+  )
+  # join that data together into a single dataframe
+  OR_MMIbugs=dplyr::left_join(bugRaw,bugsTranslation, by=c("taxonomyId", "sampleId"))
+  OR_MMIbugs=dplyr::left_join(OR_MMIbugs,sites, by='sampleId')
+
+  #rename columns for BiomonTools functions
+   bug_tax_nhd <- get_NHD_info(df_bugs_taxa) |>
+    dplyr::transmute(SampleID = Sample,
+                     Area_mi2 = NA_integer_,
+                     SurfaceArea = NA_integer_,
+                     TaxaID = TAXAID,
+                     N_Taxa = Count,
+                     Index_Name ='MMI_metrics',
+                     INDEX_CLASS = str_to_title(SITE_TYPE),
+                     NonTarget,
+                     SITE_TYPE,
+                     Kingdom,
+                     SubOrder,
+                     SubFamily,
+                     GenusGroup,
+                     SpeciesGroup,
+                     SpeciesSubGroup,
+                     SpeciesComplex,
+                     Phylum,
+                     SubPhylum,
+                     Class,
+                     SubClass,
+                     Order,
+                     SuperFamily,
+                     Family,
+                     Tribe,
+                     Genus,
+                     SubGenus,
+                     Species,
+                     BCG_Attr  = BCG_attr,
+                     FFG,
+                     Habit,
+                     Life_Cycle,
+                     Thermal_Indicator = Thermal_indicator,
+                     TolVal,
+                     INFRAORDER = NA_character_,
+                     HABITAT = Habitat,
+                     ELEVATION_ATTR = NA_character_,
+                     GRADIENT_ATTR = NA_character_,
+                     WSAREA_ATTR = NA_character_,
+                     HABSTRUCT = NA_character_,
+                     UFC = NA_integer_,
+                     Density_ft2. = NA_integer_,
+                     DENSITY_M2 = NA_integer_,
+
+    )
+
+  #use biomontools markExcluded function to generate the exclude column
+  bugs.excluded <- BioMonTools::markExcluded(bug_tax_nhd, TaxaLevels = c("Kingdom", "Phylum",
+                                                                         "SubPhylum", "Class", "SubClass", "Order", "SubOrder", "SuperFamily",
+                                                                         "Family", "SubFamily", "Tribe", "GenusGroup", "Genus", "SubGenus", "SpeciesGroup",
+                                                                         "SpeciesSubGroup", "SpeciesComplex", "Species"))
+
+  mets.keep <- c('pt_tv_intol', 'nt_habitat_rheo', 'pt_ti_stenocold_cold_cool', 'pi_EPTNoHydro')
+
+
+  #Calculate metrics
+  # The boo.Shiny argument prevents the code from stopping and asking permission to calculate metrics with missing parameters.
+  # It will give a warning instead.
+
+  # The function will return the metrics identified in mets.keep
+  metricsdf <- BioMonTools::metric.values(bugs.excluded, "bugs",fun.MetricNames = mets.keep, boo.Shiny	= TRUE)
+
+
+  bugnew= metricsdf
+  return(bugnew)
+}
 
 
 #' CA CSCI bug data export

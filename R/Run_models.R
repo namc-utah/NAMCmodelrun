@@ -259,6 +259,26 @@ if (length(def_models$modelId[def_models$modelId %in% 8]==T)>=1){
   prednew$rh_WS=prednew$RH_WS
 } else{}
 
+# ---------------------------------------------------------------
+# load model specific R objects which include reference bug data and predictors RF model objects
+# ---------------------------------------------------------------
+# every model has an R object that stores the random forest model and reference data
+# the R objects are named with the model abbreviation
+# instead of all these if statements the R file name could be stored in the database... but WY and NV require two models and R file names
+#if CO, CSCI, or OR null model no R data file needs loaded in
+if (length(def_models$modelId[def_models$modelId %in% c(1,4,5,6,12,169)]==T)>=1){
+  print("no R object needs loaded")
+  #if WY model only one Rdata file needs loaded and not one for each "model" but Alkalinity also needs added
+} else if (length(def_models$modelId[def_models$modelId %in% 13:23]==T)>=1){
+  load("sysdata.rda//WY2018.Rdata")
+  load("sysdata.rda//Alkalinity.Rdata")### objects named the same so they will be overwritten.... how do we deal with
+  #if westwide model only one R data file needs loaded in and not one for each model
+}else if (length(def_models$modelId[def_models$modelId %in% 25:26]==T)>=1){
+  load(paste0("sysdata.rda//Westwide2018.Rdata"))
+  # all other models should have R data files named identical to model name
+}else{
+  load(paste0("sysdata.rda//",def_models$abbreviation, ".Rdata"))
+}
 
 # ---------------------------------------------------------------
 # Get bug data for model functions
@@ -307,6 +327,8 @@ if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1) {
   bugnew = CSCI_bug(sampleIds = def_samples$sampleId)
 } else if (length(def_models$modelId[def_models$modelId %in% 169]==T)>=1){
   bugnew=AZ_bug_export(sampleIds = def_samples$sampleId)
+} else if (length(def_models$modelId[def_models$modelId %in% 599]==T)>=1){
+  bugnew=OR_MMI_bug_export(sampleIds = def_samples$sampleId)
 }else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
   bugnew = MMI_metrics(sampleIds = def_samples$sampleId, translationId=def_models$translationId, fixedCount = def_models$fixedCount,modelId=def_models$modelId)
 }else {
@@ -331,26 +353,6 @@ bugnew = bugnew[order(rownames(bugnew)),];
 prednew = prednew[order(rownames(prednew)),];
 }
 
-# ---------------------------------------------------------------
-# load model specific R objects which include reference bug data and predictors RF model objects
-# ---------------------------------------------------------------
-# every model has an R object that stores the random forest model and reference data
-# the R objects are named with the model abbreviation
-# instead of all these if statements the R file name could be stored in the database... but WY and NV require two models and R file names
-#if CO, CSCI, or OR null model no R data file needs loaded in
-if (length(def_models$modelId[def_models$modelId %in% c(1,4,5,6,12,169)]==T)>=1){
-  print("no R object needs loaded")
-  #if WY model only one Rdata file needs loaded and not one for each "model" but Alkalinity also needs added
-} else if (length(def_models$modelId[def_models$modelId %in% 13:23]==T)>=1){
-  load("sysdata.rda//WY2018.Rdata")
-  load("sysdata.rda//Alkalinity.Rdata")### objects named the same so they will be overwritten.... how do we deal with
-  #if westwide model only one R data file needs loaded in and not one for each model
-}else if (length(def_models$modelId[def_models$modelId %in% 25:26]==T)>=1){
-  load(paste0("sysdata.rda//Westwide2018.Rdata"))
-  # all other models should have R data files named identical to model name
-}else{
-  load(paste0("sysdata.rda//",def_models$abbreviation, ".Rdata"))
-}
 
 # ---------------------------------------------------------------
 # Run models
@@ -363,7 +365,7 @@ if (length(def_models$modelId[def_models$modelId %in% c(1,4,5,6,12,169)]==T)>=1)
 # ##Code breaks here on 5/16/2023, in model.predict.v4.2.r## #
 
 
-if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29)]==T)>=1) {
+if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29,598)]==T)>=1) {
   OE_list<-list()
   for(i in 1:length(unique(def_models$modelId))){
     OE <-model.predict.RanFor.4.2(
@@ -439,6 +441,19 @@ if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29)]==T)>=1)
       NON_INSECT_rich.rf,
       PER_EPT.rf,
       PER_INTOL.rf,
+      rf_models,
+      mdeg_metrics_adj_cal,
+      ref_metrics_adj
+    )
+} else if (length(def_models$modelId[def_models$modelId %in% 599]==T)>=1) {# AREMP MMI
+  modelResults <-
+    OR_MMI_model(
+      bugnew,
+      prednew,
+      rfmod_nt_habitat_rheo,
+      rfmod_pi_EPTNoHydro,
+      rfmod_pi_ti_stenocold_cold_cool,
+      rfmod_pt_tv_intol,
       rf_models,
       mdeg_metrics_adj_cal,
       ref_metrics_adj

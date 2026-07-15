@@ -266,3 +266,81 @@ rarify<-function(inbug, sample.ID, abund, subsiz){
 } #end of function;
 
 
+#' OR MMI
+#'
+#' @param bugnew
+#' @param prednew
+#' @param rfmod_nt_habitat_rheo
+#' @param rfmod_pi_EPTNoHydro
+#' @param rfmod_pi_ti_stenocold_cold_cool
+#' @param rfmod_pt_tv_intol
+#'
+#' @return MMI score
+#' @export
+#'
+#' @examples
+OR_MMI_model<-function(bugnew,prednew,rfmod_nt_habitat_rheo,rfmod_pi_EPTNoHydro,rfmod_pi_ti_stenocold_cold_cool,rfmod_pt_tv_intol){
+
+  #join bug data to predictors
+  Drfdat=dplyr::left_join(bugnew,prednew,by='SampleID')
+
+  # which rf models to use
+  rfmodels <- c('rfmod_pt_tv_intol', 'rfmod_nt_habitat_rheo', 'rfmod_pt_ti_stenocold_cold_cool',
+                'rfmod_pi_EPTNoHydro')
+  ## test site predictions -------------------------------------------------------------------------------------------
+  Dpredictions=list()
+  for (i in 1:length(rfmodels)){
+    tryCatch({Dpredictions[[paste0("E.",rfmodels[i])]]<- round(predict(eval(parse(text =paste0(rfmodels[i]))), Drfdat, type = "response"),digits=4)
+    }, error =function (e){
+      cat(paste0("/n/tERROR calculating: ",paste0(names(Drfdat)[i],"_pred"),"/n"))
+      str(e,indent.str = "   "); cat("/n")
+    })
+  }
+  predictionsdf=as.data.frame(do.call(cbind,Dpredictions))
+  #join predictions into master dataframe
+  Drfdat2=cbind(Drfdat,predictionsdf)
+
+  ## CALCULATE RESIDUALS ---------------------------------------------------------------------------------------------
+  resid=list()
+  for (i in 2:5){
+    tryCatch({resid[[paste0(colnames(Drfdat2)[i],"_resid")]]=Drfdat2[,i]- Drfdat2[,paste0("E.rfmod_",colnames(Drfdat2)[i])]
+
+    }, error =function (e){
+      cat(paste0("/n/tERROR calculating: ",paste0(Drfdat2[i],"_resid"),"/n"))
+      str(e,indent.str = "   "); cat("/n")
+    })
+
+  }
+  residualsdf=as.data.frame(do.call(cbind,resid))
+  rfdat_all_final4=cbind(Drfdat2,residualsdf)
+
+
+  # Select SAMPLEID + 4 metrics.residuals
+  candmetrics <- rfdat_all_final4 %>%
+    select(SAMPLEID, pt_tv_intol_resid, nt_habitat_rheo_resid,
+           pt_ti_stenocold_cold_cool_resid, pi_EPTNoHydro_resid)
+
+  metric_rs <- candmetrics |>
+    mutate(pt_tv_intol_resid = (pt_tv_intol_resid - -50.54222) /  (14.13465 -  -50.54222) ,
+           nt_habitat_rheo_resid = (nt_habitat_rheo_resid - -24.334100) /  (8.299599 -  -24.334100) ,
+           pt_ti_stenocold_cold_cool_resid = (pt_ti_stenocold_cold_cool_resid - -38.35066) /  (15.15093 -  -38.35066),
+           pi_EPTNoHydro_resid = (pi_EPTNoHydro_resid - -54.76710) /  (24.54683 -  -54.76710)) %>%
+    mutate(pt_tv_intol_resid = case_when(pt_tv_intol_resid <0 ~ 0,
+                                         pt_tv_intol_resid >1 ~ 1,
+                                         TRUE ~ pt_tv_intol_resid)) %>%
+    mutate(nt_habitat_rheo_resid = case_when(nt_habitat_rheo_resid <0 ~ 0,
+                                             nt_habitat_rheo_resid >1 ~ 1,
+                                             TRUE ~ nt_habitat_rheo_resid)) %>%
+    mutate(pt_ti_stenocold_cold_cool_resid = case_when(pt_ti_stenocold_cold_cool_resid <0 ~ 0,
+                                                       pt_ti_stenocold_cold_cool_resid >1 ~ 1,
+                                                       TRUE ~ pt_ti_stenocold_cold_cool_resid)) %>%
+    mutate( pi_EPTNoHydro_resid = case_when( pi_EPTNoHydro_resid <0 ~ 0,
+                                             pi_EPTNoHydro_resid >1 ~ 1,
+                                             TRUE ~  pi_EPTNoHydro_resid)) %>%
+    mutate(MMI = (pt_tv_intol_resid + nt_habitat_rheo_resid +
+                    pt_ti_stenocold_cold_cool_resid+pi_EPTNoHydro_resid)  /4)
+
+  #Throw MMI result and MMI metrics into a list for getting out of the function
+  metric_rs=dplyr::left_join(bugnew, metric_rs, by="SampleID")
+  return(metric_rs)
+}
