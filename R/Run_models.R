@@ -272,6 +272,9 @@ if (length(def_models$modelId[def_models$modelId %in% c(1,4,5,6,12,169)]==T)>=1)
 } else if (length(def_models$modelId[def_models$modelId %in% 13:23]==T)>=1){
   load("sysdata.rda//WY2018.Rdata")
   load("sysdata.rda//Alkalinity.Rdata")### objects named the same so they will be overwritten.... how do we deal with
+  #load in AZ trait data only one R data file needs loaded in and not one for each model
+}  else if (length(def_models$modelId[def_models$modelId %in% 169:236]==T)>=1){
+  load("AZ_perennial.Rdata")
   #if westwide model only one R data file needs loaded in and not one for each model
 }else if (length(def_models$modelId[def_models$modelId %in% 25:26]==T)>=1){
   load(paste0("sysdata.rda//Westwide2018.Rdata"))
@@ -325,7 +328,7 @@ if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1) {
   # CSCI requires just the raw taxa list translated for misspelling
 } else if (length(def_models$modelId[def_models$modelId %in% 1]==T)>=1) {
   bugnew = CSCI_bug(sampleIds = def_samples$sampleId)
-} else if (length(def_models$modelId[def_models$modelId %in% 169]==T)>=1){
+} else if (length(def_models$modelId[def_models$modelId %in% c(169,236)]==T)>=1){
   bugnew=AZ_bug_export(sampleIds = def_samples$sampleId)
 } else if (length(def_models$modelId[def_models$modelId %in% 599]==T)>=1){
   bugnew=OR_MMI_bug_export(sampleIds = def_samples$sampleId)
@@ -458,7 +461,12 @@ if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29,598)]==T)
       mdeg_metrics_adj_cal,
       ref_metrics_adj
     )
-} else if (length(def_models$modelId[def_models$modelId %in% 3]==T)>=1) {# NV MMI
+} else if (length(def_models$modelId[def_models$modelId %in% c(169,236)]==T)>=1) {# AZ perennial MMI
+  modelResults <-AZ_perennial_MMI_model(
+    bugnew,
+    prednew)
+
+}else if (length(def_models$modelId[def_models$modelId %in% 3]==T)>=1) {# NV MMI
   # need to call conductivity model first before calling the NV model because predicted conductivity is a predictor for the NV model
   load(file="sysdata.rda//EC12.Rdata")
   PrdCond = setNames(as.data.frame(

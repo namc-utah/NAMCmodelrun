@@ -190,8 +190,10 @@ MMI_metrics<-function(sampleIds,translationId,fixedCount,modelId){
 OR_MMI_bug_export <- function(sampleIds){
   # get needed data from the APIs
   bugRaw = NAMCr::query(
-    "sampleTaxa",
-    sampleIds = sampleIds
+    "sampleTaxaTranslationRarefied",
+    sampleIds = sampleIds,
+    translationId = translationId,
+    fixedCount = fixedCount
   )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
 
   bugsTranslation = NAMCr::query(
@@ -495,20 +497,42 @@ return(bugnew)
 #' @export
 #'
 #' @examples
-AZ_bug_export<-function(sampleIds){
+AZ_bug_export<-function(sampleIds,mats_taxa){
+  #mats_taxa=read.csv("inputs/mats_taxa_species.csv")
+  #load(file = "inputs/mats_site.rdata")
+
+  # FFG and TOLVAL are by OTU not by taxa.  Add FFG and TOLVAL by OTU.
+
+  # Correction for Operational Taxa Unit.  Ensures TolVal and FFG uses appropriate level from taxa table.  Note Taxa table has a lot of null values for tolerance and FFG.  Keep tolval and FFG if no OTU
+  #getting trait info for OTU
+  mats_taxa_otu <- AZ_traits %>%
+    mutate(filt = ifelse(TAXA_ID == OTU_TAXA_ID, "Y", "N")) %>% # Makes the OTU record the primary for FFG and TOLVAL.
+    filter(filt == "Y") %>%
+    distinct(OTU_TAXA_ID, TOLVAL, FFG)
+
+  # Includes rolled up tolval from mats_taxa_otu (see chironomidae 42 all being tolval 6).  Also includes OTU that are missing but has tolvalues
+  #applying OTU trait data to lower level taxa
+  mats_taxa <- AZ_traits %>%
+    select(TAXA_ID, OTU_TAXA_ID, OTU_ADEQ, T_ORDER, FAMILY, GENUS, IBI_TAXA_STATUS_CD,NAMC_taxonomy_id, TOLVAL2 = TOLVAL, FFG2 = FFG) %>%
+    left_join(mats_taxa_otu, by = c("OTU_TAXA_ID")) %>%
+    mutate(TOLVAL = ifelse(is.na(TOLVAL) & !is.na(TOLVAL2), TOLVAL2, TOLVAL)) %>%
+    mutate(FFG = ifelse(is.na(FFG) & !is.na(FFG2), FFG2, FFG)) %>%
+    select(-TOLVAL2, -FFG2)
+
+
   bugRaw = NAMCr::query(
     "sampleTaxaUnambiguous",
-    sampleIds=210531#sampleIds
+    sampleIds=sampleIds
   )# unique unrarefied taxa NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
 
-  AZsubsamp<-rarify(inbug=bugRaw, sample.ID="sampleId", abund="splitCount", subsiz=500)
-  AZsubsamp<-AZsubsamp[AZsubsamp$splitCount>0,]
+  #AZsubsamp<-rarify(inbug=bugRaw, sample.ID="sampleId", abund="splitCount", subsiz=500)
+  #AZsubsamp<-AZsubsamp[AZsubsamp$splitCount>0,]
 
-  bugsTranslation = NAMCr::query(
-    "sampleTaxaTranslation",
-    translationId = 26,
-    sampleIds=sampleIds
-  )
+  # bugsTranslation = NAMCr::query(
+  #   "sampleTaxaTranslation",
+  #   translationId = 26,
+  #   sampleIds=sampleIds
+  # )
   samples = NAMCr::query(
     "samples",
     include = c("boxId","sampleId",'siteId','sampleDate',"siteName", "waterbodyName","sampleMethod","habitatName","area", "labSplit"),
@@ -516,8 +540,8 @@ AZ_bug_export<-function(sampleIds){
   )
 
   # join that data together into a single dataframe
-  AZbugs=dplyr::left_join(AZsubsamp,bugsTranslation[,c('otuName','taxonomyId','sampleId')], by=c("taxonomyId", "sampleId"))
-  AZbugs=dplyr::left_join(AZbugs,samples, by='sampleId')
+  #AZbugs=dplyr::left_join(AZsubsamp,bugsTranslation[,c('otuName','taxonomyId','sampleId')], by=c("taxonomyId", "sampleId"))
+  AZbugs=dplyr::left_join(bugRaw,samples, by='sampleId')
 
   sampletax = NAMCr::query(
     "sampleTaxa",
@@ -535,7 +559,7 @@ AZ_bug_export<-function(sampleIds){
   AZbugs2$CollMeth=rep('ADEQ Riffle bugs',nrow(AZbugs))
   #correction factor is 100 * 1/labsplit %. So we need to force decimal to %.
   AZbugs2$CorrectionFactor=100*(1/(AZbugs$labSplit*100))
-  AZbugs2$FinalID=AZbugs$otuName
+  #AZbugs2$FinalID=AZbugs$otuName
   AZbugs2$Individuals=AZbugs$splitCount
   AZbugs2$Stage=AZbugs$lifeStageAbbreviation
   AZbugs2$LargeRare='No'
@@ -546,15 +570,94 @@ AZ_bug_export<-function(sampleIds){
 
 
   AZbugs2<-AZbugs2[which(is.na(AZbugs2$FinalID)==F),]
+  left_join(mats_taxa, by = "otuName")%>%
+    select(StationID = StationID,
+           CollDate = CollDate,
+           CollMeth = CollMeth,
+           Habitat = Habitat,
+           Individuals = Individuals,
+           IndividualsCorrected = Correction,
+           OTU_ADEQ = OTU_ADEQ,
+           OTU_BenTaxaID = OTU_TAXA_ID,
+           Order = T_ORDER,
+           Family = FAMILY,
+           Genus = GENUS,
+           TolVal = TOLVAL,
+           FFG,
+           IBI_TAXA_STATUS_CD,
+           w_or_c=w_or_c)
 
-  #write excel file to workspace
+  # creating a column that has the heiarchy equivalent to a scientific name column
+  # Join individuals and taxa
+  mats_raw <- mats_individuals %>%
+    mutate(Mark = "Y") %>%
+    mutate(phylo = paste(Order, Family, Genus))
 
-  write.csv(AZbugs2,file = paste0("C://Users//andrew.caudillo//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//Arizona//InputFiles//AZbugs","boxId_",boxId,"_",Sys.Date(),".csv"),row.names=FALSE)
-  cat(paste("csv with AZbugs has been written out to your current working directory.",
-            "convert this csv to excel 2003 and import into AZ EDAS access database to compute the IBI score.",
-            "/OE_Modeling/NAMC_Supported_OEmodels/AZ/Benthic Data Bulk Upload_SOP.doc",
-            "to import bug and habitat data, harmonize taxa list, rarefy and compute MMI",
-            "then read resulting excel file back into R to save results in the database.", sep="\n"))
-  return(AZbugs2)
+
+  ### using this dataset for richness metrics and filtering only taxa with OTUs
+  # Ensure that one taxa per sample for multiple levels (family/order).  OTU null values use determined per metric.
+  mats_no_na <- mats_raw %>%
+    filter(!is.na(OTU_ADEQ)) %>% # we do not use taxa with no OTU
+    group_by(StationID, CollDate, OTU_ADEQ) %>%
+    mutate(Individuals = sum(Individuals, na.rm = TRUE), IndividualsCorrected = sum(IndividualsCorrected)) %>%
+    distinct(StationID, CollDate, OTU_ADEQ, .keep_all = TRUE) %>%
+    ungroup()
+
+  mats_just_fam <- mats_raw %>%
+    filter(is.na(OTU_ADEQ)) %>%
+    mutate(lowest = ifelse(!is.na(Family), "Family",
+                           ifelse(!is.na(Order), "Order", "Reject"))) %>%
+    filter(lowest == "Family") %>%
+    group_by(StationID, CollDate, Family) %>% # add family
+    mutate(Individuals = sum(Individuals), IndividualsCorrected = sum(IndividualsCorrected)) %>%
+    distinct(StationID, CollDate, Family, .keep_all = TRUE) %>% # added because lose if just distinct on OTU w/ NAs
+    ungroup() %>%
+    select(-lowest)
+
+  mats_just_ord <- mats_raw %>%
+    filter(is.na(OTU_ADEQ)) %>%
+    mutate(lowest = ifelse(!is.na(Family), "Family",
+                           ifelse(!is.na(Order), "Order", "Reject"))) %>%
+    filter(lowest == "Order") %>%
+    group_by(StationID, CollDate, Order) %>% # add order
+    mutate(Individuals = sum(Individuals), IndividualsCorrected = sum(IndividualsCorrected)) %>%
+    distinct(StationID, CollDate, Order, .keep_all = TRUE) %>% # added because lose if just distinct on OTU w/ NAs
+    ungroup() %>%
+    select(-lowest)
+
+  mats <- bind_rows(mats_no_na, mats_just_fam, mats_just_ord)
+
+  mats_w_or_c <- mats %>%
+    distinct(StationID, w_or_c)
+
+  # Figure out which NA's for OTU_ADEQ are present at order or family
+  # Step 1 - Determine lowest level identified ----
+  mats_lowest <- mats %>%
+    filter(is.na(OTU_ADEQ)) %>%
+    mutate(lowest = ifelse(!is.na(Family), Family,
+                           ifelse(!is.na(Order), Order, "Reject"))) %>%
+    distinct(StationID, CollDate, phylo, lowest)
+
+  # Step 2 - Identify rows that already have taxa present at level 2 ----
+  mats_exclude <- mats_lowest %>%
+    left_join(mats, by = c("StationID", "CollDate", "lowest" = "Family")) %>%
+    rename(family_flag = Mark) %>%
+    left_join(mats, by = c("StationID", "CollDate", "lowest" = "Order")) %>%
+    rename(order_flag = Mark) %>%
+    group_by(StationID, CollDate, lowest) %>% # look for multiples.  Determine situations where taxonomist able to identify some taxa to genus and some to family IN SAME GROUP (ex simulidae only and simulidae and genus should not count as 2 genera)
+    mutate(count = n()) %>% # 2's with a na in oTU = exclude flag
+    mutate(OTU_Temp = ifelse(!is.na(OTU_ADEQ.x), OTU_ADEQ.x,
+                             ifelse(!is.na(OTU_ADEQ.y), OTU_ADEQ.y, NA))) %>%
+    mutate(exclude = ifelse(count > 1 & is.na(OTU_Temp), "Y", "N")) %>% # exclude flag for taxa not identified to lowest taxa for metrics like number of taxa but have valid information for other metrics like percent scraper.
+    filter(exclude == "Y") %>%
+    ungroup() %>%
+    select(StationID, CollDate, phylo = phylo.x, exclude)
+
+  # Add back to original
+  mats <- mats %>%
+    left_join(mats_exclude, by = c("StationID", "CollDate", "phylo"))
+
+
+    return(AZbugs2)
 
 }
