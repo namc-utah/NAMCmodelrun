@@ -179,6 +179,104 @@ MMI_metrics<-function(sampleIds,translationId,fixedCount,modelId){
   return(bugnew)
 }
 
+#' OR MMI  bug data export
+#'
+#' @param sampleIds
+#'
+#' @return raw bug data translated by OR translation and with column names formatted for BioMonTools metric function
+#' @export
+#'
+#' @examples
+OR_MMI_bug_export <- function(sampleIds){
+  # get needed data from the APIs
+  bugRaw = NAMCr::query(
+    "sampleTaxaTranslationRarefied",
+    sampleIds = sampleIds,
+    translationId = translationId,
+    fixedCount = fixedCount
+  )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
+
+  bugsTranslation = NAMCr::query(
+    "sampleTaxaTranslation",
+    translationId = 9,####edit
+    sampleIds = sampleIds
+  )
+  sites = NAMCr::query(
+    "samples",
+    include = c("sampleId", 'siteName'),
+    sampleIds = sampleIds
+  )
+  # join that data together into a single dataframe
+  OR_MMIbugs=dplyr::left_join(bugRaw,bugsTranslation, by=c("taxonomyId", "sampleId"))
+  OR_MMIbugs=dplyr::left_join(OR_MMIbugs,sites, by='sampleId')
+
+  #rename columns for BiomonTools functions
+   bug_tax_nhd <- get_NHD_info(df_bugs_taxa) |>
+    dplyr::transmute(SampleID = Sample,
+                     Area_mi2 = NA_integer_,
+                     SurfaceArea = NA_integer_,
+                     TaxaID = TAXAID,
+                     N_Taxa = Count,
+                     Index_Name ='MMI_metrics',
+                     INDEX_CLASS = str_to_title(SITE_TYPE),
+                     NonTarget,
+                     SITE_TYPE,
+                     Kingdom,
+                     SubOrder,
+                     SubFamily,
+                     GenusGroup,
+                     SpeciesGroup,
+                     SpeciesSubGroup,
+                     SpeciesComplex,
+                     Phylum,
+                     SubPhylum,
+                     Class,
+                     SubClass,
+                     Order,
+                     SuperFamily,
+                     Family,
+                     Tribe,
+                     Genus,
+                     SubGenus,
+                     Species,
+                     BCG_Attr  = BCG_attr,
+                     FFG,
+                     Habit,
+                     Life_Cycle,
+                     Thermal_Indicator = Thermal_indicator,
+                     TolVal,
+                     INFRAORDER = NA_character_,
+                     HABITAT = Habitat,
+                     ELEVATION_ATTR = NA_character_,
+                     GRADIENT_ATTR = NA_character_,
+                     WSAREA_ATTR = NA_character_,
+                     HABSTRUCT = NA_character_,
+                     UFC = NA_integer_,
+                     Density_ft2. = NA_integer_,
+                     DENSITY_M2 = NA_integer_,
+
+    )
+
+  #use biomontools markExcluded function to generate the exclude column
+  bugs.excluded <- BioMonTools::markExcluded(bug_tax_nhd, TaxaLevels = c("Kingdom", "Phylum",
+                                                                         "SubPhylum", "Class", "SubClass", "Order", "SubOrder", "SuperFamily",
+                                                                         "Family", "SubFamily", "Tribe", "GenusGroup", "Genus", "SubGenus", "SpeciesGroup",
+                                                                         "SpeciesSubGroup", "SpeciesComplex", "Species"))
+
+  mets.keep <- c('pt_tv_intol', 'nt_habitat_rheo', 'pt_ti_stenocold_cold_cool', 'pi_EPTNoHydro')
+
+
+  #Calculate metrics
+  # The boo.Shiny argument prevents the code from stopping and asking permission to calculate metrics with missing parameters.
+  # It will give a warning instead.
+
+  # The function will return the metrics identified in mets.keep
+  metricsdf <- BioMonTools::metric.values(bugs.excluded, "bugs",fun.MetricNames = mets.keep, boo.Shiny	= TRUE)
+
+
+  bugnew= metricsdf
+  return(bugnew)
+}
 
 
 #' CA CSCI bug data export
@@ -399,66 +497,122 @@ return(bugnew)
 #' @export
 #'
 #' @examples
-AZ_bug_export<-function(sampleIds){
+AZ_bug_export<-function(sampleIds,AZ_traits){
+  #mats_taxa=read.csv("inputs/mats_taxa_species.csv")
+  #load(file = "inputs/mats_site.rdata")
+
+  # FFG and TOLVAL are by OTU not by taxa.  Add FFG and TOLVAL by OTU.
+
+  # Correction for Operational Taxa Unit.  Ensures TolVal and FFG uses appropriate level from taxa table.  Note Taxa table has a lot of null values for tolerance and FFG.  Keep tolval and FFG if no OTU
+  #getting trait info for OTU
+  mats_taxa_otu <- AZ_traits %>%
+    mutate(filt = ifelse(TAXA_ID == OTU_TAXA_ID, "Y", "N")) %>% # Makes the OTU record the primary for FFG and TOLVAL.
+    filter(filt == "Y") %>%
+    distinct(OTU_TAXA_ID, TOLVAL, FFG)
+
+  # Includes rolled up tolval from mats_taxa_otu (see chironomidae 42 all being tolval 6).  Also includes OTU that are missing but has tolvalues
+  #applying OTU trait data to lower level taxa
+  mats_taxa <- AZ_traits %>%
+    select(TAXA_ID, OTU_TAXA_ID, OTU_ADEQ, T_ORDER, FAMILY, GENUS, IBI_TAXA_STATUS_CD,NAMC_taxonomy_id, TOLVAL2 = TOLVAL, FFG2 = FFG) %>%
+    left_join(mats_taxa_otu, by = c("OTU_TAXA_ID")) %>%
+    mutate(TOLVAL = ifelse(is.na(TOLVAL) & !is.na(TOLVAL2), TOLVAL2, TOLVAL)) %>%
+    mutate(FFG = ifelse(is.na(FFG) & !is.na(FFG2), FFG2, FFG)) %>%
+    select(-TOLVAL2, -FFG2)
+
+##get NAMC bug data
   bugRaw = NAMCr::query(
-    "sampleTaxaUnambiguous",
-    sampleIds=210531#sampleIds
-  )# unique unrarefied taxa NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
-
-  AZsubsamp<-rarify(inbug=bugRaw, sample.ID="sampleId", abund="splitCount", subsiz=500)
-  AZsubsamp<-AZsubsamp[AZsubsamp$splitCount>0,]
-
-  bugsTranslation = NAMCr::query(
-    "sampleTaxaTranslation",
-    translationId = 26,
-    sampleIds=sampleIds
-  )
-  samples = NAMCr::query(
-    "samples",
-    include = c("boxId","sampleId",'siteId','sampleDate',"siteName", "waterbodyName","sampleMethod","habitatName","area", "labSplit"),
-    sampleIds=sampleIds
-  )
-
-  # join that data together into a single dataframe
-  AZbugs=dplyr::left_join(AZsubsamp,bugsTranslation[,c('otuName','taxonomyId','sampleId')], by=c("taxonomyId", "sampleId"))
-  AZbugs=dplyr::left_join(AZbugs,samples, by='sampleId')
-
-  sampletax = NAMCr::query(
     "sampleTaxa",
     sampleIds=sampleIds
   )
-  sampletax<-sampletax[!duplicated(sampletax$scientificName),]
-  AZbugs<-merge(AZbugs,sampletax[,c('scientificName','lifeStageAbbreviation')],'scientificName')
-  AZbugs2<-data.frame(matrix(nrow=nrow(AZbugs)));names(AZbugs2)<-'StationID'
-  AZbugs2$StationID=AZbugs$siteName
-  AZbugs2$WaterbodyName=AZbugs$waterbodyName
-  AZbugs2$ActivityID=AZbugs$sampleId
-  AZbugs2$RepNum=1
-  AZbugs2$CommentsSample=NA
-  AZbugs2$CollDate=AZbugs$sampleDate
-  AZbugs2$CollMeth=rep('ADEQ Riffle bugs',nrow(AZbugs))
-  #correction factor is 100 * 1/labsplit %. So we need to force decimal to %.
-  AZbugs2$CorrectionFactor=100*(1/(AZbugs$labSplit*100))
-  AZbugs2$FinalID=AZbugs$otuName
-  AZbugs2$Individuals=AZbugs$splitCount
-  AZbugs2$Stage=AZbugs$lifeStageAbbreviation
-  AZbugs2$LargeRare='No'
-  AZbugs2$Habitat=ifelse(AZbugs$habitatName=='Targeted Riffle','Riffle','Multi-Habitat')
-  AZbugs2$Lab='NAMC'
-  AZbugs2$LabID=NA
+  # sum taxa across all lifestages
+  sumTaxa = bugRaw  %>%
+    dplyr::group_by(sampleId, taxonomyId,scientificName) %>%
+    dplyr::summarize(sumSplitCount = sum(splitCount))
+
+  sumTaxa$NAMC_taxonomy_id= sumTaxa$taxonomyId
+
+#join AZ trait data into NAMC bug data
+  mats_individuals=left_join(sumTaxa,mats_taxa, by = "NAMC_taxonomy_id")%>%
+    select(SampleID=sampleId,
+           NAMC_taxonomy_id,
+           scientificName,
+           Individuals = sumSplitCount,
+           OTU_ADEQ = OTU_ADEQ,
+           Order = T_ORDER,
+           Family = FAMILY,
+           Genus = GENUS,
+           TolVal = TOLVAL,
+           FFG)
+
+  # creating a column that has the heiarchy equivalent to a scientific name column
+  # Join individuals and taxa
+  mats_raw <- mats_individuals %>%
+    mutate(Mark = "Y") %>%
+    mutate(phylo = paste(Order, Family, Genus))
 
 
+  ### using this dataset for richness metrics and filtering only taxa with OTUs
+  # Ensure that one taxa per sample for multiple levels (family/order).  OTU null values use determined per metric.
+  mats_no_na <- mats_raw %>%
+    filter(!is.na(OTU_ADEQ)) %>% # we do not use taxa with no OTU
+    group_by(SampleID, OTU_ADEQ) %>%
+    mutate(Individuals = sum(Individuals, na.rm = TRUE)) %>%
+    distinct(SampleID, OTU_ADEQ, .keep_all = TRUE) %>%
+    ungroup()
 
-  AZbugs2<-AZbugs2[which(is.na(AZbugs2$FinalID)==F),]
+  mats_just_fam <- mats_raw %>%
+    filter(is.na(OTU_ADEQ)) %>%
+    mutate(lowest = ifelse(!is.na(Family), "Family",
+                           ifelse(!is.na(Order), "Order", "Reject"))) %>%
+    filter(lowest == "Family") %>%
+    group_by(SampleID, Family) %>% # add family
+    mutate(Individuals = sum(Individuals)) %>%
+    distinct(SampleID, Family, .keep_all = TRUE) %>% # added because lose if just distinct on OTU w/ NAs
+    ungroup() %>%
+    select(-lowest)
 
-  #write excel file to workspace
+  mats_just_ord <- mats_raw %>%
+    filter(is.na(OTU_ADEQ)) %>%
+    mutate(lowest = ifelse(!is.na(Family), "Family",
+                           ifelse(!is.na(Order), "Order", "Reject"))) %>%
+    filter(lowest == "Order") %>%
+    group_by(SampleID, Order) %>% # add order
+    mutate(Individuals = sum(Individuals)) %>%
+    distinct(SampleID, Order, .keep_all = TRUE) %>% # added because lose if just distinct on OTU w/ NAs
+    ungroup() %>%
+    select(-lowest)
 
-  write.csv(AZbugs2,file = paste0("C://Users//andrew.caudillo//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//Arizona//InputFiles//AZbugs","boxId_",boxId,"_",Sys.Date(),".csv"),row.names=FALSE)
-  cat(paste("csv with AZbugs has been written out to your current working directory.",
-            "convert this csv to excel 2003 and import into AZ EDAS access database to compute the IBI score.",
-            "/OE_Modeling/NAMC_Supported_OEmodels/AZ/Benthic Data Bulk Upload_SOP.doc",
-            "to import bug and habitat data, harmonize taxa list, rarefy and compute MMI",
-            "then read resulting excel file back into R to save results in the database.", sep="\n"))
-  return(AZbugs2)
+  mats <- bind_rows(mats_no_na, mats_just_fam, mats_just_ord)
+
+
+  # Figure out which NA's for OTU_ADEQ are present at order or family
+  # Step 1 - Determine lowest level identified ----
+  mats_lowest <- mats %>%
+    filter(is.na(OTU_ADEQ)) %>%
+    mutate(lowest = ifelse(!is.na(Family), Family,
+                           ifelse(!is.na(Order), Order, "Reject"))) %>%
+    distinct(SampleID, phylo, lowest)
+
+  # Step 2 - Identify rows that already have taxa present at level 2 ----
+  mats_exclude <- mats_lowest %>%
+    left_join(mats, by = c("SampleID", "lowest" = "Family")) %>%
+    rename(family_flag = Mark) %>%
+    left_join(mats, by = c("SampleID", "lowest" = "Order")) %>%
+    rename(order_flag = Mark) %>%
+    group_by(SampleID, lowest) %>% # look for multiples.  Determine situations where taxonomist able to identify some taxa to genus and some to family IN SAME GROUP (ex simulidae only and simulidae and genus should not count as 2 genera)
+    mutate(count = n()) %>% # 2's with a na in oTU = exclude flag
+    mutate(OTU_Temp = ifelse(!is.na(OTU_ADEQ.x), OTU_ADEQ.x,
+                             ifelse(!is.na(OTU_ADEQ.y), OTU_ADEQ.y, NA))) %>%
+    mutate(exclude = ifelse(count > 1 & is.na(OTU_Temp), "Y", "N")) %>% # exclude flag for taxa not identified to lowest taxa for metrics like number of taxa but have valid information for other metrics like percent scraper.
+    filter(exclude == "Y") %>%
+    ungroup() %>%
+    select(SampleID, phylo = phylo.x, exclude)
+
+  # Add back to original
+  mats <- mats %>%
+    left_join(mats_exclude, by = c("SampleID", "phylo"))
+
+
+    return(mats)
 
 }
