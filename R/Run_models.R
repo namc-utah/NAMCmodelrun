@@ -23,11 +23,13 @@ if (exists("boxId")) {
 }else{
   def_samples = NAMCr::query("samples", projectId = projectId)
 }
-#def_samples<-def_samples[def_samples$sampleId <= 219683,]
+
+def_samples<-def_samples[def_samples$sampleId %in% c(220856,220857),]
 if(exists('CritHab')){
 #for PIBO model (only Idaho)
 def_samples=def_samples[def_samples$siteId %in% CritHab$siteId,]
 }
+#def_samples=def_samples[def_samples$sampleId %in% c(220070,220072)==F,]
 #def_samples=def_samples[def_samples$sampleId !=219740,]
 #def_samples<-def_samples[def_samples$sampleId %in% c(213908,213907),]
 #this section will subset out the modelID that is appropriate for the OR
@@ -76,7 +78,7 @@ def_model_results = NAMCr::query(
   api_endpoint = "modelResults",
   args=list
     (
-  sampleIds=def_samples$sampleId,
+  sampleIds=sampleIds,
   modelIds=modelID
   )
 )
@@ -160,6 +162,7 @@ def_predictors <- def_predictors[!duplicated(def_predictors), ]
 if(modelID %in% c(4,
                   5,
                   6,
+                  11,
                   27,
                   31,
                   32,
@@ -198,8 +201,7 @@ for (j in 1:length(modelID)){
 }
 
 ##subset predictors to only those needed for the models that you are running
-def_predictors=subset(def_predictors,predictorId %in% modelpred$predictorId)
-
+def_predictors=def_predictors[def_predictors$predictorId %in% modelpred$predictorId,]
 ## Format predictors and convert to numeric where needed
 if (length(modelID[modelID%in%c(4,5,6,28)]==T)>=1){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
     def_predictors_categorical=subset(def_predictors,predictorId %in% c(111,75))
@@ -231,6 +233,12 @@ if (length(modelID[modelID%in%c(4,5,6,28)]==T)>=1){ #CO and TP models have predi
           prednew=as.data.frame(prednew)
   }
 
+#edas_eco4=read.csv("C://Users//andrew.caudillo.BUGLAB-I9//Downloads//all_6063_coords.csv")
+#prednew=plyr::join(prednew,edas_eco4[,c('sampleId','US_L4CODE')])
+#prednew=prednew[,-9]
+# Eco4=c('21i','21c','21c','21i','21c','21i','21i','21i','21i','21i')
+# prednew$ECO4=Eco4
+#names(prednew)[ncol(prednew)]<-'ECO4'
 rownames(prednew)<-prednew$sampleId
 prednew<-prednew[,-1]
 
@@ -243,8 +251,12 @@ if(nrow(prednew[which(is.na(prednew)),] ) >0){
 } else{
   message('All predictors have values!')
 }
+
 all_na_rows <- apply(prednew, 1, function(x) all(is.na(x)))
 prednew=prednew[!all_na_rows,]
+
+
+
 #prednew$ECO4<-'21c'
 #prednew=prednew[which(!is.na(prednew)),]
 #prednew<-prednew[row.names(prednew) %in% 214051 ==F,]
@@ -477,6 +489,8 @@ if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29)]==T)>=1)
 }else{
 
 }
+
+#clipr::write_clip(modelResults)
 #modelResults=modelResults[!is.na(modelResults),]
 # ---------------------------------------------------------------
 # Always run model applicability test
@@ -529,7 +543,7 @@ if(modelID ==1){
 names(modelResults)[1]<-'sampleId'
 modelResults$sampleId<-as.integer(modelResults$sampleId)
 }
-modelResults$sampleId=as.integer(row.names(modelResults))
+modelResults$sampleId=sampleIds
 finalResults=merge(modelResults,ModelApplicability_obj,by="sampleId")
 }
 finalResults
@@ -554,7 +568,7 @@ sumrarefiedOTUTaxa = bugsOTU  %>%
 
 finalResults=dplyr::left_join(finalResults,sumrarefiedOTUTaxa,by="sampleId")
 #IF NATIONAL UNCOMMENT OUT THE LINE BELOW
-if(modelId %in% c(25,26)){
+if(modelID %in% c(25,26)){
 finalResults$notes='National'
 }
 
