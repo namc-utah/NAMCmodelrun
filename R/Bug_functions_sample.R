@@ -503,7 +503,7 @@ return(bugnew)
 #'
 #' @examples
 AZ_bug_export<-function(sampleIds,AZ_traits){
-  AZ_Traits=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//Arizona//Traits_and_taxa_NAMCcrosswalk_complete_clean.csv')
+  #AZ_Traits=read.csv('C://Users//A01964518//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//Arizona//Traits_and_taxa_NAMCcrosswalk_complete_clean.csv')
   #mats_taxa=read.csv("inputs/mats_taxa_species.csv")
   #load(file = "inputs/mats_site.rdata")
 
