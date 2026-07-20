@@ -255,7 +255,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
   m.w.pctscraper <- bugnew %>%
     dplyr::mutate(FFG = ifelse(Family == "Chironomidae", NA, FFG)) %>% # numbers are not filtered out as in scraper taxa
     group_by(SampleID, FFG) %>%
-    dplyr::dplyr::summarise(ffg_num = sum(Individuals)) %>%
+    dplyr::summarise(ffg_num = sum(Individuals)) %>%
     group_by(SampleID) %>%
     dplyr::mutate(total_ind = sum(ffg_num)) %>%
     filter(FFG == "Scraper") %>%
@@ -365,7 +365,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     filter(is.na(exclude)) %>%
     filter(TolVal <= 3) %>% # no na's
     group_by(SampleID) %>%
-    dplyr::dplyr::summarise(NumIntolTaxa = n()) %>%
+    dplyr::summarise(NumIntolTaxa = n()) %>%
     dplyr::mutate(M.NumIntolTaxa = ifelse(NumIntolTaxa >= R.C.NumIntolTaxa, 100, (NumIntolTaxa/R.C.NumIntolTaxa)* 100))
 
   #### 4 - Number of Scraper Taxa ----
