@@ -612,7 +612,7 @@ AZ_bug_export<-function(sampleIds,AZ_traits){
     left_join(mats, by = c("SampleID", "lowest" = "Order")) %>%
     mutate(order_flag = Mark.y) %>%
     dplyr::group_by(SampleID, lowest) %>% # look for multiples.  Determine situations where taxonomist able to identify some taxa to genus and some to family IN SAME GROUP (ex simulidae only and simulidae and genus should not count as 2 genera)
-    dplyr::mutate(count = n()) %>% # 2's with a na in oTU = exclude flag
+    dplyr::mutate(count = dplyr::n()) %>% # 2's with a na in oTU = exclude flag
     mutate(OTU_Temp = ifelse(!is.na(OTU_ADEQ.x), OTU_ADEQ.x,
                              ifelse(!is.na(OTU_ADEQ.y), OTU_ADEQ.y, NA))) %>%
     mutate(exclude = ifelse(count > 1 & is.na(OTU_Temp), "Y", "N")) %>% # exclude flag for taxa not identified to lowest taxa for metrics like number of taxa but have valid information for other metrics like percent scraper.
