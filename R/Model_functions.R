@@ -221,7 +221,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     filter(is.na(exclude)) %>% # Exclude is for where OTU_ADEQ is NA due to taxonomist not getting low enough AND if that bug also identified to lower level
     group_by(SampleID) %>%
     dplyr::summarize(NumTaxa = n()) %>%
-    mutate(M.NumTaxa = ifelse(NumTaxa >= R.W.NumTaxa, 100, (NumTaxa/R.W.NumTaxa)* 100))
+    dplyr::mutate(M.NumTaxa = ifelse(NumTaxa >= R.W.NumTaxa, 100, (NumTaxa/R.W.NumTaxa)* 100))
 
   #### 2 - Number of Ephemeroptera Taxa ----
   m.w.ephtaxa <- bugnew %>%
@@ -230,7 +230,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     group_by(SampleID) %>%
     dplyr::summarize(NumEphTaxa = n()) %>%
     select(SampleID, NumEphTaxa) %>%
-    mutate(M.NumEphTaxa = ifelse(NumEphTaxa >= R.W.NumEphTaxa, 100, (NumEphTaxa/R.W.NumEphTaxa)* 100))
+    dplyr::mutate(M.NumEphTaxa = ifelse(NumEphTaxa >= R.W.NumEphTaxa, 100, (NumEphTaxa/R.W.NumEphTaxa)* 100))
 
   #### 3 - Number of Trichoptera Taxa ----
   m.w.tritaxa <- bugnew %>%
@@ -239,7 +239,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     group_by(SampleID) %>%
     dplyr::summarize(NumTriTaxa = n()) %>%
     select(SampleID, NumTriTaxa) %>%
-    mutate(M.NumTriTaxa = ifelse(NumTriTaxa >= R.W.NumTriTaxa, 100, (NumTriTaxa/R.W.NumTriTaxa)* 100))
+    dplyr::mutate(M.NumTriTaxa = ifelse(NumTriTaxa >= R.W.NumTriTaxa, 100, (NumTriTaxa/R.W.NumTriTaxa)* 100))
 
   #### 4 - Number of Scraper Taxa ----
   m.w.scrapertaxa <- bugnew %>%
@@ -249,26 +249,26 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     group_by(SampleID) %>%
     dplyr::summarize(NumScraperTaxa = n()) %>%
     select(SampleID, NumScraperTaxa) %>%
-    mutate(M.NumScraperTaxa = ifelse(NumScraperTaxa >= R.W.NumScraperTaxa, 100, (NumScraperTaxa/R.W.NumScraperTaxa)* 100))
+    dplyr::mutate(M.NumScraperTaxa = ifelse(NumScraperTaxa >= R.W.NumScraperTaxa, 100, (NumScraperTaxa/R.W.NumScraperTaxa)* 100))
 
   #### 5 - Percent Scrapers ----
   m.w.pctscraper <- bugnew %>%
-    mutate(FFG = ifelse(Family == "Chironomidae", NA, FFG)) %>% # numbers are not filtered out as in scraper taxa
+    dplyr::mutate(FFG = ifelse(Family == "Chironomidae", NA, FFG)) %>% # numbers are not filtered out as in scraper taxa
     group_by(SampleID, FFG) %>%
-    summarise(ffg_num = sum(Individuals)) %>%
+    dplyr::dplyr::summarise(ffg_num = sum(Individuals)) %>%
     group_by(SampleID) %>%
-    mutate(total_ind = sum(ffg_num)) %>%
+    dplyr::mutate(total_ind = sum(ffg_num)) %>%
     filter(FFG == "Scraper") %>%
-    mutate(PctScraper = (ffg_num/total_ind) * 100) %>%
+    dplyr::mutate(PctScraper = (ffg_num/total_ind) * 100) %>%
     select(SampleID, PctScraper) %>%
-    mutate(M.PctScraper = ifelse(PctScraper >= R.W.PctScraper, 100, (PctScraper/R.W.PctScraper)* 100))
+    dplyr::mutate(M.PctScraper = ifelse(PctScraper >= R.W.PctScraper, 100, (PctScraper/R.W.PctScraper)* 100))
 
   #### 6 - Hilsenhoff Biotic Index ----
   m.w.hbi <- bugnew %>%
     filter(!is.na(TolVal)) %>% # no na's
     group_by(SampleID) %>%
-    summarise(HBI = sum(TolVal * Individuals)/sum(Individuals)) %>% # HBI equation
-    mutate(M.HBI = ifelse(HBI <= R.W.HBI, 100, (10 - HBI)/(10 - R.W.HBI)*100))
+    dplyr::summarise(HBI = sum(TolVal * Individuals)/sum(Individuals)) %>% # HBI equation
+    dplyr::mutate(M.HBI = ifelse(HBI <= R.W.HBI, 100, (10 - HBI)/(10 - R.W.HBI)*100))
 
   #### 7 - Number of Diptera Taxa ----
   m.w.diptaxa <- bugnew %>%
@@ -277,17 +277,17 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     group_by(SampleID) %>%
     dplyr::summarize(NumDipTaxa = n()) %>%
     select(SampleID, NumDipTaxa) %>%
-    mutate(M.NumDipTaxa = ifelse(NumDipTaxa >= R.W.NumDipTaxa, 100, (NumDipTaxa/R.W.NumDipTaxa)* 100))
+    dplyr::mutate(M.NumDipTaxa = ifelse(NumDipTaxa >= R.W.NumDipTaxa, 100, (NumDipTaxa/R.W.NumDipTaxa)* 100))
 
   #### 8 - Percent Ephemeroptera ----
   m.w.pctephm <- bugnew %>%
     group_by(SampleID, Order) %>%
-    summarise(ephmnum = sum(Individuals)) %>%
+    dplyr::summarise(ephmnum = sum(Individuals)) %>%
     group_by(SampleID) %>%
-    mutate(PctEphm = (ephmnum/sum(ephmnum))*100) %>%
+    dplyr::mutate(PctEphm = (ephmnum/sum(ephmnum))*100) %>%
     filter(Order == "Ephemeroptera") %>%
     select(SampleID, PctEphm) %>%
-    mutate(M.PctEphm = ifelse(PctEphm >= R.W.PctEphm, 100, (PctEphm/R.W.PctEphm)* 100))
+    dplyr::mutate(M.PctEphm = ifelse(PctEphm >= R.W.PctEphm, 100, (PctEphm/R.W.PctEphm)* 100))
 
   #### 9 - Percent individuals in dominant taxon ----
 
@@ -295,10 +295,10 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
   m.w.domtaxa <- bugnew %>%
     arrange(desc(Individuals)) %>%
     group_by(SampleID) %>%
-    mutate(PctDom = (Individuals/sum(Individuals))*100) %>%
+    dplyr::mutate(PctDom = (Individuals/sum(Individuals))*100) %>%
     slice(1) %>% # slice picks x number of rows in the group to return. Here 1 represents the dominant taxa
     select(SampleID, PctDom) %>%
-    mutate(M.PctDom = ifelse(PctDom <= R.W.PctDom, 100, (100 - PctDom)/(100 - R.W.PctDom)* 100))
+    dplyr::mutate(M.PctDom = ifelse(PctDom <= R.W.PctDom, 100, (100 - PctDom)/(100 - R.W.PctDom)* 100))
 
   ### B. Index Normalization ----
 
@@ -323,7 +323,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     filter(ELEV_SITE <= 1524) %>%
     #Num Dip Taxa not being coerced to 0, even though it is metric used in both C and W models...?
     replace_na(list(M.HBI = 0, M.NumChironTaxa = 0, M.PctDom = 0, M.NumTaxa = 0, M.NumEphTaxa = 0, M.NumTriTaxa = 0, M.NumScraperTaxa = 0, M.PctScraper = 0, M.PctEphm = 0)) %>%
-    mutate(modelId=236,IBI = (M.HBI + M.NumDipTaxa + M.PctDom + M.NumTaxa + M.NumEphTaxa + M.NumTriTaxa + M.NumScraperTaxa + M.PctScraper + M.PctEphm)/9) %>%
+    dplyr::mutate(modelId=236,IBI = (M.HBI + M.NumDipTaxa + M.PctDom + M.NumTaxa + M.NumEphTaxa + M.NumTriTaxa + M.NumScraperTaxa + M.PctScraper + M.PctEphm)/9) %>%
     select(SampleID, NumTaxa, NumTriTaxa, NumEphTaxa, NumDipTaxa, NumScraperTaxa, PctScraper, PctEphm, PctDom, HBI, everything())
 
 
@@ -347,7 +347,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     filter(is.na(exclude)) %>%
     group_by(SampleID) %>%
     dplyr::summarize(NumTaxa = n()) %>%
-    mutate(M.NumTaxa = ifelse(NumTaxa >= R.C.NumTaxa, 100, (NumTaxa/R.C.NumTaxa)* 100))
+    dplyr::mutate(M.NumTaxa = ifelse(NumTaxa >= R.C.NumTaxa, 100, (NumTaxa/R.C.NumTaxa)* 100))
 
   #### 2 - Number of Diptera Taxa ----
   # ADEQ method from QAPP.  Uses genus for all insects but midges which go to family (so family just counted as one taxa)
@@ -357,7 +357,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     group_by(SampleID) %>%
     dplyr::summarize(NumDipTaxa = n()) %>%
     select(SampleID, NumDipTaxa) %>%
-    mutate(M.NumDipTaxa = ifelse(NumDipTaxa >= R.C.NumDipTaxa, 100, (NumDipTaxa/R.C.NumDipTaxa)* 100))
+    dplyr::mutate(M.NumDipTaxa = ifelse(NumDipTaxa >= R.C.NumDipTaxa, 100, (NumDipTaxa/R.C.NumDipTaxa)* 100))
 
   #### 3 - Number of Intolerant Taxa ----
   # Number of taxa having a tolerance value of <= 3
@@ -365,8 +365,8 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     filter(is.na(exclude)) %>%
     filter(TolVal <= 3) %>% # no na's
     group_by(SampleID) %>%
-    dplyr::summarise(NumIntolTaxa = n()) %>%
-    mutate(M.NumIntolTaxa = ifelse(NumIntolTaxa >= R.C.NumIntolTaxa, 100, (NumIntolTaxa/R.C.NumIntolTaxa)* 100))
+    dplyr::dplyr::summarise(NumIntolTaxa = n()) %>%
+    dplyr::mutate(M.NumIntolTaxa = ifelse(NumIntolTaxa >= R.C.NumIntolTaxa, 100, (NumIntolTaxa/R.C.NumIntolTaxa)* 100))
 
   #### 4 - Number of Scraper Taxa ----
   m.c.scrapertaxa <- bugnew %>%
@@ -376,36 +376,36 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     group_by(SampleID) %>%
     dplyr::summarize(NumScraperTaxa = n()) %>%
     select(SampleID, NumScraperTaxa) %>%
-    mutate(M.NumScraperTaxa = ifelse(NumScraperTaxa >= R.C.NumScraperTaxa, 100, (NumScraperTaxa/R.C.NumScraperTaxa)* 100))
+    dplyr::mutate(M.NumScraperTaxa = ifelse(NumScraperTaxa >= R.C.NumScraperTaxa, 100, (NumScraperTaxa/R.C.NumScraperTaxa)* 100))
 
   #### 5 - Percent Scrapers ----
   m.c.pctscraper <- bugnew %>%
-    mutate(FFG = ifelse(Family == "Chironomidae", NA, FFG)) %>% # Abundances numbers are not filtered out like scraper taxa
+    dplyr::mutate(FFG = ifelse(Family == "Chironomidae", NA, FFG)) %>% # Abundances numbers are not filtered out like scraper taxa
     group_by(SampleID, FFG) %>%
-    summarise(ffg_num = sum(Individuals)) %>%
+    dplyr::summarise(ffg_num = sum(Individuals)) %>%
     group_by(SampleID) %>%
-    mutate(total_ind = sum(ffg_num)) %>%
+    dplyr::mutate(total_ind = sum(ffg_num)) %>%
     filter(FFG == "Scraper") %>%
-    mutate(PctScraper = (ffg_num/total_ind) * 100) %>%
+    dplyr::mutate(PctScraper = (ffg_num/total_ind) * 100) %>%
     select(SampleID, PctScraper) %>%
-    mutate(M.PctScraper = ifelse(PctScraper >= R.C.PctScraper, 100, (PctScraper/R.C.PctScraper)* 100))
+    dplyr::mutate(M.PctScraper = ifelse(PctScraper >= R.C.PctScraper, 100, (PctScraper/R.C.PctScraper)* 100))
 
   #### 6 - Percent Plecoptera ----
   m.c.pctplec <- bugnew %>%
     group_by(SampleID, Order) %>%
-    summarise(plecnum = sum(Individuals)) %>%
+    dplyr::summarise(plecnum = sum(Individuals)) %>%
     group_by(SampleID) %>%
-    mutate(PctPlec = (plecnum/sum(plecnum))*100) %>%
+    dplyr::mutate(PctPlec = (plecnum/sum(plecnum))*100) %>%
     filter(Order == "Plecoptera") %>%
     select(SampleID, PctPlec) %>%
-    mutate(M.PctPlec = ifelse(PctPlec >= R.C.PctPlec, 100, (PctPlec/R.C.PctPlec)* 100))
+    dplyr::mutate(M.PctPlec = ifelse(PctPlec >= R.C.PctPlec, 100, (PctPlec/R.C.PctPlec)* 100))
 
   #### 7 - Hilsenhoff Biotic Index ----
   m.c.hbi <- bugnew %>%
     filter(!is.na(TolVal)) %>% # no na's
     group_by(SampleID) %>%
-    summarise(HBI = sum(TolVal * Individuals)/sum(Individuals)) %>%
-    mutate(M.HBI = ifelse(HBI <= R.C.HBI, 100, (10 - HBI)/(10 - R.C.HBI)*100))
+    dplyr::summarise(HBI = sum(TolVal * Individuals)/sum(Individuals)) %>%
+    dplyr::mutate(M.HBI = ifelse(HBI <= R.C.HBI, 100, (10 - HBI)/(10 - R.C.HBI)*100))
 
   ### B. Index Normalization ----
 
@@ -424,7 +424,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     left_join(prednew, by = "SampleID") %>%
     filter(ELEV_SITE>1524) %>%
     replace_na(list(M.HBI = 0, M.NumTaxa = 0, M.DipTaxa = 0, M.NumIntolTaxa = 0, M.NumScraperTaxa = 0, M.PctScraper = 0, M.PctPlec = 0)) %>%
-    mutate(modelId=169,IBI = (M.HBI + M.NumTaxa + M.NumDipTaxa + M.NumIntolTaxa + M.NumScraperTaxa + M.PctScraper + M.PctPlec)/7) %>%
+    dplyr::mutate(modelId=169,IBI = (M.HBI + M.NumTaxa + M.NumDipTaxa + M.NumIntolTaxa + M.NumScraperTaxa + M.PctScraper + M.PctPlec)/7) %>%
     select(StationID, CollDate, NumTaxa, NumDipTaxa, NumIntolTaxa, NumScraperTaxa, PctScraper, PctPlec, HBI, everything())
 
   ## IBI ----
