@@ -283,7 +283,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
   m.w.pctephm <- bugnew %>%
     group_by(SampleID, Order) %>%
     summarise(ephmnum = sum(Individuals)) %>%
-    group_by(StationID, CollDate) %>%
+    group_by(SampleID) %>%
     mutate(PctEphm = (ephmnum/sum(ephmnum))*100) %>%
     filter(Order == "Ephemeroptera") %>%
     select(SampleID, PctEphm) %>%
@@ -319,11 +319,11 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
   #NA in some final scores due to NAs in metrics?
   #find out why
   ibi.w <- m.w.all %>%
-    left_join(mats_w_or_c, by = "StationID") %>%
-    filter(w_or_c == "warm") %>%
+    left_join(prednew, by = "SampleID") %>%
+    filter(ELEV_SITE <= 1524) %>%
     #Num Dip Taxa not being coerced to 0, even though it is metric used in both C and W models...?
     replace_na(list(M.HBI = 0, M.NumChironTaxa = 0, M.PctDom = 0, M.NumTaxa = 0, M.NumEphTaxa = 0, M.NumTriTaxa = 0, M.NumScraperTaxa = 0, M.PctScraper = 0, M.PctEphm = 0)) %>%
-    mutate(IBI = (M.HBI + M.NumDipTaxa + M.PctDom + M.NumTaxa + M.NumEphTaxa + M.NumTriTaxa + M.NumScraperTaxa + M.PctScraper + M.PctEphm)/9) %>%
+    mutate(modelId=236,IBI = (M.HBI + M.NumDipTaxa + M.PctDom + M.NumTaxa + M.NumEphTaxa + M.NumTriTaxa + M.NumScraperTaxa + M.PctScraper + M.PctEphm)/9) %>%
     select(SampleID, NumTaxa, NumTriTaxa, NumEphTaxa, NumDipTaxa, NumScraperTaxa, PctScraper, PctEphm, PctDom, HBI, everything())
 
 
@@ -422,22 +422,14 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
   # Straight up average of normalized scores
   ibi.c <- m.c.all %>%
     left_join(prednew, by = "SampleID") %>%
-    filter(w_or_c == "cold") %>%
+    filter(ELEV_SITE>1524) %>%
     replace_na(list(M.HBI = 0, M.NumTaxa = 0, M.DipTaxa = 0, M.NumIntolTaxa = 0, M.NumScraperTaxa = 0, M.PctScraper = 0, M.PctPlec = 0)) %>%
-    mutate(IBI = (M.HBI + M.NumTaxa + M.NumDipTaxa + M.NumIntolTaxa + M.NumScraperTaxa + M.PctScraper + M.PctPlec)/7) %>%
+    mutate(modelId=169,IBI = (M.HBI + M.NumTaxa + M.NumDipTaxa + M.NumIntolTaxa + M.NumScraperTaxa + M.PctScraper + M.PctPlec)/7) %>%
     select(StationID, CollDate, NumTaxa, NumDipTaxa, NumIntolTaxa, NumScraperTaxa, PctScraper, PctPlec, HBI, everything())
 
   ## IBI ----
   ibi <- ibi.w %>%
     bind_rows(ibi.c)
-
-
-  ibi$Condition = ifelse(ibi$w_or_c=='warm' & ibi$IBI < 50, "Inconclusive",
-                         ifelse(ibi$w_or_c=='warm' & ibi$IBI >=50 & ibi$IBI <39,
-                                'Violating Biocriteria',
-                                ifelse(ibi$w_or_c=='cold' & ibi$IBI < 52,"Inconclusive",
-                                       ifelse(ibi$w_or_c=='cold' & ibi$IBI >=52 & ibi$IBI < 45,
-                                              'Violating Biocriteria','Meeting Biocriteria'))))
   #add sampleId to the final table
 
   return(ibi)
