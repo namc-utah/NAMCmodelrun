@@ -503,6 +503,7 @@ return(bugnew)
 #'
 #' @examples
 AZ_bug_export<-function(sampleIds,AZ_traits){
+  AZ_Traits=read.csv('C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//Arizona//Traits_and_taxa_NAMCcrosswalk_complete_clean.csv')
   #mats_taxa=read.csv("inputs/mats_taxa_species.csv")
   #load(file = "inputs/mats_site.rdata")
 
@@ -510,14 +511,14 @@ AZ_bug_export<-function(sampleIds,AZ_traits){
 
   # Correction for Operational Taxa Unit.  Ensures TolVal and FFG uses appropriate level from taxa table.  Note Taxa table has a lot of null values for tolerance and FFG.  Keep tolval and FFG if no OTU
   #getting trait info for OTU
-  mats_taxa_otu <- AZ_traits %>%
+  mats_taxa_otu <- AZ_Traits %>%
     mutate(filt = ifelse(TAXA_ID == OTU_TAXA_ID, "Y", "N")) %>% # Makes the OTU record the primary for FFG and TOLVAL.
     filter(filt == "Y") %>%
     distinct(OTU_TAXA_ID, TOLVAL, FFG)
 
   # Includes rolled up tolval from mats_taxa_otu (see chironomidae 42 all being tolval 6).  Also includes OTU that are missing but has tolvalues
   #applying OTU trait data to lower level taxa
-  mats_taxa <- AZ_traits %>%
+  mats_taxa <- AZ_Traits %>%
     select(TAXA_ID, OTU_TAXA_ID, OTU_ADEQ, T_ORDER, FAMILY, GENUS, IBI_TAXA_STATUS_CD,NAMC_taxonomy_id, TOLVAL2 = TOLVAL, FFG2 = FFG) %>%
     left_join(mats_taxa_otu, by = c("OTU_TAXA_ID")) %>%
     mutate(TOLVAL = ifelse(is.na(TOLVAL) & !is.na(TOLVAL2), TOLVAL2, TOLVAL)) %>%
@@ -535,6 +536,7 @@ AZ_bug_export<-function(sampleIds,AZ_traits){
     dplyr::summarize(sumSplitCount = sum(splitCount))
 
   sumTaxa$NAMC_taxonomy_id= sumTaxa$taxonomyId
+  sumTaxa=sumTaxa[,names(sumTaxa) != 'taxonomyId']
 
 #join AZ trait data into NAMC bug data
   mats_individuals=left_join(sumTaxa,mats_taxa, by = "NAMC_taxonomy_id")%>%
@@ -594,18 +596,18 @@ AZ_bug_export<-function(sampleIds,AZ_traits){
   # Step 1 - Determine lowest level identified ----
   mats_lowest <- mats %>%
     filter(is.na(OTU_ADEQ)) %>%
-    mutate(lowest = ifelse(!is.na(Family), Family,
-                           ifelse(!is.na(Order), Order, "Reject"))) %>%
-    distinct(SampleID, phylo, lowest)
+    mutate(lowest = ifelse(!is.na(Family), "Family",
+                           ifelse(!is.na(Order), "Order", "Reject"))) %>%
+    distinct(SampleID, phylo, lowest,Mark)
 
   # Step 2 - Identify rows that already have taxa present at level 2 ----
   mats_exclude <- mats_lowest %>%
     left_join(mats, by = c("SampleID", "lowest" = "Family")) %>%
-    rename(family_flag = Mark) %>%
+    mutate(family_flag = Mark.x) %>%
     left_join(mats, by = c("SampleID", "lowest" = "Order")) %>%
-    rename(order_flag = Mark) %>%
-    group_by(SampleID, lowest) %>% # look for multiples.  Determine situations where taxonomist able to identify some taxa to genus and some to family IN SAME GROUP (ex simulidae only and simulidae and genus should not count as 2 genera)
-    mutate(count = n()) %>% # 2's with a na in oTU = exclude flag
+    mutate(order_flag = Mark.y) %>%
+    dplyr::group_by(SampleID, lowest) %>% # look for multiples.  Determine situations where taxonomist able to identify some taxa to genus and some to family IN SAME GROUP (ex simulidae only and simulidae and genus should not count as 2 genera)
+    dplyr::mutate(count = n()) %>% # 2's with a na in oTU = exclude flag
     mutate(OTU_Temp = ifelse(!is.na(OTU_ADEQ.x), OTU_ADEQ.x,
                              ifelse(!is.na(OTU_ADEQ.y), OTU_ADEQ.y, NA))) %>%
     mutate(exclude = ifelse(count > 1 & is.na(OTU_Temp), "Y", "N")) %>% # exclude flag for taxa not identified to lowest taxa for metrics like number of taxa but have valid information for other metrics like percent scraper.
@@ -619,5 +621,12 @@ AZ_bug_export<-function(sampleIds,AZ_traits){
 
 
     return(mats)
-
+  # unam=NAMCr::query('sampleTaxaUnambiguous',boxId=3793)
+  # mats$scientificName[mats$scientificName %in% unam$scientificName==F]
+  # unam$scientificName[unam$scientificName %in% mats$scientificName==F]
+  # unique(unam$scientificName)[unique(unam$scientificName) %in% unique(mats$scientificName)==F]
 }
+
+
+
+
