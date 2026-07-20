@@ -220,7 +220,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
   m.w.taxa <- bugnew %>%
     filter(is.na(exclude)) %>% # Exclude is for where OTU_ADEQ is NA due to taxonomist not getting low enough AND if that bug also identified to lower level
     group_by(SampleID) %>%
-    summarize(NumTaxa = n()) %>%
+    dplyr::summarize(NumTaxa = n()) %>%
     mutate(M.NumTaxa = ifelse(NumTaxa >= R.W.NumTaxa, 100, (NumTaxa/R.W.NumTaxa)* 100))
 
   #### 2 - Number of Ephemeroptera Taxa ----
