@@ -607,18 +607,18 @@ AZ_bug_export<-function(sampleIds,AZ_traits){
 
   # Step 2 - Identify rows that already have taxa present at level 2 ----
   mats_exclude <- mats_lowest %>%
-    left_join(mats, by = c("SampleID", "lowest" = "Family")) %>%
-    mutate(family_flag = Mark.x) %>%
-    left_join(mats, by = c("SampleID", "lowest" = "Order")) %>%
-    mutate(order_flag = Mark.y) %>%
+    dplyr::left_join(mats, by = c("SampleID", "lowest" = "Family")) %>%
+    dplyr::mutate(family_flag = Mark.x) %>%
+    dplyr::left_join(mats, by = c("SampleID", "lowest" = "Order")) %>%
+    dplyr::mutate(order_flag = Mark.y) %>%
     dplyr::group_by(SampleID, lowest) %>% # look for multiples.  Determine situations where taxonomist able to identify some taxa to genus and some to family IN SAME GROUP (ex simulidae only and simulidae and genus should not count as 2 genera)
     dplyr::mutate(count = dplyr::n()) %>% # 2's with a na in oTU = exclude flag
-    mutate(OTU_Temp = ifelse(!is.na(OTU_ADEQ.x), OTU_ADEQ.x,
+    dplyr::mutate(OTU_Temp = ifelse(!is.na(OTU_ADEQ.x), OTU_ADEQ.x,
                              ifelse(!is.na(OTU_ADEQ.y), OTU_ADEQ.y, NA))) %>%
-    mutate(exclude = ifelse(count > 1 & is.na(OTU_Temp), "Y", "N")) %>% # exclude flag for taxa not identified to lowest taxa for metrics like number of taxa but have valid information for other metrics like percent scraper.
-    filter(exclude == "Y") %>%
-    ungroup() %>%
-    select(SampleID, phylo = phylo.x, exclude)
+    dplyr::mutate(exclude = ifelse(count > 1 & is.na(OTU_Temp), "Y", "N")) %>% # exclude flag for taxa not identified to lowest taxa for metrics like number of taxa but have valid information for other metrics like percent scraper.
+    dplyr::filter(exclude == "Y") %>%
+    dplyr::ungroup() %>%
+    dplyr::select(SampleID, phylo = phylo.x, exclude)
 
   # Add back to original
   mats <- mats %>%
