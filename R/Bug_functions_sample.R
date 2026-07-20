@@ -192,35 +192,40 @@ OR_MMI_bug_export <- function(sampleIds){
   bugRaw = NAMCr::query(
     "sampleTaxaTranslationRarefied",
     sampleIds = sampleIds,
-    translationId = translationId,
-    fixedCount = fixedCount
+    translationId = 15,
+    fixedCount = 300
   )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
 
-  bugsTranslation = NAMCr::query(
-    "sampleTaxaTranslation",
-    translationId = 9,####edit
-    sampleIds = sampleIds
-  )
+  # bugRaw2 = NAMCr::query(
+  #   "sampleTaxa",
+  #   sampleIds = sampleIds
+  # )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
+  # sumTaxa = bugRaw2  %>%
+  #   dplyr::group_by(sampleId, taxonomyId,scientificName) %>%
+  #   dplyr::summarize(sumSplitCount = sum(splitCount))
+
   sites = NAMCr::query(
     "samples",
-    include = c("sampleId", 'siteName'),
+    include = c("sampleId", 'siteName',"area"),
     sampleIds = sampleIds
   )
   # join that data together into a single dataframe
-  OR_MMIbugs=dplyr::left_join(bugRaw,bugsTranslation, by=c("taxonomyId", "sampleId"))
-  OR_MMIbugs=dplyr::left_join(OR_MMIbugs,sites, by='sampleId')
+  OR_MMIbugs=dplyr::left_join(bugRaw,sites, by='sampleId')
+  #OR_MMIbugs=dplyr::left_join(OR_MMIbugs,sumTaxa,by=c('taxonomyId',"sampleId","scientificName"))
+  OR_MMIbugs$Taxon=OR_MMIbugs$otuName
+  OR_MMIbugs=dplyr::left_join(OR_MMIbugs,attribute_table_ORDEQ, by="Taxon")
 
   #rename columns for BiomonTools functions
-   bug_tax_nhd <- get_NHD_info(df_bugs_taxa) |>
-    dplyr::transmute(SampleID = Sample,
-                     Area_mi2 = NA_integer_,
-                     SurfaceArea = NA_integer_,
-                     TaxaID = TAXAID,
-                     N_Taxa = Count,
+   bug_tax_nhd <- OR_MMIbugs |>
+    dplyr::transmute(SampleID = sampleId,
+                     TaxaID = Taxon,
+                     N_Taxa = splitCount,
                      Index_Name ='MMI_metrics',
-                     INDEX_CLASS = str_to_title(SITE_TYPE),
+                     INDEX_CLASS ='bugs',
                      NonTarget,
-                     SITE_TYPE,
+                     LONGLIVED,
+                     Noteworthy,
+                     #SITE_TYPE,
                      Kingdom,
                      SubOrder,
                      SubFamily,
