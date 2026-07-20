@@ -534,7 +534,12 @@ AZ_bug_export<-function(sampleIds,AZ_traits){
   sumTaxa = bugRaw  %>%
     dplyr::group_by(sampleId, taxonomyId,scientificName) %>%
     dplyr::summarize(sumSplitCount = sum(splitCount))
-
+  #remove any blank records, especially
+  #with imported data such as the reference sites used in the model.
+  #all other individuals should have a non-zero split count.
+  #this could be happening with big/rare taxa, as well, especially if they
+  #are not present in the split.
+  sumTaxa=sumTaxa[sumTaxa$sumSplitCount >0,]
   sumTaxa$NAMC_taxonomy_id= sumTaxa$taxonomyId
   sumTaxa=sumTaxa[,names(sumTaxa) != 'taxonomyId']
 
