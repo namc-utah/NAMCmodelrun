@@ -228,7 +228,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     filter(is.na(exclude)) %>%
     filter(Order == "Ephemeroptera") %>%
     group_by(SampleID) %>%
-    summarize(NumEphTaxa = n()) %>%
+    dplyr::summarize(NumEphTaxa = n()) %>%
     select(SampleID, NumEphTaxa) %>%
     mutate(M.NumEphTaxa = ifelse(NumEphTaxa >= R.W.NumEphTaxa, 100, (NumEphTaxa/R.W.NumEphTaxa)* 100))
 
@@ -237,7 +237,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     filter(is.na(exclude)) %>%
     filter(Order == "Trichoptera") %>%
     group_by(SampleID) %>%
-    summarize(NumTriTaxa = n()) %>%
+    dplyr::summarize(NumTriTaxa = n()) %>%
     select(SampleID, NumTriTaxa) %>%
     mutate(M.NumTriTaxa = ifelse(NumTriTaxa >= R.W.NumTriTaxa, 100, (NumTriTaxa/R.W.NumTriTaxa)* 100))
 
@@ -247,7 +247,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     filter(Family != "Chironomidae") %>% # Family FFG for all Chironomidae is "UN" or null in master taxa
     filter(FFG == "Scraper") %>%
     group_by(SampleID) %>%
-    summarize(NumScraperTaxa = n()) %>%
+    dplyr::summarize(NumScraperTaxa = n()) %>%
     select(SampleID, NumScraperTaxa) %>%
     mutate(M.NumScraperTaxa = ifelse(NumScraperTaxa >= R.W.NumScraperTaxa, 100, (NumScraperTaxa/R.W.NumScraperTaxa)* 100))
 
@@ -275,7 +275,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     filter(is.na(exclude)) %>%
     filter(Order == "Diptera") %>%
     group_by(SampleID) %>%
-    summarize(NumDipTaxa = n()) %>%
+    dplyr::summarize(NumDipTaxa = n()) %>%
     select(SampleID, NumDipTaxa) %>%
     mutate(M.NumDipTaxa = ifelse(NumDipTaxa >= R.W.NumDipTaxa, 100, (NumDipTaxa/R.W.NumDipTaxa)* 100))
 
@@ -346,7 +346,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
   m.c.taxa <- bugnew %>%
     filter(is.na(exclude)) %>%
     group_by(SampleID) %>%
-    summarize(NumTaxa = n()) %>%
+    dplyr::summarize(NumTaxa = n()) %>%
     mutate(M.NumTaxa = ifelse(NumTaxa >= R.C.NumTaxa, 100, (NumTaxa/R.C.NumTaxa)* 100))
 
   #### 2 - Number of Diptera Taxa ----
@@ -355,7 +355,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     filter(is.na(exclude)) %>%
     filter(Order == "Diptera") %>%
     group_by(SampleID) %>%
-    summarize(NumDipTaxa = n()) %>%
+    dplyr::summarize(NumDipTaxa = n()) %>%
     select(SampleID, NumDipTaxa) %>%
     mutate(M.NumDipTaxa = ifelse(NumDipTaxa >= R.C.NumDipTaxa, 100, (NumDipTaxa/R.C.NumDipTaxa)* 100))
 
@@ -365,7 +365,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     filter(is.na(exclude)) %>%
     filter(TolVal <= 3) %>% # no na's
     group_by(SampleID) %>%
-    summarise(NumIntolTaxa = n()) %>%
+    dplyr::summarise(NumIntolTaxa = n()) %>%
     mutate(M.NumIntolTaxa = ifelse(NumIntolTaxa >= R.C.NumIntolTaxa, 100, (NumIntolTaxa/R.C.NumIntolTaxa)* 100))
 
   #### 4 - Number of Scraper Taxa ----
@@ -374,7 +374,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     filter(Family != "Chironomidae") %>% # Family FFG for all Chironomidae is "UN" or null in master taxa
     filter(FFG == "Scraper") %>%
     group_by(SampleID) %>%
-    summarize(NumScraperTaxa = n()) %>%
+    dplyr::summarize(NumScraperTaxa = n()) %>%
     select(SampleID, NumScraperTaxa) %>%
     mutate(M.NumScraperTaxa = ifelse(NumScraperTaxa >= R.C.NumScraperTaxa, 100, (NumScraperTaxa/R.C.NumScraperTaxa)* 100))
 
