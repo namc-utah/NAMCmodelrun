@@ -425,7 +425,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     filter(ELEV_SITE>1524) %>%
     replace_na(list(M.HBI = 0, M.NumTaxa = 0, M.DipTaxa = 0, M.NumIntolTaxa = 0, M.NumScraperTaxa = 0, M.PctScraper = 0, M.PctPlec = 0)) %>%
     dplyr::mutate(modelId=169,IBI = (M.HBI + M.NumTaxa + M.NumDipTaxa + M.NumIntolTaxa + M.NumScraperTaxa + M.PctScraper + M.PctPlec)/7) %>%
-    select(SampleID, CollDate,NumTaxa, NumDipTaxa, NumIntolTaxa, NumScraperTaxa, PctScraper, PctPlec, HBI, everything())
+    select(StationID, CollDate,NumTaxa, NumDipTaxa, NumIntolTaxa, NumScraperTaxa, PctScraper, PctPlec, HBI, everything())
 
   ## IBI ----
   ibi <- ibi.w %>%
