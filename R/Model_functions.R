@@ -531,7 +531,7 @@ rarify<-function(inbug, sample.ID, abund, subsiz){
 OR_MMI_model<-function(bugnew,prednew,rfmod_nt_habitat_rheo,rfmod_pi_EPTNoHydro,rfmod_pi_ti_stenocold_cold_cool,rfmod_pt_tv_intol){
 
   #join bug data to predictors
-  Drfdat=dplyr::left_join(bugnew,prednew,by='SampleID')
+  Drfdat=dplyr::left_join(bugnew,prednew,by='SAMPLEID')
 
   # which rf models to use
   rfmodels <- c('rfmod_pt_tv_intol', 'rfmod_nt_habitat_rheo', 'rfmod_pt_ti_stenocold_cold_cool',
