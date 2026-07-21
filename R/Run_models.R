@@ -24,7 +24,7 @@ if (exists("boxId")) {
   def_samples = NAMCr::query("samples", projectId = projectId)
 }
 
-def_samples<-def_samples[def_samples$sampleId %in% c(220856,220857),]
+#def_samples<-def_samples[def_samples$sampleId %in% c(220856,220857),]
 if(exists('CritHab')){
 #for PIBO model (only Idaho)
 def_samples=def_samples[def_samples$siteId %in% CritHab$siteId,]
@@ -278,15 +278,15 @@ if (length(def_models$modelId[def_models$modelId %in% 8]==T)>=1){
 # the R objects are named with the model abbreviation
 # instead of all these if statements the R file name could be stored in the database... but WY and NV require two models and R file names
 #if CO, CSCI, or OR null model no R data file needs loaded in
-if (length(def_models$modelId[def_models$modelId %in% c(1,4,5,6,12,169)]==T)>=1){
+if (length(def_models$modelId[def_models$modelId %in% c(1,4,5,6,12)]==T)>=1){
   print("no R object needs loaded")
   #if WY model only one Rdata file needs loaded and not one for each "model" but Alkalinity also needs added
 } else if (length(def_models$modelId[def_models$modelId %in% 13:23]==T)>=1){
   load("sysdata.rda//WY2018.Rdata")
   load("sysdata.rda//Alkalinity.Rdata")### objects named the same so they will be overwritten.... how do we deal with
   #load in AZ trait data only one R data file needs loaded in and not one for each model
-}  else if (length(def_models$modelId[def_models$modelId %in% 169:236]==T)>=1){
-  load("AZ_perennial.Rdata")
+}  else if (length(def_models$modelId[def_models$modelId %in% c(169,236)]==T)>=1){
+  load("sysdata.rda//AZ_perennial.Rdata")
   #if westwide model only one R data file needs loaded in and not one for each model
 }else if (length(def_models$modelId[def_models$modelId %in% 25:26]==T)>=1){
   load(paste0("sysdata.rda//Westwide2018.Rdata"))
@@ -342,6 +342,7 @@ if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1) {
   bugnew = CSCI_bug(sampleIds = def_samples$sampleId)
 } else if (length(def_models$modelId[def_models$modelId %in% c(169,236)]==T)>=1){
   bugnew=AZ_bug_export(sampleIds = def_samples$sampleId)
+  row.names(bugnew)=bugnew$SampleID
 } else if (length(def_models$modelId[def_models$modelId %in% 599]==T)>=1){
   bugnew=OR_MMI_bug_export(sampleIds = def_samples$sampleId)
 }else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
@@ -362,10 +363,18 @@ message('PREDATOR does not need predictors')
   bugnew = bugnew[order(row.names(bugnew)),];
   prednew = prednew[order(rownames(prednew)),];
 } else {bugnew<-subset(bugnew,rownames(bugnew) %in% rownames(prednew))
-prednew<-subset(prednew,rownames(prednew) %in% rownames(bugnew))
+#prednew<-subset(prednew,rownames(prednew) %in% rownames(bugnew))
 #reorder them the same just in case model functions dont already do this
 bugnew = bugnew[order(rownames(bugnew)),];
 prednew = prednew[order(rownames(prednew)),];
+if(modelID %in% c(169,236)){
+  prednew$SampleID=as.integer(row.names(prednew))
+  names(def_samples)[1]<-'SampleID'
+  prednew=plyr::join(prednew,def_samples[,c('SampleID','sampleDate','siteName')])
+  names(prednew)[names(prednew)=='sampleDate']<-'CollDate'
+  names(prednew)[names(prednew)=='siteName']<-'StationID'
+  prednew$ELEV_SITE=little_df$value
+}
 }
 
 
@@ -604,13 +613,13 @@ finalResults=dplyr::left_join(finalResults,def_samples[,c('sampleId','siteLongit
 finalResults_sf=sf::st_as_sf(finalResults,coords=c('siteLongitude','siteLatitude'),crs=4269)
 # create modelId column specific to geography
 if (length(modelID[modelID %in% 25:26]==T)>=1){
-  ecoregion=sf::st_read(paste0(user_path,"//Box//NAMC WATS Department Files//GIS//GIS_Stats//CONUS//ecoregion//hybrid_level_III_ecoregions.shp"))
+  ecoregion=sf::st_read(paste0(user_path,"Box//GIS//GIS_Stats//CONUS//ecoregion//hybrid_level_III_ecoregions.shp"))
   ecoregion=sf::st_make_valid(ecoregion)
   finalResults_sf=sf::st_transform(finalResults_sf,5070)
   finalResults_sf=sf::st_intersection(finalResults_sf,ecoregion)
   finalResults=dplyr::left_join(finalResults,sf::st_drop_geometry(finalResults_sf[,c('sampleId','modelId')]),by='sampleId')
 } else if (length(modelID[modelID %in% 13:23]==T)>=1){
-  ecoregion=sf::st_read(paste0(ecoregion_base_path,"//Box//NAMC WATS Department Files////GIS_Stats//Wyoming//ecoregion//BIOREGIONS_2011_modifiedCP.shp"))
+  ecoregion=sf::st_read(paste0(ecoregion_base_path,"Box//GIS_Stats//Wyoming//ecoregion//BIOREGIONS_2011_modifiedCP.shp"))
   ecoregion=sf::st_make_valid(ecoregion)
   finalResults_sf=sf::st_transform(finalResults_sf,5070)
   finalResults_sf=sf::st_intersection(finalResults_sf,ecoregion)
