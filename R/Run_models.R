@@ -23,7 +23,7 @@ if (exists("boxId")) {
 }else{
   def_samples = NAMCr::query("samples", projectId = projectId)
 }
-
+def_samples=def_samples[def_samples$sampleId %in% c(149814,149822,210808)==F,]
 #def_samples<-def_samples[def_samples$sampleId %in% c(220856,220857),]
 if(exists('CritHab')){
 #for PIBO model (only Idaho)
@@ -351,6 +351,7 @@ if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1) {
 
 }
 
+
 # ---------------------------------------------------------------
 # make sure predictors and bug data are in same sample order and all samples match up
 # ---------------------------------------------------------------
@@ -387,7 +388,13 @@ if(modelID %in% c(169,236)){
 # ------------------------------
 # models using john vansickles RIVPACS random forest code : AREMP, UTDEQ15, Westwide, PIBO
 # ##Code breaks here on 5/16/2023, in model.predict.v4.2.r## #
-
+preddy=predcal[row.names(predcal) %in% row.names(prednew),]
+buggy=bugcal.pa[row.names(bugcal.pa) %in% row.names(bugnew),]
+if(modelID==599){
+  prednew$SAMPLEID=as.integer(row.names(prednew))
+  prednew=prednew[prednew$SAMPLEID!=210808,]
+#  names(prednew)[names(prednew)=='P205']<-'P2O5'
+}
 
 if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29,598)]==T)>=1) {
   OE_list<-list()
@@ -397,10 +404,10 @@ if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29,598)]==T)
       grps.final,
       preds.final,
       ranfor.mod,
-      prednew = prednew,
-      bugnew=bugnew,
+      prednew = preddy,
+      bugnew=buggy,
       Pc = 0.5,
-      Cal.OOB = FALSE
+      Cal.OOB = T
     )#....
     modelResults<-OE$OE.scores
     modelResults$modelID<-def_models$abbreviation[i]
@@ -477,10 +484,10 @@ if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29,598)]==T)
       rfmod_nt_habitat_rheo,
       rfmod_pi_EPTNoHydro,
       rfmod_pi_ti_stenocold_cold_cool,
-      rfmod_pt_tv_intol,
-      rf_models,
-      mdeg_metrics_adj_cal,
-      ref_metrics_adj
+      rfmod_pt_tv_intol
+       # rf_models,
+       # mdeg_metrics_adj_cal,
+       # ref_metrics_adj
     )
 } else if (length(def_models$modelId[def_models$modelId %in% c(169,236)]==T)>=1) {# AZ perennial MMI
   modelResults <-AZ_perennial_MMI_model(
@@ -546,6 +553,7 @@ applicabilitypreds = tidyr::pivot_wider(applicabilitypreds,
                                         names_from = "abbreviation",
                                         values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
 applicabilitypreds=as.data.frame(applicabilitypreds)
+applicabilitypreds=applicabilitypreds[applicabilitypreds$sampleId!=210808,]
 # run model applicability function
 #only for PREDATOR SECTION
 #some sites are NA, which breaks the code because "duplicate row names"
@@ -575,10 +583,11 @@ if(modelID ==1){
 names(modelResults)[1]<-'sampleId'
 modelResults$sampleId<-as.integer(modelResults$sampleId)
 }
-modelResults$sampleId=sampleIds
+modelResults$sampleId=modelResults$SAMPLEID
 finalResults=merge(modelResults,ModelApplicability_obj,by="sampleId")
 }
 finalResults
+clipr::write_clip(finalResults)
 # ---------------------------------------------------------------
 # Get additional bug metrics (fixed count)
 # ---------------------------------------------------------------
