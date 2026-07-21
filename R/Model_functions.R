@@ -551,7 +551,7 @@ OR_MMI_model<-function(bugnew,prednew,rfmod_nt_habitat_rheo,rfmod_pi_EPTNoHydro,
 
   ## CALCULATE RESIDUALS ---------------------------------------------------------------------------------------------
   resid=list()
-  for (i in 2:5){
+  for (i in 5:8){
     tryCatch({resid[[paste0(colnames(Drfdat2)[i],"_resid")]]=Drfdat2[,i]- Drfdat2[,paste0("E.rfmod_",colnames(Drfdat2)[i])]
 
     }, error =function (e){
@@ -590,6 +590,6 @@ OR_MMI_model<-function(bugnew,prednew,rfmod_nt_habitat_rheo,rfmod_pi_EPTNoHydro,
                     pt_ti_stenocold_cold_cool_resid+pi_EPTNoHydro_resid)  /4)
 
   #Throw MMI result and MMI metrics into a list for getting out of the function
-  metric_rs=dplyr::left_join(bugnew, metric_rs, by="SampleID")
+  metric_rs=dplyr::left_join(bugnew, metric_rs, by="SAMPLEID")
   return(metric_rs)
 }
