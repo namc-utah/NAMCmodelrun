@@ -23,15 +23,10 @@ if (exists("boxId")) {
 }else{
   def_samples = NAMCr::query("samples", projectId = projectId)
 }
-#def_samples=def_samples[def_samples$sampleId %in% c(149814,149822,210808)==F,]
-#def_samples<-def_samples[def_samples$sampleId %in% c(220856,220857),]
 if(exists('CritHab')){
 #for PIBO model (only Idaho)
 def_samples=def_samples[def_samples$siteId %in% CritHab$siteId,]
 }
-#def_samples=def_samples[def_samples$sampleId %in% c(220070,220072)==F,]
-#def_samples=def_samples[def_samples$sampleId !=219740,]
-#def_samples<-def_samples[def_samples$sampleId %in% c(213908,213907),]
 #this section will subset out the modelID that is appropriate for the OR
 #models.
 if(modelID %in% 10:12){
@@ -65,8 +60,7 @@ if(modelID==10){
     }
   }
 }
-#sampleIds<-sampleIds[sampleIds %in% c(216039,216040,216047)==F]
-#sampleIds<-sampleIds[sampleIds!=213928]
+
 #   # ---------------------------------------------------------------
 # get a list of samples if the needed model has already been run for the sample
 # ---------------------------------------------------------------
@@ -342,7 +336,6 @@ if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1) {
   bugnew = CSCI_bug(sampleIds = def_samples$sampleId)
 } else if (length(def_models$modelId[def_models$modelId %in% c(169,236)]==T)>=1){
   bugnew=AZ_bug_export(sampleIds = def_samples$sampleId)
-  row.names(bugnew)=bugnew$SampleID
 } else if (length(def_models$modelId[def_models$modelId %in% 599]==T)>=1){
   bugnew=OR_MMI_bug_export(sampleIds = def_samples$sampleId)
 }else if (def_models$modelTypeAbbreviation == "MMI") {# if modelType= bug MMI get
@@ -357,7 +350,7 @@ if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1) {
 # ---------------------------------------------------------------
 if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1){#no predictors are needed for OR null model
 message('PREDATOR does not need predictors')
-} else if (length(def_models$modelId[def_models$modelId %in% c(1,4:6)]==T)>=1){#CSCI bug file doesnt have row names and has multiple rows for a given sampleID, so does CO but CO is written out to disk
+} else if (length(def_models$modelId[def_models$modelId %in% c(1,4:6,169:236)]==T)>=1){#CSCI bug file doesnt have row names and has multiple rows for a given sampleID, so does CO but CO is written out to disk
   bugnew<-subset(bugnew,bugnew$SampleID %in% rownames(prednew))
   prednew<-subset(prednew,rownames(prednew) %in% bugnew$SampleID)
   #reorder them the same just in case model functions dont already do this
@@ -368,11 +361,7 @@ message('PREDATOR does not need predictors')
 #reorder them the same just in case model functions dont already do this
 bugnew = bugnew[order(rownames(bugnew)),];
 prednew = prednew[order(rownames(prednew)),];
-if(modelID %in% c(169,236)){
-  prednew$SampleID=as.integer(row.names(prednew))
-  names(def_samples)[1]<-'SampleID'
-  prednew$ELEV_SITE=little_df$value
-}
+
 }
 
 
@@ -516,6 +505,8 @@ if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29,598)]==T)
 
 }
 
+modelResults$sampleId<-as.integer(row.names(modelResults))
+
 #clipr::write_clip(modelResults)
 #modelResults=modelResults[!is.na(modelResults),]
 # ---------------------------------------------------------------
@@ -531,7 +522,7 @@ applicabilitypreds = NAMCr::query("samplePredictorValues",
                                     "predictorValue"
                                   ),
                                   sampleIds = sampleIds,
-                                  modelIds=modelID
+                                  modelIds=modelID[1]
 ) #need list of samples in database with values
 applicabilitypreds = subset(applicabilitypreds, abbreviation %in% c('ElevCat','Tmean8110Ws','WsAreaSqKm','Precip8110Ws'))
 applicabilitypreds$predictorValue=as.numeric(applicabilitypreds$predictorValue)
@@ -540,40 +531,29 @@ applicabilitypreds = tidyr::pivot_wider(applicabilitypreds,
                                         names_from = "abbreviation",
                                         values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
 applicabilitypreds=as.data.frame(applicabilitypreds)
+
 # run model applicability function
-#only for PREDATOR SECTION
-#some sites are NA, which breaks the code because "duplicate row names"
-#so just give them burner names...
-if(modelID==12){
-CalPredsModelApplicability$SiteID[CalPredsModelApplicability$modelID==12 & CalPredsModelApplicability$SiteID=='']<-LETTERS[1:9]
-}
 if(length(modelID)>1){
+  arbitrary_list=list()
   for(i in 1:length(modelID)){
     ModelApplicability_obj = ModelApplicability(CalPredsModelApplicability,
                                                 modelId = modelID[i],
                                                 applicabilitypreds) # add to config file or add an R object with calpreds
-
+    ModelApplicability_obj$modelId=modelID
     arbitrary_list[[i]]<-ModelApplicability_obj
   }
   ModelApplicability_obj<-do.call('rbind',arbitrary_list)
-  row.names(modelResults)<-sampleIds
-  finalResults=merge(modelResults,ModelApplicability_obj,by="row.names")
+
 }else{
   ModelApplicability_obj = ModelApplicability(CalPredsModelApplicability,
                                               modelId = modelID,
                                               applicabilitypreds) # add to config file or add an R object with calpreds
-modelResults<-as.data.frame(modelResults)
-if(modelID ==1){
-#rownames(modelResults)<-modelResults$sampleId
-#modelResults<-modelResults[,-1]
-names(modelResults)[1]<-'sampleId'
-modelResults$sampleId<-as.integer(modelResults$sampleId)
 }
-modelResults$sampleId=modelResults$SAMPLEID
+
 finalResults=merge(modelResults,ModelApplicability_obj,by="sampleId")
-}
-finalResults
-clipr::write_clip(finalResults)
+
+#finalResults
+#clipr::write_clip(finalResults)
 # ---------------------------------------------------------------
 # Get additional bug metrics (fixed count)
 # ---------------------------------------------------------------

@@ -189,13 +189,13 @@ MMI_metrics<-function(sampleIds,translationId,fixedCount,modelId){
 #' @examples
 OR_MMI_bug_export <- function(sampleIds){
   # get needed data from the APIs
-  bugRaw = NAMCr::query(
+  OR_MMIbugs = NAMCr::query(
     "sampleTaxaTranslationRarefied",
     sampleIds = sampleIds,
     translationId = 15,
     fixedCount = 300
   )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
-
+  #
   # bugRaw2 = NAMCr::query(
   #   "sampleTaxa",
   #   sampleIds = sampleIds
@@ -204,13 +204,9 @@ OR_MMI_bug_export <- function(sampleIds){
   #   dplyr::group_by(sampleId, taxonomyId,scientificName) %>%
   #   dplyr::summarize(sumSplitCount = sum(splitCount))
 
-  sites = NAMCr::query(
-    "samples",
-    include = c("sampleId", 'siteName',"area"),
-    sampleIds = sampleIds
-  )
+
   # join that data together into a single dataframe
-  OR_MMIbugs=dplyr::left_join(bugRaw,sites, by='sampleId')
+  #OR_MMIbugs=dplyr::left_join(bugRaw,sites, by='sampleId')
   #OR_MMIbugs=dplyr::left_join(OR_MMIbugs,sumTaxa,by=c('taxonomyId',"sampleId","scientificName"))
   OR_MMIbugs$Taxon=OR_MMIbugs$otuName
   OR_MMIbugs=dplyr::left_join(OR_MMIbugs,attribute_table_ORDEQ, by="Taxon")
@@ -280,6 +276,7 @@ OR_MMI_bug_export <- function(sampleIds){
 
 
   bugnew= metricsdf
+  row.names(bugnew)<-bugnew$SAMPLEID
   return(bugnew)
 }
 
@@ -623,7 +620,7 @@ AZ_bug_export<-function(sampleIds,AZ_traits){
   # Add back to original
   mats <- mats %>%
     left_join(mats_exclude, by = c("SampleID", "phylo"))
-
+  mats=as.data.frame(mats)
 
     return(mats)
   # unam=NAMCr::query('sampleTaxaUnambiguous',boxId=3793)

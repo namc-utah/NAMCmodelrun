@@ -199,6 +199,7 @@ NV_MMI_model<-function(bugnew,prednew,CLINGER.rf,INSET.rf,NONSET.rf,PER_CFA.rf,P
 #'
 #' @examples
 AZ_perennial_MMI_model<-function(bugnew,prednew){
+prednew$SampleID=as.integer(row.names(prednew))
 
   # MATS IBI ----
 
@@ -323,7 +324,7 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     filter(ELEV_SITE <= 1524) %>%
     #Num Dip Taxa not being coerced to 0, even though it is metric used in both C and W models...?
     replace_na(list(M.HBI = 0, M.NumChironTaxa = 0, M.PctDom = 0, M.NumTaxa = 0, M.NumEphTaxa = 0, M.NumTriTaxa = 0, M.NumScraperTaxa = 0, M.PctScraper = 0, M.PctEphm = 0)) %>%
-    dplyr::mutate(modelId=236,IBI = (M.HBI + M.NumDipTaxa + M.PctDom + M.NumTaxa + M.NumEphTaxa + M.NumTriTaxa + M.NumScraperTaxa + M.PctScraper + M.PctEphm)/9) %>%
+    dplyr::mutate(IBI = (M.HBI + M.NumDipTaxa + M.PctDom + M.NumTaxa + M.NumEphTaxa + M.NumTriTaxa + M.NumScraperTaxa + M.PctScraper + M.PctEphm)/9) %>%
     select(SampleID, NumTaxa, NumTriTaxa, NumEphTaxa, NumDipTaxa, NumScraperTaxa, PctScraper, PctEphm, PctDom, HBI, everything())
 
 
@@ -424,15 +425,17 @@ AZ_perennial_MMI_model<-function(bugnew,prednew){
     left_join(prednew, by = "SampleID") %>%
     filter(ELEV_SITE>1524) %>%
     replace_na(list(M.HBI = 0, M.NumTaxa = 0, M.DipTaxa = 0, M.NumIntolTaxa = 0, M.NumScraperTaxa = 0, M.PctScraper = 0, M.PctPlec = 0)) %>%
-    dplyr::mutate(modelId=169,IBI = (M.HBI + M.NumTaxa + M.NumDipTaxa + M.NumIntolTaxa + M.NumScraperTaxa + M.PctScraper + M.PctPlec)/7) %>%
+    dplyr::mutate(IBI = (M.HBI + M.NumTaxa + M.NumDipTaxa + M.NumIntolTaxa + M.NumScraperTaxa + M.PctScraper + M.PctPlec)/7) %>%
     select(SampleID,NumTaxa, NumDipTaxa, NumIntolTaxa, NumScraperTaxa, PctScraper, PctPlec, HBI, everything())
 
   ## IBI ----
   ibi <- ibi.w %>%
     bind_rows(ibi.c)
   #add sampleId to the final table
-
-  return(ibi)
+ibi=as.data.frame(ibi)
+ibi$modelId=ifelse(ibi$ELEV_SITE>1524,169,236)
+row.names(ibi)<-ibi$SampleID
+return(ibi)
 }
 
 
@@ -531,7 +534,8 @@ rarify<-function(inbug, sample.ID, abund, subsiz){
 OR_MMI_model<-function(bugnew,prednew,rfmod_nt_habitat_rheo,rfmod_pi_EPTNoHydro,rfmod_pi_ti_stenocold_cold_cool,rfmod_pt_tv_intol){
 
   #join bug data to predictors
-  Drfdat=dplyr::left_join(bugnew,prednew,by='SAMPLEID')
+  Drfdat=merge(bugnew,prednew,by=0)
+#Drfdat=Drfdat[-c(19,20),]
 
   # which rf models to use
   rfmodels <- c('rfmod_pt_tv_intol', 'rfmod_nt_habitat_rheo', 'rfmod_pt_ti_stenocold_cold_cool',
@@ -551,7 +555,7 @@ OR_MMI_model<-function(bugnew,prednew,rfmod_nt_habitat_rheo,rfmod_pi_EPTNoHydro,
 
   ## CALCULATE RESIDUALS ---------------------------------------------------------------------------------------------
   resid=list()
-  for (i in 5:8){
+  for (i in 6:9){
     tryCatch({resid[[paste0(colnames(Drfdat2)[i],"_resid")]]=Drfdat2[,i]- Drfdat2[,paste0("E.rfmod_",colnames(Drfdat2)[i])]
 
     }, error =function (e){
@@ -591,5 +595,6 @@ OR_MMI_model<-function(bugnew,prednew,rfmod_nt_habitat_rheo,rfmod_pi_EPTNoHydro,
 
   #Throw MMI result and MMI metrics into a list for getting out of the function
   metric_rs=dplyr::left_join(bugnew, metric_rs, by="SAMPLEID")
+  row.names(metric_rs)<-metric_rs$SAMPLEID
   return(metric_rs)
 }
