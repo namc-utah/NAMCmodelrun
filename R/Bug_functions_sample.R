@@ -558,6 +558,7 @@ AZ_bug_export<-function(sampleIds,AZ_traits){
   mats_raw <- mats_individuals %>%
     mutate(Mark = "Y") %>%
     mutate(phylo = paste(Order, Family, Genus))
+  mats_raw[mats_raw=='']<-NA
 
 
   ### using this dataset for richness metrics and filtering only taxa with OTUs
@@ -601,26 +602,92 @@ AZ_bug_export<-function(sampleIds,AZ_traits){
     mutate(lowest = ifelse(!is.na(Family), "Family",
                            ifelse(!is.na(Order), "Order", "Reject"))) %>%
     distinct(SampleID, phylo, lowest,Mark)
+#### Andrew experimenting###
+  #getting only IDs where the lowest level is Family or Order
+  coarser_only <- mats %>%
+    filter(is.na(OTU_ADEQ)) %>%
+    mutate(lowest = dplyr::case_when(
+      !is.na(Family) ~ "Family",
+      !is.na(Order)  ~ "Order",
+      TRUE            ~ "Reject"
+    )) %>%
+    filter(lowest %in% c("Family","Order")) %>%
+    select(SampleID, phylo, lowest, Family, Order, Mark)
 
+  # Identify whether the sample has any finer (OTU-level) rows under that Family/Order
+  has_finer <- mats %>%
+    filter(!is.na(OTU_ADEQ)) %>%
+    mutate(level = dplyr::case_when(
+      !is.na(Family) ~ "Family",
+      !is.na(Order)  ~ "Order",
+      TRUE            ~ NA_character_
+    )) %>%
+    # Checks for family and order children
+    #and helps determine if something needs to be excluded
+    dplyr::summarise(
+      family_has_finer = list(unique(Family[!is.na(Family)])),
+      order_has_finer  = list(unique(Order[!is.na(Order)])),
+      .by = SampleID
+    )
+
+  # Compute family/order flags via joins
+  has_finer_family <- mats %>%
+    filter(!is.na(OTU_ADEQ), !is.na(Family)) %>%
+    distinct(SampleID, Family) %>%
+    mutate(family_conflict = "Y")
+  #conflict just tells us that children of that family are present
+
+  has_finer_order <- mats %>%
+    filter(!is.na(OTU_ADEQ), !is.na(Order)) %>%
+    distinct(SampleID, Order) %>%
+    mutate(order_conflict = "Y")
+  #conflict just tells us that children of that order are present
+
+  mats_exclude <- coarser_only %>%
+    left_join(has_finer_family, by = c("SampleID","Family")) %>%
+    left_join(has_finer_order,  by = c("SampleID","Order")) %>%
+    #using 2 conditions to tell us if a taxon should be excluded
+    #if the lowest is either family or order AND it has children present in the sample
+    mutate(exclude = dplyr::case_when(
+      lowest == "Family" & family_conflict == "Y" ~ "Y",
+      lowest == "Order"  & order_conflict  == "Y" ~ "Y",
+      TRUE ~ "N"
+    )) %>%
+    transmute(
+      SampleID,
+      phylo = phylo,
+      exclude
+    ) %>%
+    dplyr::filter(exclude == "Y")
+  #mats_exclude=mats_exclude[mats_exclude$exclude=='Y',]
+  #### end Andrew experimenting
+
+  #this section does not actually check for anything.
+  #the issue is that the grouping is just grouping by sample and "lowest",
+  #which is just telling us how many coarse IDs there are per sample. It
+  #does not actually match parent-child relationship.
   # Step 2 - Identify rows that already have taxa present at level 2 ----
-  mats_exclude <- mats_lowest %>%
-    dplyr::left_join(mats, by = c("SampleID", "lowest" = "Family")) %>%
-    dplyr::mutate(family_flag = Mark.x) %>%
-    dplyr::left_join(mats, by = c("SampleID", "lowest" = "Order")) %>%
-    dplyr::mutate(order_flag = Mark.y) %>%
-    dplyr::group_by(SampleID, lowest) %>% # look for multiples.  Determine situations where taxonomist able to identify some taxa to genus and some to family IN SAME GROUP (ex simulidae only and simulidae and genus should not count as 2 genera)
-    dplyr::mutate(count = dplyr::n()) %>% # 2's with a na in oTU = exclude flag
-    dplyr::mutate(OTU_Temp = ifelse(!is.na(OTU_ADEQ.x), OTU_ADEQ.x,
-                             ifelse(!is.na(OTU_ADEQ.y), OTU_ADEQ.y, NA))) %>%
-    dplyr::mutate(exclude = ifelse(count > 1 & is.na(OTU_Temp), "Y", "N")) %>% # exclude flag for taxa not identified to lowest taxa for metrics like number of taxa but have valid information for other metrics like percent scraper.
-    dplyr::filter(exclude == "Y") %>%
-    dplyr::ungroup() %>%
-    dplyr::select(SampleID, phylo = phylo.x, exclude)
+  # mats_exclude <- mats_lowest %>%
+  #   dplyr::left_join(mats, by = c("SampleID", "lowest" = "Family")) %>%
+  #   dplyr::mutate(family_flag = Mark.x) %>%
+  #   dplyr::left_join(mats, by = c("SampleID", "lowest" = "Order")) %>%
+  #   dplyr::mutate(order_flag = Mark.y) %>%
+  #   dplyr::group_by(SampleID,lowest) %>% # look for multiples.  Determine situations where taxonomist able to identify some taxa to genus and some to family IN SAME GROUP (ex simulidae only and simulidae and genus should not count as 2 genera)
+  #   dplyr::mutate(count = dplyr::n()) %>% # 2's with a na in oTU = exclude flag
+  #   dplyr::mutate(OTU_Temp = ifelse(!is.na(OTU_ADEQ.x), OTU_ADEQ.x,
+  #                            ifelse(!is.na(OTU_ADEQ.y), OTU_ADEQ.y, NA))) %>%
+  #   dplyr::mutate(exclude = ifelse(count > 1 & is.na(OTU_Temp), "Y", "N")) %>% # exclude flag for taxa not identified to lowest taxa for metrics like number of taxa but have valid information for other metrics like percent scraper.
+  #   dplyr::filter(exclude == "Y") %>%
+  #   dplyr::ungroup() %>%
+  #   dplyr::select(SampleID, phylo = phylo.x, exclude,OTU_Temp,count)
 
   # Add back to original
-  mats <- mats %>%
-    left_join(mats_exclude, by = c("SampleID", "phylo"))
+  #this has not changed
+  mats <- as.data.frame(mats %>%
+    left_join(mats_exclude, by = c("SampleID", "phylo")))
   mats=as.data.frame(mats)
+
+
 
     return(mats)
   # unam=NAMCr::query('sampleTaxaUnambiguous',boxId=3793)
