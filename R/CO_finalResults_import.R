@@ -3,10 +3,11 @@
 # ---------------------------------------------------------------
 #modelResults=read.csv("/Users/namc/Library/CloudStorage/Box-Box/NAMC/OE_Modeling/NAMC_Supported_OEmodels/CO/InputAndResults_CO2017MMI/Results1311.csv")
 modelId=565
-modelResults=read.csv("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//Colorado//Documentation//2025 EDAS Distributable Package//exports//Box11845.csv")
+modelResults=read.csv("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//Colorado//Documentation//2025 EDAS Distributable Package//exports//Proj6933.csv")
 #modelResults=read.csv("C://Users//andrew.caudillo.BUGLAB-I9//Box//NAMC//OEModeling//NAMC_Supported_OEmodels//Colorado//Documentation//EDAS2017//working new version//exports//11845.csv")
 modelResults = modelResults[,c("StationID","SiteClassification","MMI", "TotalInd")]
-if(modelId %in% c(565,567,568)){
+#modelResults=modelResults[modelResults$StationID %in% c(220496,220852),]
+if(modelId %in% c(565,566,567)){
 modelResults$BioType=ifelse(modelResults$SiteClassification=="1",565,
                             ifelse(modelResults$SiteClassification=="2",566,
                                    ifelse(modelResults$SiteClassification=="3",567,NA
@@ -24,7 +25,7 @@ modelResults = modelResults %>%  na.omit()
 # Always run model applicability test
 # ---------------------------------------------------------------
 # get all predictor values needed for a box or project # note this either needs a loop written over it or a different API end point
-if(modelId %in% c(565,567,568)){
+if(modelId %in% c(565,566,567)){
 
 applicabilitypreds = NAMCr::query("samplePredictorValues",
                                   include = c(
@@ -49,12 +50,15 @@ applicabilitypreds=as.data.frame(applicabilitypreds)
 ModelApplicability1 = ModelApplicability(CalPredsModelApplicability,
                                         modelId = 565,
                                         applicabilitypreds)
+ModelApplicability1$modelId=565
 ModelApplicability2 = ModelApplicability(CalPredsModelApplicability,
                                          modelId = 566,
                                          applicabilitypreds)
+ModelApplicability2$modelId=566
 ModelApplicability3 = ModelApplicability(CalPredsModelApplicability,
                                          modelId = 567,
-                                         applicabilitypreds)# add to config file or add an R object with calpreds
+                                         applicabilitypreds)
+ModelApplicability3$modelId=567
 }else{
   applicabilitypreds = NAMCr::query("samplePredictorValues",
                                     include = c(
@@ -79,22 +83,26 @@ ModelApplicability3 = ModelApplicability(CalPredsModelApplicability,
   ModelApplicability1 = ModelApplicability(CalPredsModelApplicability,
                                            modelId = 4,
                                            applicabilitypreds)
+  ModelApplicability1$modelId=4
   ModelApplicability2 = ModelApplicability(CalPredsModelApplicability,
                                            modelId = 5,
                                            applicabilitypreds)
+  ModelApplicability2$modelId=5
   ModelApplicability3 = ModelApplicability(CalPredsModelApplicability,
                                            modelId = 6,
                                            applicabilitypreds)
+  ModelApplicability3$modelId=6
 }
-ModelApplicability=rbind(ModelApplicability1,ModelApplicability2,ModelApplicability3)
-finalResults=merge(modelResults,ModelApplicability,by="sampleId")
-finalResults<-finalResults[!duplicated(finalResults$sampleId),]
-
+ModelAppy=rbind(ModelApplicability1,ModelApplicability2,ModelApplicability3)
+finalResults=plyr::join(ModelAppy,modelResults,by='sampleId','left')
+names(finalResults)[12]='MID'
+finalResults2<-finalResults[!duplicated(finalResults$sampleId),]
+#finalResults2=finalResults2[,names(finalResults2) != 'modelId.1']
 
 # ---------------------------------------------------------------
 # Get additional bug metrics (fixed count and invasives)
 # ---------------------------------------------------------------
-if(modelId %in% c(565,567,568)){
+if(modelId %in% c(565,566,567)){
 def_models = NAMCr::query(
   api_endpoint = "modelInfo",
   include = c("modelId",
@@ -115,9 +123,8 @@ def_models = NAMCr::query(
     modelId=4)
 }
 ##### get fixed count column #####
-bugsOTU = NAMCr::query("sampleTaxaTranslationRarefied",
+bugsOTU = NAMCr::query("sampleTaxaTranslation",
                        translationId = def_models$translationId,
-                       fixedCount = def_models$fixedCount,
                        sampleIds=modelResults$sampleId
 )
 sumrarefiedOTUTaxa = bugsOTU  %>%
@@ -153,31 +160,33 @@ additionalbugmetrics=dplyr::left_join(sumrarefiedOTUTaxa,invasives, by="sampleId
 # if no invasives were present set to absent
 additionalbugmetrics[is.na(additionalbugmetrics)]<-"Absent"
 
-finalResults=dplyr::left_join(finalResults,additionalbugmetrics,by="sampleId")
-finalResults[finalResults=='Orconectes']<-'Faxonius'
-finalResults
-
-
-for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to the notes field in some easy fashion???
+finalResults3=dplyr::left_join(finalResults2,additionalbugmetrics,by="sampleId")
+finalResults3[finalResults3=='Orconectes']<-'Faxonius'
+finalResults3$InvasiveInvertSpecies[is.na(finalResults3$InvasiveInvertSpecies)]<-'Absent'
+#finalResults3$fixedCount=ifelse(finalResults3$Count>=300,300,finalResults3$Count)
+b=NAMCr::query('samples',projectId=6933)
+ress=NAMCr::query('modelResults',sampleIds=b$sampleId)
+curr=ress[ress$modelId %in% c(565,566,567),]
+for (i in 1:nrow(finalResults3) ){# need to add invasives and extra metrics to the notes field in some easy fashion???
   #has permission to save then spit out result to console
   # pass Nas for anything not used
   tryCatch({
     NAMCr::save(
       api_endpoint = "setModelResult",
-      sampleId = finalResults$sampleId[i],
-      modelId = finalResults$modelId[i],
-      modelResult = finalResults$MMI[i],
-      fixedCount = finalResults$fixedCount[i],
-      modelApplicability = finalResults$ModelApplicability[i])
-      notes=ifelse(finalResults$InvasiveInvertSpecies[i]=='Absent','',finalResults$InvasiveInvertSpecies[i])
-    message(paste('saved result ',i,' of ',nrow(finalResults)))
+      sampleId = finalResults3$sampleId[i],
+      modelId = finalResults3$modelId[i],
+      modelResult = finalResults3$MMI[i],
+      fixedCount = finalResults3$Count[i],
+      modelApplicability = finalResults3$ModelApplicability[i])
+      notes=ifelse(finalResults3$InvasiveInvertSpecies[i]=='Absent','',finalResults3$InvasiveInvertSpecies[i])
+    message(paste('saved result ',i,' of ',nrow(finalResults3)))
 
   }, error =function(e){
-    cat(paste0("\n\tSAMPLE ERROR: ",finalResults$sampleId[i],"\n"))
+    cat(paste0("\n\tSAMPLE ERROR: ",finalResults3$sampleId[i],"\n"))
     str(e,indent.str = "   "); cat("\n")
   })
 }
-finalResults
+finalResults3
 
 ## Arizona
 AZ_results<-data.frame(
