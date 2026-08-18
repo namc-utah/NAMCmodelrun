@@ -191,8 +191,8 @@ OR_MMI_bug_export <- function(sampleIds){
   # get needed data from the APIs
   OR_MMIbugs = NAMCr::query(
     "sampleTaxaTranslationRarefied",
-    sampleIds = sampleIds,
-    translationId = 15,
+    sampleIds = 119633,
+    translationId = 158,
     fixedCount = 300
   )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
   #
@@ -487,6 +487,7 @@ OR_NBR_bug <- function(sampleIds, translationId, fixedCount) {
     dplyr::group_by(sampleId, otuName) %>%
     dplyr::summarize(sumSplitCount = sum(splitCount)) # why are multiple records exported here per OTU???
   bugnew=sumrarefiedOTUTaxa
+  row.names(bugnew)=bugnew$sampleId
 return(bugnew)
   }
 
