@@ -549,8 +549,55 @@ if(length(modelID)>1){
                                               modelId = modelID,
                                               applicabilitypreds) # add to config file or add an R object with calpreds
 }
-
+##filling in blanks, if they exist##
+#step 1: check for alignment between samples and results
+if(nrow(modelResults)!=nrow(def_samples)){
+  warning('Some samples did not receive an MMI score.')
+  #for MMIs:
+  if(modelID %in% c(3:6,8,31,32,33,136,169,236,334,335,367,565,566,567,599,631)){
+    #create blank matrix sized by the missing scores
+    blank_MMI_mat=as.data.frame(matrix(nrow=length(def_samples$sampleId[def_samples$sampleId %in% modelResults$sampleId==F]),
+                                       ncol=length(names(modelResults))))
+    #rename names
+    names(blank_MMI_mat)=names(modelResults)
+    #create sampleIds
+    blank_MMI_mat$sampleId=def_samples$sampleId[def_samples$sampleId %in% modelResults$sampleId==F]
+    #AZ calls their result an IBI, not an MMI.
+    #create small conditional statement to address this
+    if (modelID %in% c(169,236)){
+      blank_MMI_mat$IBI=0}else{
+        blank_MMI_mat$MMI=0}
+    #give modelId
+    blank_MMI_mat$modelId=modelID
+    #combine the two data frames
+    modelResults=rbind(modelResults,blank_MMI_mat)
+  }
+  #identical for O/E scores
+  if(modelID %in% c(2,7,9,10,11,12,13:23,24,25,26,103,598)){
+    warning('Some samples did not receive an O/E score.')
+    blank_OE_mat=as.data.frame(matrix(nrow=length(def_samples$sampleId[def_samples$sampleId %in% modelResults$sampleId==F]),
+                                      ncol=length(names(modelResults))))
+    names(blank_OE_mat)=names(modelResults)
+    blank_OE_mat$sampleId=def_samples$sampleId[def_samples$sampleId %in% modelResults$sampleId==F]
+    blank_OE_mat$modelId=modelID
+  }
+  #identical for CSCI scores
+  if(modelID ==1){
+    warning('Some samples did not receive a CSCI score.')
+    blank_CSCI_mat=as.data.frame(matrix(nrow=length(def_samples$sampleId[def_samples$sampleId %in% modelResults$sampleId==F]),
+                                        ncol=length(names(modelResults))))
+    names(blank_CSCI_mat)=names(modelResults)
+    blank_CSCI_mat$sampleId=def_samples$sampleId[def_samples$sampleId %in% modelResults$sampleId==F]
+    blank_CSCI_mat$CSCI=0
+    blank_CSCI_mat$modelId=modelID
+  }
+}
 finalResults=merge(modelResults,ModelApplicability_obj,by="sampleId")
+
+finalResults$IBI[is.na(finalResults$IBI)]<-0
+finalResults$OE[is.na(finalResults$OE)]<-0
+finalResults$MMI[is.na(finalResults$MMI)]<-0
+finalResults$CSCI[is.na(finalResults$CSCI)]<-0
 
 #finalResults
 #clipr::write_clip(finalResults)
@@ -652,6 +699,9 @@ finalResults$modelId<-modelID
 #names(finalResults)[1]<-'sampleId'
 finalResults$fixedCount<-ifelse(is.na(finalResults$fixedCount),0,finalResults$fixedCount)
 finalResults$notes=''
+if(modelID in (169,236)){
+  names(finalResults)[names(finalResults)=='IBI']<-'MMI'
+}
 for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to the notes field in some easy fashion???
   #has permission to save then spit out result to console
   # pass Nas for anything not used
