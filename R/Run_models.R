@@ -699,7 +699,7 @@ finalResults$modelId<-modelID
 #names(finalResults)[1]<-'sampleId'
 finalResults$fixedCount<-ifelse(is.na(finalResults$fixedCount),0,finalResults$fixedCount)
 finalResults$notes=''
-if(modelID in (169,236)){
+if(modelID %in% c(169,236)){
   names(finalResults)[names(finalResults)=='IBI']<-'MMI'
 }
 for (i in 1:nrow(finalResults) ){# need to add invasives and extra metrics to the notes field in some easy fashion???
