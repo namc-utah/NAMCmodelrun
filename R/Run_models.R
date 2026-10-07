@@ -167,7 +167,7 @@ if(modelID %in% c(4,
                   335,
                   565,
                   566,
-                  567)){
+                  567,631)){
   sample_info<-data.frame(sampleId=def_samples$sampleId,
                           predictorId=73,
                           sampleDate=def_samples$sampleDate)
@@ -197,15 +197,15 @@ for (j in 1:length(modelID)){
 ##subset predictors to only those needed for the models that you are running
 def_predictors=def_predictors[def_predictors$predictorId %in% modelpred$predictorId,]
 ## Format predictors and convert to numeric where needed
-if (length(modelID[modelID%in%c(4,5,6,28)]==T)>=1){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
-    def_predictors_categorical=subset(def_predictors,predictorId %in% c(111,75))
+if (length(modelID[modelID%in%c(4,5,6,28,631)]==T)>=1){ #CO and TP models have predictors that are categorical but all other models need predictors converted from character to numeric after pulling from database
+    def_predictors_categorical=subset(def_predictors,predictorId %in% c(111,75,826))
     prednew1 = tidyr::pivot_wider(def_predictors_categorical,
                                  id_cols="sampleId",
                                  names_from = "abbreviation",
                                  values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
     prednew1=as.data.frame(prednew1)
      '%notin%' <- Negate('%in%')
-    def_predictors=subset(def_predictors,predictorId %notin% c(111,75))
+    def_predictors=subset(def_predictors,predictorId %notin% c(111,75,826))
     def_predictors$predictorValue=as.numeric(def_predictors$predictorValue)
     prednew2 = tidyr::pivot_wider(def_predictors,
                                  id_cols="sampleId",
@@ -315,7 +315,7 @@ if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1) {
     message("Has this box been closed long enough for rarefactions?")
   })
   # CO model must be written out as an excel file using a separate bank of code and function
-} else if (length(def_models$modelId[def_models$modelId %in% c(4,5,6,565,566,567)]==T)>=1) {
+} else if (length(def_models$modelId[def_models$modelId %in% c(4,5,6,565,566,567,631,664)]==T)>=1) {
   print('CO MMI')
   #write get bugs from database, write out as a csv and save as CObugs object
   if(def_models$modelId %in% c(565,566,567)){
@@ -374,7 +374,7 @@ prednew = prednew[order(rownames(prednew)),];
 # ------------------------------
 # models using john vansickles RIVPACS random forest code : AREMP, UTDEQ15, Westwide, PIBO
 # ##Code breaks here on 5/16/2023, in model.predict.v4.2.r## #
-if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,25,26,29,598)]==T)>=1) {
+if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,24,25,26,29,598)]==T)>=1) {
   OE_list<-list()
   for(i in 1:length(unique(def_models$modelId))){
     OE <-model.predict.RanFor.4.2(

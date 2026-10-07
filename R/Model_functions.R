@@ -598,3 +598,145 @@ OR_MMI_model<-function(bugnew,prednew,rfmod_nt_habitat_rheo,rfmod_pi_EPTNoHydro,
   row.names(metric_rs)<-metric_rs$SAMPLEID
   return(metric_rs)
 }
+
+
+###
+#' AK MMI
+#'
+#' @param bugnew
+#' @param prednew
+#' @param rf_mod_UniqueRelativeAbundance_Feed_prim_Abbrev_CF
+#' @param rf_mod_UniqueRelativeAbundance_IntolerantTaxa
+#' @param rf_mod_UniqueRelativeAbundance_NonInsects
+#' @param rf_mod_UniqueRichness_Feed_prim_abbrev_CG
+#' @param rf_mod_UniqueRichnessIntolerantTaxa
+#' @return MMI value
+#' @export
+#'
+#' @examples
+AK_MMI_model<-function(bugnew,prednew,rf_mod_UniqueRelativeAbundance_Feed_prim_Abbrev_CF,
+                       rf_mod_UniqueRelativeAbundance_IntolerantTaxa, rf_mod_UniqueRelativeAbundance_NonInsects,rf_mod_UniqueRichness_Feed_prim_abbrev_CG,
+                       rf_mod_UniqueRichnessIntolerantTaxa){
+  Drfdat=merge(bugnew,prednew,by=0)
+  #Drfdat=Drfdat[-c(19,20),]
+
+  # which rf models to use
+  rfmodels <- c('rf_mod_UniqueRelativeAbundance_Feed_prim_Abbrev_CF', 'rf_mod_UniqueRelativeAbundance_IntolerantTaxa', 'rf_mod_UniqueRelativeAbundance_NonInsects',
+                'rf_mod_UniqueRichness_Feed_prim_abbrev_CG','rf_mod_UniqueRichnessIntolerantTaxa')
+  ## test site predictions -------------------------------------------------------------------------------------------
+  Dpredictions=list()
+  for (i in 1:length(rfmodels)){
+    tryCatch({Dpredictions[[paste0("E.",rfmodels[i])]]<- round(predict(eval(parse(text =paste0(rfmodels[i]))), Drfdat, type = "response"),digits=4)
+    }, error =function (e){
+      cat(paste0("/n/tERROR calculating: ",paste0(names(Drfdat)[i],"_pred"),"/n"))
+      str(e,indent.str = "   "); cat("/n")
+    })
+  }
+  predictionsdf=as.data.frame(do.call(cbind,Dpredictions))
+  #join predictions into master dataframe
+  Drfdat2=cbind(Drfdat,predictionsdf)
+
+  ## CALCULATE RESIDUALS ---------------------------------------------------------------------------------------------
+  resid=list()
+  for (i in 2:7){
+    tryCatch({resid[[paste0(colnames(Drfdat2)[i],"_resid")]]=Drfdat2[,i]- Drfdat2[,paste0("E.rfmod_",colnames(Drfdat2)[i])]
+
+    }, error =function (e){
+      cat(paste0("/n/tERROR calculating: ",paste0(Drfdat2[i],"_resid"),"/n"))
+      str(e,indent.str = "   "); cat("/n")
+    })
+
+  }
+  residualsdf=as.data.frame(do.call(cbind,resid))
+  rfdat_all_final4=cbind(Drfdat2,residualsdf)
+
+  # Select SAMPLEID + 4 metrics.residuals
+  candmetrics <- rfdat_all_final4 %>%
+    select(sampleId, UniqueRelativeAbundance_Feed_prim_Abbrev_CF_resid, UniqueRelativeAbundance_IntolerantTaxa_resid,
+           UniqueRelativeAbundance_NonInsects_resid, UniqueUniqueRichness_Feed_prim_abbrev_CG_resid, UniqueRichnessIntolerantTaxa_resid)
+
+  metric_rs <- candmetrics |>
+    mutate(UniqueRelativeAbundance_Feed_prim_Abbrev_CF_resid = (UniqueRelativeAbundance_Feed_prim_Abbrev_CF_resid - -0.291) /  (0.362 -  -0.291) ,
+           UniqueRelativeAbundance_IntolerantTaxa_resid=1- ((UniqueRelativeAbundance_IntolerantTaxa_resid - -0.176) /  (0.551 -  -0.176)),
+           UniqueRelativeAbundance_NonInsects_resid= (UniqueRelativeAbundance_NonInsects_resid - -0.195) /  (0.231 -  -0.195),
+           UniqueUniqueRichness_Feed_prim_abbrev_CG_resid = (UniqueUniqueRichness_Feed_prim_abbrev_CG_resid - -8.52) /  (5.9-  -8.52),
+  UniqueRichnessIntolerantTaxa_resid = 1-((UniqueRichnessIntolerantTaxa_resid - -2.61) /  (4.65 -  -2.61)))
+
+  metric_rs <-  metric_rs |>
+    mutate(UniqueRelativeAbundance_Feed_prim_Abbrev_CF_resid = case_when(UniqueRelativeAbundance_Feed_prim_Abbrev_CF_resid <0 ~ 0,
+                                                                         UniqueRelativeAbundance_Feed_prim_Abbrev_CF_resid >1 ~ 1,
+                                         TRUE ~ UniqueRelativeAbundance_Feed_prim_Abbrev_CF_resid)) %>%
+    mutate(UniqueRelativeAbundance_IntolerantTaxa_resid = case_when(UniqueRelativeAbundance_IntolerantTaxa_resid <0 ~ 0,
+                                                                    UniqueRelativeAbundance_IntolerantTaxa_resid >1 ~ 1,
+                                             TRUE ~ niqueRelativeAbundance_IntolerantTaxa_resid)) %>%
+    mutate(UniqueRelativeAbundance_NonInsects_resid = case_when(UniqueRelativeAbundance_NonInsects_resid <0 ~ 0,
+                                                                UniqueRelativeAbundance_NonInsects_resid >1 ~ 1,
+                                                       TRUE ~ UniqueRelativeAbundance_NonInsects_resid)) %>%
+    mutate( UniqueUniqueRichness_Feed_prim_abbrev_CG_resid = case_when( UniqueUniqueRichness_Feed_prim_abbrev_CG_resid <0 ~ 0,
+                                                                        UniqueUniqueRichness_Feed_prim_abbrev_CG_resid >1 ~ 1,
+                                             TRUE ~  UniqueUniqueRichness_Feed_prim_abbrev_CG_resid)) %>%
+
+      mutate( UniqueRichnessIntolerantTaxa_resid = case_when( UniqueRichnessIntolerantTaxa_resid <0 ~ 0,
+                                                              UniqueRichnessIntolerantTaxa_resid >1 ~ 1,
+                                                                          TRUE ~  UniqueRichnessIntolerantTaxa_resid))
+
+
+  metric_rs$predUniqueRichness_IntolerantTaxa_resid= -3.2254 + metric_rs$UniqueEvenness*5.0109
+  metric_rs$correctedUniqueRichness_IntolerantTaxa_resid=metric_rs$UniqueRichness_IntolerantTaxa_resid-metric_rs$predUniqueRichness_IntolerantTaxa_resid+1
+  metric_rs$predUniqueRichness_Feed_prim_abbrev_CG_resid= -7.649 + metric_rs$UniqueEvenness*10.426
+  metric_rs$correctedUniqueRichness_Feed_prim_abbrev_CG_resid=metric_rs$UniqueRichness_Feed_prim_abbrev_CG_resid-metric_rs$predUniqueRichness_Feed_prim_abbrev_CG_resid+1
+
+  metric_rs <-  metric_rs |>
+  mutate(MMI = (UniqueRelativeAbundance_Feed_prim_Abbrev_CF_resid  + UniqueRelativeAbundance_IntolerantTaxa_resid +correctedUniqueRichnessIntolerantTaxa_resid+
+                    UniqueRelativeAbundance_NonInsects_resid+correctedUniqueUniqueRichness_Feed_prim_abbrev_CG_resid)  /5)
+
+
+  #Throw MMI result and MMI metrics into a list for getting out of the function
+  metric_rs=dplyr::left_join(bugnew, metric_rs, by="sampleId")
+  row.names(metric_rs)<-metric_rs$sampleId
+  return(metric_rs)
+}
+
+###
+#' AK Density
+#'
+#' @param bugnew
+#' @param prednew
+#' @param rf_mod_Density
+AK_density_model<-function(bugnew,prednew,rf_mod_Density){
+  Drfdat=merge(bugnew,prednew,by=0)
+  # which rf models to use
+  rfmodels <- c('rf_mod_Density')
+  ## test site predictions -------------------------------------------------------------------------------------------
+  Dpredictions=list()
+  for (i in 1:length(rfmodels)){
+    tryCatch({Dpredictions[[paste0("E.",rfmodels[i])]]<- round(predict(eval(parse(text =paste0(rfmodels[i]))), Drfdat, type = "response"),digits=4)
+    }, error =function (e){
+      cat(paste0("/n/tERROR calculating: ",paste0(names(Drfdat)[i],"_pred"),"/n"))
+      str(e,indent.str = "   "); cat("/n")
+    })
+  }
+  predictionsdf=as.data.frame(do.call(cbind,Dpredictions))
+  #join predictions into master dataframe
+  Drfdat2=cbind(Drfdat,predictionsdf)
+
+  ## CALCULATE RESIDUALS ---------------------------------------------------------------------------------------------
+  resid=list()
+  for (i in 2:2){
+    tryCatch({resid[[paste0(colnames(Drfdat2)[i],"_resid")]]=Drfdat2[,i]- Drfdat2[,paste0("E.rfmod_",colnames(Drfdat2)[i])]
+
+    }, error =function (e){
+      cat(paste0("/n/tERROR calculating: ",paste0(Drfdat2[i],"_resid"),"/n"))
+      str(e,indent.str = "   "); cat("/n")
+    })
+
+  }
+  residualsdf=as.data.frame(do.call(cbind,resid))
+  rfdat_all_final4=cbind(Drfdat2,residualsdf)
+
+  # Select SAMPLEID + 4 metrics.residuals
+  candmetrics <- rfdat_all_final4 %>%
+    select(sampleId,Density_resid)
+  row.names(candmetrics)<-candmetrics$sampleId
+  return(candmetrics)
+}

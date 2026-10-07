@@ -107,25 +107,27 @@ MMI_metrics<-function(sampleIds,translationId,fixedCount,modelId){
     MMI_metrics$metricAbbreviation=gsub("-","_",MMI_metrics$metricAbbreviation)
     bugnew = tidyr::pivot_wider(MMI_metrics,id_cols = "sampleId",names_from = "metricAbbreviation",values_from = "metricValue")
     bugnew$UniqueRichness_Insecta=bugnew$UniqueRichness_Insecta-bugnew$UniqueRichness_Chironomidae
-  }else if (def_models$modelId==169){
-    MMI_metrics = subset(bugsMetrics, metricId %in% c(351,#total richness
-                                                      352,#ephem richness
-                                                      354,#tricoptera richness
-                                                      356,# diptera richness
-                                                      375,#scraper richness
-                                                      381,#intolerant taxa
-                                                      444,#hilsenhoff
-                                                      176,#ephem relative abundance
-                                                      177,#plecoptera relative abundance
-                                                      199,#scraper relative abundance
-                                                      448#dominant taxa abundance
-                                                      ))
+  }else if (def_models$modelId==631){
+
+# AK MMI
+    MMI_metrics = subset(bugsMetrics, metricId %in% c(192,#unique relative abundnace noninsects
+                                                      205,# unique relative abundnace intolerant taxa
+                                                      206,#unique relative abundance collector filters
+                                                      381,# unique richness intolerant taxa
+                                                      383,#unique richness collector gatherers
+                                                      446)) #evenness for correction factor
     MMI_metrics$metricValue=as.numeric(MMI_metrics$metricValue)
     MMI_metrics$metricAbbreviation=gsub("-","_",MMI_metrics$metricAbbreviation)
-    MMI_metrics$metricValue=ifelse(MMI_metrics$metricId %in% c(176,177,199,448),MMI_metrics$metricValue*100,MMI_metrics$metricValue)# converting relative abundance to %
-      bugnew=MMI_metrics
-      #NRSA xeric MMI
+    bugnew = tidyr::pivot_wider(MMI_metrics,id_cols = "sampleId",names_from = "metricAbbreviation",values_from = "metricValue")
+  }else if (def_models$modelId==664){
+
+# AK Density
+    MMI_metrics = subset(bugsMetrics, metricId %in% c(1)) #Density
+    MMI_metrics$metricValue=log10(as.numeric(MMI_metrics$metricValue))
+    MMI_metrics$metricAbbreviation=gsub("-","_",MMI_metrics$metricAbbreviation)
+    bugnew = tidyr::pivot_wider(MMI_metrics,id_cols = "sampleId",names_from = "metricAbbreviation",values_from = "metricValue")
   }else if (def_models$modelId==367){
+#### NRSA MMI
    taxa=query("sampleTaxa",sampleIds=sampleIds)
    count=taxa %>%
      dplyr::group_by(sampleId) %>%
