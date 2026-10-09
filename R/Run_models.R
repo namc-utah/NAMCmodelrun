@@ -315,7 +315,7 @@ if (length(def_models$modelId[def_models$modelId %in% 12]==T)>=1) {
     message("Has this box been closed long enough for rarefactions?")
   })
   # CO model must be written out as an excel file using a separate bank of code and function
-} else if (length(def_models$modelId[def_models$modelId %in% c(4,5,6,565,566,567,631,664)]==T)>=1) {
+} else if (length(def_models$modelId[def_models$modelId %in% c(4,5,6,565,566,567)]==T)>=1) {
   print('CO MMI')
   #write get bugs from database, write out as a csv and save as CObugs object
   if(def_models$modelId %in% c(565,566,567)){
@@ -465,7 +465,23 @@ if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,24,25,26,29,598)]=
       rfmod_pi_ti_stenocold_cold_cool,
       rfmod_pt_tv_intol
     )
-} else if (length(def_models$modelId[def_models$modelId %in% c(169,236)]==T)>=1) {# AZ perennial MMI
+} else if (length(def_models$modelId[def_models$modelId %in% 631]==T)>=1) {# AK MMI
+  modelResults <-
+    AK_MMI_model(
+      bugnew,
+      prednew,
+      rfmod_UniqueRelativeAbundance_Feed_prim_abbrev_CF,
+      rfmod_UniqueRelativeAbundance_IntolerantTaxa, rfmod_UniqueRelativeAbundance_NonInsects,rfmod_UniqueRichness_Feed_prim_abbrev_CG,
+      rfmod_UniqueRichness_IntolerantTaxa
+    )
+}else if (length(def_models$modelId[def_models$modelId %in% 664]==T)>=1) {# AK density
+  modelResults <-
+    AK_density_model(
+      bugnew,
+      prednew,
+      rfmod_Density
+    )
+}else if (length(def_models$modelId[def_models$modelId %in% c(169,236)]==T)>=1) {# AZ perennial MMI
   modelResults <-AZ_perennial_MMI_model(
     bugnew,
     prednew)

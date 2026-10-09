@@ -44,8 +44,8 @@ MMI_metrics<-function(sampleIds,translationId,fixedCount,modelId){
   # NV and AREMP relative abundances were OTU standardized too!
   bugsMetrics = NAMCr::query("sampleMetrics",
                              sampleIds=sampleIds,
-                             translationId=translationId,
-                             fixedCount=fixedCount
+                             translationId=def_models$translationId,
+                             fixedCount=def_models$fixedCount
                              )
   #modelInfo = NAMCr::query("modelInfo", modelId = def_model$modelId)
   #MMI_metrics = subset(bugsMetrics, metricId %in% ()) # store translations to metric names in database
@@ -177,7 +177,8 @@ MMI_metrics<-function(sampleIds,translationId,fixedCount,modelId){
 
   bugnew=as.data.frame(bugnew)
   rownames(bugnew)<-bugnew$sampleId
-  bugnew<-bugnew[,-1]
+  bugnew<-bugnew[,-1,drop=FALSE]
+
   return(bugnew)
 }
 
