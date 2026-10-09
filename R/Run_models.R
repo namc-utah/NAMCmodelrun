@@ -540,13 +540,22 @@ applicabilitypreds = NAMCr::query("samplePredictorValues",
                                   sampleIds = sampleIds,
                                   modelIds=modelID[1]
 ) #need list of samples in database with values
-applicabilitypreds = subset(applicabilitypreds, abbreviation %in% c('ElevCat','Tmean8110Ws','WsAreaSqKm','Precip8110Ws'))
+if(modelID %in% c(24,631,664)){
+  applicabilitypreds = subset(applicabilitypreds, abbreviation %in% c('ELVmin_WS','tmax_annual','AREA_SQKM','ppt_SON_terra'))
+  applicabilitypreds$abbreviation=ifelse(applicabilitypreds$abbreviation=='ELVmin_WS',
+                                         'ElevCat',ifelse(applicabilitypreds$abbreviation=='AREA_SQKM',
+                                                          'WsAreaSqKm',ifelse(applicabilitypreds$abbreviation=='ppt_SON_terra',
+                                                                              'Precip8110Ws',ifelse(applicabilitypreds$abbreviation=='tmax_annual',
+                                                                                                   'Tmean8110Ws',  applicabilitypreds$abbreviation))))
+}else{applicabilitypreds = subset(applicabilitypreds, abbreviation %in% c('ElevCat','Tmean8110Ws','WsAreaSqKm','Precip8110Ws'))
+}
 applicabilitypreds$predictorValue=as.numeric(applicabilitypreds$predictorValue)
 applicabilitypreds = tidyr::pivot_wider(applicabilitypreds,
                                         id_cols="sampleId",
                                         names_from = "abbreviation",
                                         values_from = "predictorValue")# add id_cols=sampleId once it gets added to end point
 applicabilitypreds=as.data.frame(applicabilitypreds)
+
 
 # run model applicability function
 if(length(modelID)>1){
