@@ -357,7 +357,7 @@ message('PREDATOR does not need predictors')
   bugnew = bugnew[order(row.names(bugnew)),];
   prednew = prednew[order(rownames(prednew)),];
 } else {bugnew<-subset(bugnew,rownames(bugnew) %in% rownames(prednew))
-#prednew<-subset(prednew,rownames(prednew) %in% rownames(bugnew))
+prednew<-subset(prednew,rownames(prednew) %in% rownames(bugnew))
 #reorder them the same just in case model functions dont already do this
 bugnew = bugnew[order(rownames(bugnew)),];
 prednew = prednew[order(rownames(prednew)),];
@@ -394,8 +394,18 @@ if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,24,25,26,29,598)]=
       modelResults<-OE_list[[1]]
   }
 
-  # models using John VanSickles RIVPACS discriminant function code: OR_WCCP, OR_MWCF
-} else if (length(def_models$modelId[def_models$modelId %in% 10:11]==T)>=1) {
+  # multivariate OE models
+} else if (length(def_models$modelId[def_models$modelId %in% c(697)]==T)>=1){
+  for(i in 1:length(unique(def_models$modelId))){
+    OE <-multivariate_OE_calc(
+      ranfor.mod,
+      prednew,
+      bugnew,
+      Pc = 0.5
+    )#....
+    modelResults<-as.data.frame(OE$OE.scores)
+  }
+}else if(length(def_models$modelId[def_models$modelId %in% 10:11]==T)>=1) {
   OE <-model.predict.v4.1(bugcal.pa,
                           grps.final,
                           preds.final,
@@ -540,7 +550,7 @@ applicabilitypreds = NAMCr::query("samplePredictorValues",
                                   sampleIds = sampleIds,
                                   modelIds=modelID[1]
 ) #need list of samples in database with values
-if(modelID %in% c(24,631,664)){
+if(modelID %in% c(24,631,664,697)){
   applicabilitypreds = subset(applicabilitypreds, abbreviation %in% c('ELVmin_WS','tmax_annual','AREA_SQKM','ppt_SON_terra'))
   applicabilitypreds$abbreviation=ifelse(applicabilitypreds$abbreviation=='ELVmin_WS',
                                          'ElevCat',ifelse(applicabilitypreds$abbreviation=='AREA_SQKM',
