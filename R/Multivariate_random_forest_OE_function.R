@@ -1,8 +1,9 @@
 multivariate_OE_calc=function(bugnew,prednew,ranfor.mod,Pc){
  datanew=cbind(bugnew,prednew)
   testpredictions=predict(ranfor.mod,datanew)
-  test=as.data.frame(testpredictions$regrOutput)
-  testresults<-sapply(test, function(x) x$predicted)
+  testresults=data.frame(sapply(testpredictions$regrOutput, function(x) x$predicted))
+  #test=as.data.frame(testpredictions$regrOutput)
+  #testresults<-sapply(test, function(x) x$predicted)
   Os=list()
   Es=list()
   BC=list()
