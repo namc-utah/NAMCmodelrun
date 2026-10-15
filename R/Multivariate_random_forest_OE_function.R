@@ -1,7 +1,9 @@
 multivariate_OE_calc=function(bugnew,prednew,ranfor.mod,Pc){
- datanew=cbind(bugnew,prednew)
-  testpredictions=predict(ranfor.mod,datanew)
+  datanew=cbind.data.frame(bugnew,prednew)
+  testpredictions=randomForestSRC::predict.rfsrc(ranfor.mod,datanew)
   testresults=data.frame(sapply(testpredictions$regrOutput, function(x) x$predicted))
+  names(testresults) <- names(testpredictions$regrOutput)
+  #testresults=data.frame(sapply(testpredictions$regrOutput, function(x) x$predicted))
   #test=as.data.frame(testpredictions$regrOutput)
   #testresults<-sapply(test, function(x) x$predicted)
   Os=list()
@@ -22,3 +24,8 @@ multivariate_OE_calc=function(bugnew,prednew,ranfor.mod,Pc){
   OE$OE.scores=OE$O/OE$E
   return(OE)
 }
+
+multivariate_OE_calc(bugnew = bugnew,
+                     prednew = prednew,
+                     ranfor.mod = ranfor.mod,
+                     Pc=0.5)
