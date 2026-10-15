@@ -521,6 +521,7 @@ if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,24,25,26,29,598)]=
   # convert to O//E ratio
   modelResults$modeledInsectRichness=modelResults$UniqueRichness_Insecta/modelResults$UniqueRichness_Insecta_pred
 
+
   # ------------------------------
   # WQ models
   # ------------------------------
@@ -530,8 +531,27 @@ if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,24,25,26,29,598)]=
 }else{
 
 }
-
 modelResults$sampleId<-as.integer(row.names(modelResults))
+
+# ------------------------------
+  # AK O/E evenness correction factor
+  # ------------------------------
+if(def_models$modelId %in% c(24,697)){
+  bugsMetrics = NAMCr::query("sampleMetrics",
+                             sampleIds=sampleIds,
+                             translationId=def_models$translationId,
+                             fixedCount=def_models$fixedCount
+  )
+  MMI_metrics = subset(bugsMetrics, metricId %in% c(446))#unique evenness
+  MMI_metrics$metricValue=as.numeric(MMI_metrics$metricValue)
+  modelResults=dplyr::left_join(modelResults,MMI_metrics,by='sampleId')
+  modelResults$predOE=ifelse(modelID==24, 0.65628 + modelResults$metricValue*0.54520,
+                         ifelse(modelID==697, 0.71243 + modelResults$metricValue*0.45749,
+                                modelResults$OE))
+  modelResults$OE=modelResults$OE-modelResults$predOE+1
+}else{
+
+  }
 
 #clipr::write_clip(modelResults)
 #modelResults=modelResults[!is.na(modelResults),]
