@@ -287,8 +287,7 @@ if (length(def_models$modelId[def_models$modelId %in% c(1,4,5,6,12)]==T)>=1){
   # all other models should have R data files named identical to model name
 }else{
   load(paste0("sysdata.rda//",def_models$abbreviation, ".Rdata"))
-}
-
+  }
 # ---------------------------------------------------------------
 # Get bug data for model functions
 # ---------------------------------------------------------------
