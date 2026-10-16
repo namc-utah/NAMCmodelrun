@@ -398,12 +398,12 @@ if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,24,25,26,29,598)]=
 } else if (length(def_models$modelId[def_models$modelId %in% c(697)]==T)>=1){
   for(i in 1:length(unique(def_models$modelId))){
     OE <-multivariate_OE_calc(
-      ranfor.mod,
-      prednew,
-      bugnew,
+      bugnew = bugnew,
+      prednew = prednew,
+      ranfor.mod = ranfor.mod,
       Pc = 0.5
     )#....
-    modelResults<-as.data.frame(OE$OE.scores)
+    modelResults<-as.data.frame(OE)
   }
 }else if(length(def_models$modelId[def_models$modelId %in% 10:11]==T)>=1) {
   OE <-model.predict.v4.1(bugcal.pa,
@@ -548,7 +548,7 @@ if(def_models$modelId %in% c(24,697)){
   modelResults$predOE=ifelse(modelID==24, 0.65628 + modelResults$metricValue*0.54520,
                          ifelse(modelID==697, 0.71243 + modelResults$metricValue*0.45749,
                                 modelResults$OE))
-  modelResults$OE=modelResults$OE-modelResults$predOE+1
+  modelResults$OoverE=modelResults$OoverE-modelResults$predOE+1
 }else{
 
   }

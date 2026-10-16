@@ -21,11 +21,7 @@ multivariate_OE_calc=function(bugnew,prednew,ranfor.mod,Pc){
   OE=as.data.frame(cbind(unlist(Os),unlist(Es),unlist(BC)))
 
   names(OE)<-c('O','E','BC')
-  OE$OE.scores=OE$O/OE$E
+  OE$OoverE=OE$O/OE$E
+  row.names(OE)=row.names(bugnew)
   return(OE)
 }
-
-multivariate_OE_calc(bugnew = bugnew,
-                     prednew = prednew,
-                     ranfor.mod = ranfor.mod,
-                     Pc=0.5)
