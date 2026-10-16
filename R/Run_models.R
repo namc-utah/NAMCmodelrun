@@ -287,8 +287,7 @@ if (length(def_models$modelId[def_models$modelId %in% c(1,4,5,6,12)]==T)>=1){
   # all other models should have R data files named identical to model name
 }else{
   load(paste0("sysdata.rda//",def_models$abbreviation, ".Rdata"))
-}
-
+  }
 # ---------------------------------------------------------------
 # Get bug data for model functions
 # ---------------------------------------------------------------
@@ -398,9 +397,9 @@ if (length(def_models$modelId[def_models$modelId %in% c(2,7,9,24,25,26,29,598)]=
 } else if (length(def_models$modelId[def_models$modelId %in% c(697)]==T)>=1){
   for(i in 1:length(unique(def_models$modelId))){
     OE <-multivariate_OE_calc(
-      ranfor.mod,
-      prednew,
-      bugnew,
+      bugnew = bugnew,
+      prednew=prednew,
+      ranfor.mod = ranfor.mod,
       Pc = 0.5
     )#....
     modelResults<-as.data.frame(OE$OE.scores)
