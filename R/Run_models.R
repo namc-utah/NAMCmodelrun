@@ -353,13 +353,13 @@ message('PREDATOR does not need predictors')
   bugnew<-subset(bugnew,bugnew$SampleID %in% rownames(prednew))
   prednew<-subset(prednew,rownames(prednew) %in% bugnew$SampleID)
   #reorder them the same just in case model functions dont already do this
-  bugnew = bugnew[order(row.names(bugnew)),];
+  bugnew = bugnew[order(row.names(bugnew))];
   prednew = prednew[order(rownames(prednew)),];
-} else {bugnew<-subset(bugnew,rownames(bugnew) %in% rownames(prednew))
+} else {bugnew<-subset(bugnew,rownames(bugnew) %in% rownames(prednew),drop=FALSE)
 prednew<-subset(prednew,rownames(prednew) %in% rownames(bugnew))
 #reorder them the same just in case model functions dont already do this
-bugnew = bugnew[order(rownames(bugnew)),];
-prednew = prednew[order(rownames(prednew)),];
+bugnew = bugnew[order(rownames(bugnew)),,drop=FALSE];
+prednew = prednew[order(rownames(prednew)),,drop=FALSE];
 
 }
 
@@ -544,9 +544,11 @@ if(def_models$modelId %in% c(24,697)){
   MMI_metrics = subset(bugsMetrics, metricId %in% c(446))#unique evenness
   MMI_metrics$metricValue=as.numeric(MMI_metrics$metricValue)
   modelResults=dplyr::left_join(modelResults,MMI_metrics,by='sampleId')
-  modelResults$predOE=ifelse(modelID==24, 0.65628 + modelResults$metricValue*0.54520,
-                         ifelse(modelID==697, 0.71243 + modelResults$metricValue*0.45749,
-                                modelResults$OE))
+  if(modelID==24){
+    modelResults$predOE=0.64393 + modelResults$metricValue*0.55423
+  }else if (modelID==697){
+    modelResults$predOE= 0.71243 + modelResults$metricValue*0.45749
+  }else{}
   modelResults$OoverE=modelResults$OoverE-modelResults$predOE+1
 }else{
 

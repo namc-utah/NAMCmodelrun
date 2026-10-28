@@ -617,7 +617,7 @@ OR_MMI_model<-function(bugnew,prednew,rfmod_nt_habitat_rheo,rfmod_pi_EPTNoHydro,
 AK_MMI_model<-function(bugnew,prednew,rfmod_UniqueRelativeAbundance_Feed_prim_abbrev_CF,
                        rfmod_UniqueRelativeAbundance_IntolerantTaxa, rfmod_UniqueRelativeAbundance_NonInsects,rfmod_UniqueRichness_Feed_prim_abbrev_CG,
                        rfmod_UniqueRichness_IntolerantTaxa){
-
+bugnew$sampleId=row.names(bugnew)
   Drfdat=merge(bugnew,prednew,by='sampleId')
   #Drfdat=Drfdat[-c(19,20),]
 Drfdat$Ecoregion=as.factor(Drfdat$Ecoregion)
@@ -651,17 +651,26 @@ Drfdat$Ecoregion=as.factor(Drfdat$Ecoregion)
   residualsdf=as.data.frame(do.call(cbind,resid))
   rfdat_all_final4=cbind(Drfdat2,residualsdf)
 
-  # Select SAMPLEID + 4 metrics.residuals
+ # Select SAMPLEID + 4 metrics.residuals
   candmetrics <- rfdat_all_final4 %>%
     select(sampleId,UniqueEvenness,UniqueRelativeAbundance_Feed_prim_abbrev_CF_resid, UniqueRelativeAbundance_IntolerantTaxa_resid,
            UniqueRelativeAbundance_NonInsects_resid, UniqueRichness_Feed_prim_abbrev_CG_resid, UniqueRichness_IntolerantTaxa_resid)
 
-  metric_rs <- candmetrics |>
+  metric_rs=candmetrics
+   metric_rs$predUniqueRichness_IntolerantTaxa_resid= -3.2254 + metric_rs$UniqueEvenness*5.0109
+  metric_rs$correctedUniqueRichness_IntolerantTaxa_resid=metric_rs$UniqueRichness_IntolerantTaxa_resid-metric_rs$predUniqueRichness_IntolerantTaxa_resid+1
+  metric_rs$predUniqueRichness_Feed_prim_abbrev_CG_resid= -7.649 + metric_rs$UniqueEvenness*10.426
+  metric_rs$correctedUniqueRichness_Feed_prim_abbrev_CG_resid=metric_rs$UniqueRichness_Feed_prim_abbrev_CG_resid-metric_rs$predUniqueRichness_Feed_prim_abbrev_CG_resid+1
+
+  metric_rs <- metric_rs |>
     mutate(UniqueRelativeAbundance_Feed_prim_abbrev_CF_resid = (UniqueRelativeAbundance_Feed_prim_abbrev_CF_resid - -0.291) /  (0.362 -  -0.291) ,
            UniqueRelativeAbundance_IntolerantTaxa_resid=1- ((UniqueRelativeAbundance_IntolerantTaxa_resid - -0.176) /  (0.551 -  -0.176)),
            UniqueRelativeAbundance_NonInsects_resid= (UniqueRelativeAbundance_NonInsects_resid - -0.195) /  (0.231 -  -0.195),
-           UniqueRichness_Feed_prim_abbrev_CG_resid = (UniqueRichness_Feed_prim_abbrev_CG_resid - -8.52) /  (5.9-  -8.52),
-  UniqueRichness_IntolerantTaxa_resid = 1-((UniqueRichness_IntolerantTaxa_resid - -2.61) /  (4.65 -  -2.61)))
+           #UniqueRichness_Feed_prim_abbrev_CG_resid = (UniqueRichness_Feed_prim_abbrev_CG_resid - -8.52) /  (5.9-  -8.52),
+           correctedUniqueRichness_Feed_prim_abbrev_CG_resid = (correctedUniqueRichness_Feed_prim_abbrev_CG_resid - -6.7) /  (7.15-  -6.7),
+
+           #UniqueRichness_IntolerantTaxa_resid = 1-((UniqueRichness_IntolerantTaxa_resid - -2.61) /  (4.65 -  -2.61)))
+           correctedUniqueRichness_IntolerantTaxa_resid = 1-((correctedUniqueRichness_IntolerantTaxa_resid - -1.75) /  (5 -  -1.75)))
 
   metric_rs <-  metric_rs |>
     mutate(UniqueRelativeAbundance_Feed_prim_abbrev_CF_resid = case_when(UniqueRelativeAbundance_Feed_prim_abbrev_CF_resid <0 ~ 0,
@@ -673,27 +682,23 @@ Drfdat$Ecoregion=as.factor(Drfdat$Ecoregion)
     mutate(UniqueRelativeAbundance_NonInsects_resid = case_when(UniqueRelativeAbundance_NonInsects_resid <0 ~ 0,
                                                                 UniqueRelativeAbundance_NonInsects_resid >1 ~ 1,
                                                        TRUE ~ UniqueRelativeAbundance_NonInsects_resid)) %>%
-    mutate( UniqueRichness_Feed_prim_abbrev_CG_resid = case_when( UniqueRichness_Feed_prim_abbrev_CG_resid <0 ~ 0,
-                                                                        UniqueRichness_Feed_prim_abbrev_CG_resid >1 ~ 1,
-                                             TRUE ~  UniqueRichness_Feed_prim_abbrev_CG_resid)) %>%
+    mutate( correctedUniqueRichness_Feed_prim_abbrev_CG_resid = case_when( correctedUniqueRichness_Feed_prim_abbrev_CG_resid <0 ~ 0,
+                                                                           correctedUniqueRichness_Feed_prim_abbrev_CG_resid >1 ~ 1,
+                                             TRUE ~  correctedUniqueRichness_Feed_prim_abbrev_CG_resid)) %>%
 
-      mutate( UniqueRichness_IntolerantTaxa_resid = case_when( UniqueRichness_IntolerantTaxa_resid <0 ~ 0,
-                                                              UniqueRichness_IntolerantTaxa_resid >1 ~ 1,
-                                                                          TRUE ~  UniqueRichness_IntolerantTaxa_resid))
+      mutate( correctedUniqueRichness_IntolerantTaxa_resid = case_when( correctedUniqueRichness_IntolerantTaxa_resid <0 ~ 0,
+                                                               correctedUniqueRichness_IntolerantTaxa_resid >1 ~ 1,
+                                                                          TRUE ~  correctedUniqueRichness_IntolerantTaxa_resid))
 
-
-  metric_rs$predUniqueRichness_IntolerantTaxa_resid= -3.2254 + metric_rs$UniqueEvenness*5.0109
-  metric_rs$correctedUniqueRichness_IntolerantTaxa_resid=metric_rs$UniqueRichness_IntolerantTaxa_resid-metric_rs$predUniqueRichness_IntolerantTaxa_resid+1
-  metric_rs$predUniqueRichness_Feed_prim_abbrev_CG_resid= -7.649 + metric_rs$UniqueEvenness*10.426
-  metric_rs$correctedUniqueRichness_Feed_prim_abbrev_CG_resid=metric_rs$UniqueRichness_Feed_prim_abbrev_CG_resid-metric_rs$predUniqueRichness_Feed_prim_abbrev_CG_resid+1
 
   metric_rs <-  metric_rs |>
   mutate(MMI = (UniqueRelativeAbundance_Feed_prim_abbrev_CF_resid  + UniqueRelativeAbundance_IntolerantTaxa_resid +correctedUniqueRichness_IntolerantTaxa_resid+
                     UniqueRelativeAbundance_NonInsects_resid+correctedUniqueRichness_Feed_prim_abbrev_CG_resid)  /5)
+metric_rs$MMI=metric_rs$MMI/0.5414
 
 
   #Throw MMI result and MMI metrics into a list for getting out of the function
-  bugnew$sampleId=as.numeric(row.names(bugnew))
+  #bugnew$sampleId=as.numeric(row.names(bugnew))
   metric_rs=dplyr::left_join(bugnew, metric_rs, by="sampleId")
   row.names(metric_rs)<-metric_rs$sampleId
   return(metric_rs)
@@ -706,6 +711,9 @@ Drfdat$Ecoregion=as.factor(Drfdat$Ecoregion)
 #' @param prednew
 #' @param rf_mod_Density
 AK_density_model<-function(bugnew,prednew,rfmod_Density){
+  bugnew$sampleId=row.names(bugnew)
+  prednew$sampleId=row.names(prednew)
+  prednew$Proportion_Perennial_Ice_Snow=prednew$Prop_Perennial_Ice_Snow
   Drfdat=merge(bugnew,prednew,by='sampleId')
   # which rf models to use
   rfmodels <- c('rfmod_Density')
@@ -736,9 +744,6 @@ AK_density_model<-function(bugnew,prednew,rfmod_Density){
   residualsdf=as.data.frame(do.call(cbind,resid))
   rfdat_all_final4=cbind(Drfdat2,residualsdf)
 
-  # Select SAMPLEID + 4 metrics.residuals
-  candmetrics <- rfdat_all_final4 %>%
-    select(sampleId,Density_resid)
-  row.names(candmetrics)<-candmetrics$sampleId
-  return(candmetrics)
+  row.names(rfdat_all_final4)<-rfdat_all_final4$sampleId
+  return(rfdat_all_final4)
 }
