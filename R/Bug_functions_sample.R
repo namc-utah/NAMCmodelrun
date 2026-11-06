@@ -195,7 +195,7 @@ OR_MMI_bug_export <- function(sampleIds){
   OR_MMIbugs = NAMCr::query(
     "sampleTaxaTranslationRarefied",
     sampleIds = sampleIds,
-    translationId = 191, #ORDEQ MMI "translation"
+    translationId = 224, #ORDEQ MMI "translation"
     fixedCount = 300
   )# raw NAMCr::query with pivoted taxonomy, and join translation name but not roll it up.... then summ in here
   #
